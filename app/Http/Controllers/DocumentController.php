@@ -262,11 +262,9 @@ class DocumentController extends Controller
                 'file_size' => file_exists($docxPath) ? filesize($docxPath) : 'not_found',
             ]);
 
-            $filename = $this->buildDownloadName(
-                $seminar->mahasiswa?->nama ?? 'Mahasiswa',
-                $template->nama ?? 'Template',
-                'docx'
-            );
+            $rawName = ($seminar->mahasiswa?->nama ?? 'Mahasiswa') . ' - ' . ($template->nama ?? 'Template');
+            $safeName = preg_replace('/[<>:"\/\\|?*]/', '', $rawName);
+            $filename = trim($safeName) . '.docx';
 
             return response()->download($docxPath, $filename)->deleteFileAfterSend(true);
         } catch (\Throwable $e) {
@@ -1747,4 +1745,5 @@ class DocumentController extends Controller
 
         return $filePath;
     }
+
 }

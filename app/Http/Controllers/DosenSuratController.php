@@ -408,21 +408,26 @@ class DosenSuratController extends Controller
             return redirect()->back()->with('error', 'Template surat tidak ditemukan.');
         }
 
-        $outDir = public_path('uploads/documents/surat/generated');
+        $outDir = base_path('uploads/documents/surat/generated');
         if (!is_dir($outDir)) {
             mkdir($outDir, 0755, true);
         }
         
-        $safeName = Str::slug($surat->jenis->nama . '_' . ($surat->no_surat ?? $surat->id)) ?: 'surat';
-        $filename = $safeName . '_' . time() . '.docx';
-        $outPath = $outDir . '/' . $filename;
+        
+        $pemohonName = $surat->pemohonDosen ? $surat->pemohonDosen->nama : ($surat->pemohonMahasiswa ? $surat->pemohonMahasiswa->nama : 'Unknown');
+        $rawName = $pemohonName . ' - ' . $surat->jenis->nama;
+        $safeName = preg_replace('/[<>:"\/\\|?*]/', '', $rawName);
+        $downloadName = trim($safeName) . '.docx';
+
+        $tempFilename = Str::uuid() . '.docx';
+        $outPath = $outDir . '/' . $tempFilename;
 
         try {
             $service->generateDocx($template, $surat, $outPath);
             if (!file_exists($outPath)) {
                 throw new \Exception("File failed to generate.");
             }
-            return response()->download($outPath, $filename);
+            return response()->download($outPath, $downloadName)->deleteFileAfterSend(true);
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'Gagal mengunduh surat: ' . $e->getMessage());
         }

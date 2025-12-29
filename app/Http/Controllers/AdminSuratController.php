@@ -14,9 +14,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Exports\SuratExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminSuratController extends Controller
 {
+    public function export()
+    {
+        return Excel::download(new SuratExport, 'rekap_surat_' . date('Y-m-d_H-i') . '.xlsx');
+    }
+
     public function index(Request $request)
     {
         $sortFields = [

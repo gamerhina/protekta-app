@@ -72,9 +72,12 @@
                     <p class="text-sm text-gray-600 mb-4">Unduh hasil template untuk diperiksa atau dibagikan manual.</p>
                 </div>
                 <div>
-                    <a href="{{ route('admin.document.download-docx', [$template->id, $seminar->id]) }}"
+                    <a href="{{ route('admin.document.download-docx', [$template->id, $seminar->id]) }}" 
                        id="btn_download_docx"
-                       class="btn-pill btn-pill-primary w-full flex items-center justify-center gap-2" data-no-ajax>
+                       download
+                       data-no-ajax
+                       target="_blank"
+                       class="btn-pill btn-pill-primary w-full flex items-center justify-center gap-2">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v8m0-8l-3 3m3-3l3 3M5 8h14l-1.405-4.215A1 1 0 0016.638 3H7.362a1 1 0 00-.957.785L5 8z"></path>
                         </svg>

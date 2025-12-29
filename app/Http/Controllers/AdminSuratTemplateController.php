@@ -121,14 +121,21 @@ class AdminSuratTemplateController extends Controller
         abort_unless((int) $template->surat_jenis_id === (int) $suratJenis->id, 404);
         abort_unless((int) $surat->surat_jenis_id === (int) $suratJenis->id, 404);
 
-        $outDir = public_path('uploads/documents/surat/generated');
+        $outDir = base_path('uploads/documents/surat/generated');
         if (!is_dir($outDir)) {
             mkdir($outDir, 0755, true);
         }
         
-        $safeName = Str::slug($suratJenis->nama . '_' . ($surat->no_surat ?? $surat->id)) ?: 'surat';
-        $filename = $safeName . '_' . time() . '.docx';
-        $outPath = $outDir . '/' . $filename;
+        
+        $pemohonName = $surat->pemohonDosen ? $surat->pemohonDosen->nama : ($surat->pemohonMahasiswa ? $surat->pemohonMahasiswa->nama : 'Unknown');
+        $rawName = $pemohonName . ' - ' . $suratJenis->nama;
+        // Remove only characters invalid in filenames: \ / : * ? " < > |
+        $safeName = preg_replace('/[<>:"\/\\|?*]/', '', $rawName);
+        $downloadName = trim($safeName) . '.docx';
+        
+        // Use a safe unique name for storage to prevent collisions
+        $tempFilename = Str::uuid() . '.docx';
+        $outPath = $outDir . '/' . $tempFilename;
 
         try {
             $service->generateDocx($template, $surat, $outPath);
@@ -137,7 +144,7 @@ class AdminSuratTemplateController extends Controller
                 throw new \Exception("File failed to generate at $outPath");
             }
 
-            return response()->download($outPath, $filename);
+            return response()->download($outPath, $downloadName)->deleteFileAfterSend(true);
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'Gagal membuat dokumen: ' . $e->getMessage());
         }
@@ -167,7 +174,7 @@ class AdminSuratTemplateController extends Controller
             'to' => 'required|email',
         ]);
 
-        $outDir = public_path('uploads/documents/surat/generated');
+        $outDir = base_path('uploads/documents/surat/generated');
         if (!is_dir($outDir)) {
             mkdir($outDir, 0755, true);
         }

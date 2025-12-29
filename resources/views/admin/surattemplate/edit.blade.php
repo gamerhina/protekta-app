@@ -159,7 +159,7 @@
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $s->status }}</td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="flex flex-wrap items-center gap-3">
-                                        <a class="text-blue-600 hover:underline" href="{{ route('admin.surattemplate.download', [$suratJenis, $template, $s]) }}" data-no-ajax>Download DOCX</a>
+                                        <a class="text-blue-600 hover:underline" href="{{ route('admin.surattemplate.download', [$suratJenis, $template, $s]) }}" download data-no-ajax target="_blank">Download DOCX</a>
                                         <form method="POST" action="{{ route('admin.surattemplate.send', [$suratJenis, $template, $s]) }}" class="flex items-center gap-2">
                                             @csrf
                                             <input name="to" value="{{ $s->penerima_email ?? ($s->mahasiswa->email ?? '') }}" class="px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="email@contoh.com" required>

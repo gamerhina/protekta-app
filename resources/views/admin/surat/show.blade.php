@@ -29,8 +29,8 @@
         <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl">
             <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Preview & Pengiriman</h2>
             @if($surat->jenis && $surat->jenis->template)
-                <div class="flex flex-wrap items-center gap-4">
-                    <a id="btn-download-docx-surat" class="btn-pill btn-pill-secondary flex items-center gap-2" href="{{ route('admin.surattemplate.download', [$surat->jenis, $surat->jenis->template, $surat]) }}" data-no-ajax>
+                <div class="flex flex-col gap-2">
+                    <a id="btn-download-docx-surat" class="btn-pill btn-pill-secondary flex items-center gap-2" href="{{ route('admin.surattemplate.download', [$surat->jenis, $surat->jenis->template, $surat]) }}" download data-no-ajax target="_blank">
                         <i class="fas fa-file-word text-blue-500"></i> Download DOCX
                     </a>
 

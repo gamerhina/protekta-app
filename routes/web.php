@@ -99,6 +99,7 @@ Route::middleware(['auth:admin', 'notifications'])->prefix('admin')->name('admin
 
     // Seminar management routes (using methods in ManagementController)
     Route::get('/seminars/next-no-surat', [App\Http\Controllers\ManagementController::class, 'getNextNoSurat'])->name('seminar.next-no-surat');
+    Route::get('/seminars/export', [App\Http\Controllers\ManagementController::class, 'exportSeminar'])->name('seminar.export');
     Route::get('/seminars', [App\Http\Controllers\ManagementController::class, 'indexSeminar'])->name('seminar.index');
     Route::get('/seminars/create', [App\Http\Controllers\ManagementController::class, 'createSeminar'])->name('seminar.create');
     Route::post('/seminars', [App\Http\Controllers\ManagementController::class, 'storeSeminar'])->name('seminar.store');
@@ -156,6 +157,7 @@ Route::middleware(['auth:admin', 'notifications'])->prefix('admin')->name('admin
     Route::post('/surat-jenis/{suratJenis}/template/{template}/send/{surat}', [AdminSuratTemplateController::class, 'sendEmail'])->name('surattemplate.send');
 
     Route::get('/surats', [AdminSuratController::class, 'index'])->name('surat.index');
+    Route::get('/surats/export', [AdminSuratController::class, 'export'])->name('surat.export');
     Route::get('/surats/next-no-surat', [AdminSuratController::class, 'getNextNoSurat'])->name('surat.next-no-surat');
     Route::get('/surats/create', [AdminSuratController::class, 'create'])->name('surat.create');
     Route::post('/surats', [AdminSuratController::class, 'store'])->name('surat.store');
