@@ -121,7 +121,7 @@ class AdminSuratTemplateController extends Controller
         abort_unless((int) $template->surat_jenis_id === (int) $suratJenis->id, 404);
         abort_unless((int) $surat->surat_jenis_id === (int) $suratJenis->id, 404);
 
-        $outDir = storage_path('app/public/generated-surats');
+        $outDir = public_path('uploads/documents/surat/generated');
         if (!is_dir($outDir)) {
             mkdir($outDir, 0755, true);
         }
@@ -167,7 +167,7 @@ class AdminSuratTemplateController extends Controller
             'to' => 'required|email',
         ]);
 
-        $outDir = storage_path('app/public/generated-surats');
+        $outDir = public_path('uploads/documents/surat/generated');
         if (!is_dir($outDir)) {
             mkdir($outDir, 0755, true);
         }

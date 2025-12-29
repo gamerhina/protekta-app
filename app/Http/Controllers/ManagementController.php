@@ -93,7 +93,7 @@ class ManagementController extends Controller
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
-            $data['foto'] = $request->file('foto')->store('foto-dosen', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/dosen', 'public');
         }
 
         Dosen::create($data);
@@ -176,7 +176,7 @@ class ManagementController extends Controller
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
-            $data['foto'] = $request->file('foto')->store('foto-mahasiswa', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/mahasiswa', 'public');
         }
 
         Mahasiswa::create($data);
@@ -262,7 +262,7 @@ class ManagementController extends Controller
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
-            $data['foto'] = $request->file('foto')->store('foto-admin', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/admin', 'public');
         }
 
         $admin = Admin::create($data);
@@ -319,7 +319,7 @@ class ManagementController extends Controller
                 }
             }
 
-            $data['foto'] = $request->file('foto')->store('foto-dosen', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/dosen', 'public');
         }
 
         $dosen->update($data);
@@ -390,7 +390,7 @@ class ManagementController extends Controller
                 }
             }
 
-            $data['foto'] = $request->file('foto')->store('foto-mahasiswa', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/mahasiswa', 'public');
         }
 
         $mahasiswa->update($data);
@@ -455,7 +455,7 @@ class ManagementController extends Controller
                 }
             }
 
-            $data['foto'] = $request->file('foto')->store('foto-admin', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/admin', 'public');
         }
 
         $admin->update($data);
@@ -679,7 +679,7 @@ class ManagementController extends Controller
                 }
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('seminar-berkas', 'public');
+                    $stored[$key] = $file->store('documents/seminar', 'public');
                 }
             }
             $data['berkas_syarat'] = $stored;
@@ -922,7 +922,7 @@ class ManagementController extends Controller
                 }
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('seminar-berkas', 'public');
+                    $stored[$key] = $file->store('documents/seminar', 'public');
                 }
             }
 

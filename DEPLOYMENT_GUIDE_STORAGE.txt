@@ -1,0 +1,66 @@
+SERVER DEPLOYMENT GUIDE (FILE STORAGE)
+======================================
+
+Karena kita telah mengubah mekanisme penyimpanan file dari `storage/app/public` (symlink)
+menjadi `public/uploads` (folder fisik langsung), ada beberapa hal yang WAJIB disesuaikan 
+di server production agar file upload bisa terbaca dan tersimpan dengan benar.
+
+1. UPDATE DATABASE (HANYA SEKALI SAJA)
+--------------------------------------
+Kita perlu mengupdate path file-file lama di database agar mengarah ke folder baru.
+Jalankan command ini di terminal server (SSH) di root project aplikasi web-nya:
+
+   php artisan app:update-file-paths
+
+   *Command ini akan otomatis mengubah prefix path di database:*
+   - foto-dosen/     -> photos/dosen/
+   - foto-mahasiswa/ -> photos/mahasiswa/
+   - seminar-berkas/ -> documents/seminar/
+   - dan seterusnya...
+
+2. PASTIKAN FOLDER UPLOADS ADA DAN MEMILIKI PERMISSION YANG BENAR
+-----------------------------------------------------------------
+Hosting/Server kadang membatasi permission folder. Pastikan folder `public/uploads` 
+bisa ditulisi (writable) oleh aplikasi.
+
+Jika Anda punya akses SSH:
+   chmod -R 755 public/uploads
+   chown -R www-data:www-data public/uploads  (sesuaikan user:group server Anda)
+
+3. KONFIGURASI DI SERVER (PENTING!)
+-----------------------------------
+A. Update Environment (.env)
+   Pastikan APP_URL di file .env server sudah benar-benar sesuai dengan domain Anda.
+   Contoh:
+   APP_URL=https://protekta.unila.ac.id
+   (JANGAN pakai localhost atau 127.0.0.1 di server produksi)
+
+B. Update Config (Jika deploy manual via git pull)
+   Setelah pull update terbaru, jangan lupa clear cache config agar perubahan di 
+   `config/filesystems.php` (yang mengarah ke `public/uploads`) terbaca.
+   
+   php artisan config:clear
+   php artisan view:clear
+
+4. JIKA ANDA MEMINDAHKAN FILE MANUAL DARI SERVER LAMA
+-----------------------------------------------------
+Jika ada file di server lama yang belum masuk ke struktur folder baru, 
+Anda harus memindahkannya manual sesuai struktur berikut di dalam folder `public/uploads`:
+
+   public/uploads/
+   ├── photos/
+   │   ├── dosen/      <-- isi file dari storage/app/public/foto-dosen
+   │   ├── mahasiswa/  <-- isi file dari storage/app/public/foto-mahasiswa
+   │   └── admin/      <-- isi file dari storage/app/public/foto-admin
+   ├── documents/
+   │   ├── seminar/    <-- isi file dari storage/app/public/seminar-berkas
+   │   └── surat/
+   │       ├── attachments/ <-- isi file dari storage/app/public/surat-attachments
+   │       └── generated/   <-- isi file dari storage/app/public/generated-surats
+   ├── signatures/     <-- isi file dari storage/app/public/signatures
+   └── branding/       <-- isi file dari storage/app/public/branding
+
+CATATAN TAMBAHAN:
+-----------------
+Folder `storage/app/public` dan symlink `public/storage` sudah TIDAK DIGUNAKAN LAGI.
+Jangan simpan file manual di sana karena tidak akan terbaca oleh aplikasi.

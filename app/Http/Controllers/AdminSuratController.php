@@ -263,7 +263,7 @@ class AdminSuratController extends Controller
         $stored = [];
         foreach ($files as $k => $file) {
             if (!$file) continue;
-            $stored[$k] = $file->store('surat-attachments', 'public');
+            $stored[$k] = $file->store('documents/surat/attachments', 'public');
         }
 
         // Store remaining data + uploaded file paths
@@ -419,7 +419,7 @@ class AdminSuratController extends Controller
             $normalized = str_replace('\\', '/', ltrim((string) $p, '/'));
 
             // Only allow deleting known directories
-            if (Str::startsWith($normalized, ['surat-attachments/', 'generated-surats/'])) {
+            if (Str::startsWith($normalized, ['surat-attachments/', 'documents/surat/generated/', 'documents/surat/attachments/'])) {
                 try {
                     Storage::disk('public')->delete($normalized);
                 } catch (\Throwable $e) {

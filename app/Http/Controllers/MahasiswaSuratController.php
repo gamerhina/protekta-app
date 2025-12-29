@@ -161,7 +161,7 @@ class MahasiswaSuratController extends Controller
 
         $stored = [];
         foreach ($files as $k => $file) {
-            if ($file) $stored[$k] = $file->store('surat-attachments', 'public');
+            if ($file) $stored[$k] = $file->store('documents/surat/attachments', 'public');
         }
 
         $payload['data'] = array_merge($data, $stored);
@@ -220,7 +220,7 @@ class MahasiswaSuratController extends Controller
             return redirect()->back()->with('error', 'Template surat tidak ditemukan.');
         }
 
-        $outDir = storage_path('app/public/generated-surats');
+        $outDir = public_path('uploads/documents/surat/generated');
         if (!is_dir($outDir)) {
             mkdir($outDir, 0755, true);
         }

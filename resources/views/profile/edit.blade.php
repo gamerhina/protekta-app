@@ -79,7 +79,7 @@
                 <label for="foto" class="block text-sm font-medium text-gray-700 mb-1">Foto Profil (maks 500KB)</label>
                 <div class="flex items-center gap-4 mt-1">
                     @if($user->foto ?? false)
-                        <img src="{{ asset('storage/' . $user->foto) }}" alt="Current Photo" class="w-14 h-14 rounded-xl object-cover border">
+                        <img src="{{ asset('uploads/' . $user->foto) }}" alt="Current Photo" class="w-14 h-14 rounded-xl object-cover border">
                     @else
                         <div class="w-14 h-14 rounded-xl flex items-center justify-center bg-gray-100 text-gray-400 border">
                             <i class="fas fa-user text-lg"></i>

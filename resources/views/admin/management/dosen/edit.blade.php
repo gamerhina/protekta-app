@@ -115,7 +115,7 @@
                     @if($dosen->foto)
                         <div class="mt-2">
                             <p class="text-sm text-gray-600">Foto saat ini:</p>
-                            <img src="{{ asset('storage/' . $dosen->foto) }}" alt="Current Photo" class="mt-1 h-16 w-16 object-cover rounded">
+                            <img src="{{ asset('uploads/' . $dosen->foto) }}" alt="Current Photo" class="mt-1 h-16 w-16 object-cover rounded">
                         </div>
                     @endif
                 </div>

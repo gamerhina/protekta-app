@@ -49,7 +49,7 @@
                             @if($filePath)
                                 <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
                                     <span class="text-sm font-medium text-gray-700">{{ $label }}</span>
-                                    <a href="{{ asset('storage/' . $filePath) }}" target="_blank" class="text-blue-600 hover:underline text-sm flex items-center gap-1">
+                                    <a href="{{ asset('uploads/' . $filePath) }}" target="_blank" class="text-blue-600 hover:underline text-sm flex items-center gap-1">
                                         <i class="fas fa-file-download"></i> Lihat Berkas
                                     </a>
                                 </div>
@@ -180,7 +180,7 @@
             <div class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <h3 class="text-lg font-semibold text-gray-800 mb-3">Tanda Tangan Anda</h3>
                 <div class="flex items-center space-x-4">
-                    <img src="{{ asset('storage/' . $existingSignature->tanda_tangan) }}"
+                    <img src="{{ asset('uploads/' . $existingSignature->tanda_tangan) }}"
                          alt="Tanda Tangan"
                          class="h-16 border border-gray-300 rounded bg-white">
                     <div>

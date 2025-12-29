@@ -850,7 +850,7 @@
                 <div class="p-4 border-b bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
                     <div class="flex items-center">
                         @if($currentUser->foto ?? false)
-                            <img src="{{ asset('storage/' . $currentUser->foto) }}" alt="Profile Photo"
+                            <img src="{{ asset('uploads/' . $currentUser->foto) }}" alt="Profile Photo"
                                 class="w-16 h-16 rounded-xl object-cover border-2 border-white" loading="eager"
                                 decoding="async">
                         @else
