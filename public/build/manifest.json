@@ -1,0 +1,26 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-DRf-LT_f.js",
+    "name": "app",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "css": [
+      "assets/app-CqtMV7wp.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-B07t4tM-.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "resources/css/app.css"
+    ]
+  },
+  "resources/js/signature-pad.js": {
+    "file": "assets/signature-pad-BBe6n4zP.js",
+    "name": "signature-pad",
+    "src": "resources/js/signature-pad.js",
+    "isEntry": true
+  }
+}

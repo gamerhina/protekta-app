@@ -1,0 +1,2029 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use PhpOffice\PhpWord\TemplateProcessor;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Settings;
+use App\Models\DocumentTemplate;
+use App\Models\Seminar;
+use App\Models\SeminarJenis;
+use App\Models\SeminarNilai;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Mpdf\Mpdf;
+
+// Load OpenTBS
+require_once base_path('vendor/tinybutstrong/tinybutstrong/tbs_class.php');
+require_once base_path('vendor/tinybutstrong/opentbs/tbs_plugin_opentbs.php');
+
+class DocumentController extends Controller
+{
+    /**
+     * Generate a document using a template
+     */
+    public function generateDocument(Request $request, $templateId, $seminarId = null)
+    {
+        $template = DocumentTemplate::findOrFail($templateId);
+
+        // Load the template file
+        $templatePath = storage_path('app/' . $template->file_path);
+
+        if (!file_exists($templatePath)) {
+            abort(404, 'Template file not found.');
+        }
+
+        $phpWord = new TemplateProcessor($templatePath);
+
+        // If seminar ID is provided, fetch the seminar data to populate the template
+        if ($seminarId) {
+            $seminar = Seminar::with(['mahasiswa', 'p1Dosen', 'p2Dosen', 'pembahasDosen', 'seminarJenis'])->findOrFail($seminarId);
+
+            // Map the template variables with seminar data
+            $data = [
+                'nama' => $seminar->mahasiswa->nama ?? '',
+                'npm' => $seminar->mahasiswa->npm ?? '',
+                'judul' => $seminar->judul ?? '',
+                'tanggal' => $seminar->tanggal ? date('d F Y', strtotime($seminar->tanggal)) : '',
+                'jenis_seminar' => $seminar->seminarJenis->nama ?? '',
+                'no_surat' => $seminar->no_surat ?? '',
+                'p1_nama' => $seminar->p1Dosen->nama ?? '',
+                'p1_nip' => $seminar->p1Dosen->nip ?? '',
+                'p2_nama' => $seminar->p2Dosen->nama ?? '',
+                'p2_nip' => $seminar->p2Dosen->nip ?? '',
+                'pembahas_nama' => $seminar->pembahasDosen->nama ?? '',
+                'pembahas_nip' => $seminar->pembahasDosen->nip ?? '',
+            ];
+
+            // Replace variables in the template
+            foreach ($data as $key => $value) {
+                $phpWord->setValue($key, $value);
+            }
+        }
+
+        // Generate output filename
+        $fileName = $template->kode . '_' . date('Y-m-d') . '.docx';
+        $outputPath = storage_path('app/temp/' . $fileName);
+
+        // Create temp directory if it doesn't exist
+        if (!Storage::exists('temp')) {
+            Storage::makeDirectory('temp');
+        }
+
+        $phpWord->saveAs($outputPath);
+
+        // Return the file for download
+        return response()->download($outputPath)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Show the document templates page for admins
+     */
+    public function showTemplates()
+    {
+        $templates = DocumentTemplate::with('seminarJenis')->get();
+        return view('admin.document.templates', compact('templates'));
+    }
+
+    /**
+     * Show the form to create a new document template
+     */
+    public function showCreateTemplateForm()
+    {
+        $seminarJenis = SeminarJenis::all();
+        return view('admin.document.create', compact('seminarJenis'));
+    }
+
+    /**
+     * Store a new document template
+     */
+    public function storeTemplate(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'kode' => 'required|string|max:50|unique:document_templates,kode',
+            'seminar_jenis_id' => 'nullable|exists:seminar_jenis,id',
+            'keterangan' => 'nullable|string',
+            'file' => 'required|file|mimes:docx|max:10240',
+        ]);
+
+        // Ensure directory exists
+        $templatesDir = storage_path('app/private/document-templates');
+        if (!is_dir($templatesDir)) {
+            mkdir($templatesDir, 0755, true);
+        }
+
+        $filePath = $request->file('file')->store('document-templates');
+        $fullPath = storage_path('app/private/' . $filePath);
+        
+        $availableTags = DocumentTemplate::extractTagsFromDocx($fullPath);
+
+        $template = DocumentTemplate::create([
+            'nama' => $request->nama,
+            'kode' => $request->kode,
+            'seminar_jenis_id' => $request->seminar_jenis_id,
+            'keterangan' => $request->keterangan,
+            'file_path' => $filePath,
+            'available_tags' => $availableTags,
+            'aktif' => true,
+        ]);
+
+        return redirect()->route('admin.document.edit', $template->id)
+            ->with('success', 'Template berhasil diupload! Silakan mapping tags.');
+    }
+
+    /**
+     * Show edit template form with tag mapping
+     */
+    public function showEditTemplate($id)
+    {
+        $template = DocumentTemplate::with('seminarJenis')->findOrFail($id);
+        $seminarJenis = SeminarJenis::all();
+        $availableFields = DocumentTemplate::getAvailableFields();
+        
+        // Check if file exists - only show error if not already showing success message
+        if (!file_exists(storage_path('app/private/' . $template->file_path)) && !session()->has('success')) {
+            session()->flash('warning', 'File template tidak ditemukan di storage.');
+        }
+        
+        return view('admin.document.edit', compact('template', 'seminarJenis', 'availableFields'));
+    }
+
+    /**
+     * Update template and tag mappings
+     */
+    public function updateTemplate(Request $request, $id)
+    {
+        $template = DocumentTemplate::findOrFail($id);
+        
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'seminar_jenis_id' => 'nullable|exists:seminar_jenis,id',
+            'keterangan' => 'nullable|string',
+            'available_tags' => 'nullable|array',
+            'tag_mappings' => 'nullable|array',
+            'tag_types' => 'nullable|array',
+            'tag_properties' => 'nullable|array',
+            'new_file' => 'nullable|file|mimes:docx|max:10240',
+        ]);
+
+        $updateData = [
+            'nama' => $request->nama,
+            'seminar_jenis_id' => $request->seminar_jenis_id,
+            'keterangan' => $request->keterangan,
+            'available_tags' => $request->available_tags ?? $template->available_tags,
+            'tag_mappings' => $request->tag_mappings,
+            'tag_types' => $request->tag_types,
+            'tag_properties' => $request->tag_properties,
+            'aktif' => $request->has('aktif'),
+        ];
+
+        // Handle file re-upload
+        if ($request->hasFile('new_file')) {
+            // Ensure directory exists
+            $templatesDir = storage_path('app/private/document-templates');
+            if (!is_dir($templatesDir)) {
+                mkdir($templatesDir, 0755, true);
+            }
+            
+            // Delete old file if exists
+            $oldPath = storage_path('app/private/' . $template->file_path);
+            if (file_exists($oldPath)) {
+                unlink($oldPath);
+            }
+            
+            // Store new file
+            $filePath = $request->file('new_file')->store('document-templates');
+            $fullPath = storage_path('app/private/' . $filePath);
+            
+            // Extract tags from new file
+            $availableTags = DocumentTemplate::extractTagsFromDocx($fullPath);
+            
+            $updateData['file_path'] = $filePath;
+            $updateData['available_tags'] = $availableTags;
+            
+            $template->update($updateData);
+            
+            return redirect()->route('admin.document.edit', $template->id)
+                ->with('success', 'Template dan file berhasil diupdate! Ditemukan ' . count($availableTags) . ' tags. Silakan mapping tags di bawah.');
+        }
+
+        $template->update($updateData);
+
+        return redirect()->route('admin.document.templates')
+            ->with('success', 'Template berhasil diupdate!');
+    }
+
+    /**
+     * Re-extract tags from template file
+     */
+    public function reExtractTags($id)
+    {
+        $template = DocumentTemplate::findOrFail($id);
+        $templatePath = storage_path('app/private/' . $template->file_path);
+        
+        if (!file_exists($templatePath)) {
+            return redirect()->back()->with('error', 'Template file tidak ditemukan di: ' . $templatePath);
+        }
+        
+        $availableTags = DocumentTemplate::extractTagsFromDocx($templatePath);
+        
+        $template->update([
+            'available_tags' => $availableTags,
+        ]);
+        
+        return redirect()->back()
+            ->with('success', 'Tags berhasil di-extract ulang! Ditemukan ' . count($availableTags) . ' tags.');
+    }
+
+    /**
+     * Delete template
+     */
+    public function deleteTemplate($id)
+    {
+        $template = DocumentTemplate::findOrFail($id);
+        
+        // Delete file
+        $filePath = storage_path('app/private/' . $template->file_path);
+        if (file_exists($filePath)) {
+            unlink($filePath);
+        }
+        
+        $template->delete();
+        
+        return redirect()->route('admin.document.templates')
+            ->with('success', 'Template berhasil dihapus!');
+    }
+
+    /**
+     * Get list of seminars for preview selection (API)
+     */
+    public function getSeminarsList()
+    {
+        $seminars = Seminar::with(['mahasiswa', 'seminarJenis'])
+            ->latest()
+            ->take(50)
+            ->get()
+            ->map(function($seminar) {
+                return [
+                    'id' => $seminar->id,
+                    'mahasiswa_nama' => $seminar->mahasiswa->nama ?? '',
+                    'npm' => $seminar->mahasiswa->npm ?? '',
+                    'jenis_seminar' => $seminar->seminarJenis->nama ?? '',
+                    'judul' => $seminar->judul ?? '',
+                    'tanggal' => $seminar->tanggal ? $seminar->tanggal->format('d M Y') : '',
+                ];
+            });
+
+        return response()->json(['seminars' => $seminars]);
+    }
+
+    /**
+     * Get data from seminar for template
+     */
+    private function getSeminarData($seminarId)
+    {
+        $seminar = Seminar::with([
+            'mahasiswa',
+            'p1Dosen',
+            'p2Dosen',
+            'pembahasDosen',
+            'seminarJenis',
+            'nilai',
+            'signatures'
+        ])->findOrFail($seminarId);
+
+        $nilaiData = $this->calculateNilai($seminar);
+        
+        // Get signatures and convert base64 to temp files
+        $p1Signature = $seminar->signatures()->where('dosen_id', $seminar->p1_dosen_id)->first();
+        $p2Signature = $seminar->signatures()->where('dosen_id', $seminar->p2_dosen_id)->first();
+        $pembahasSignature = $seminar->signatures()->where('dosen_id', $seminar->pembahas_dosen_id)->first();
+        
+        // Convert base64 signatures to temp image files
+        $p1SignaturePath = $p1Signature ? $this->convertBase64ToImage($p1Signature->tanda_tangan, 'p1_' . $seminar->id) : null;
+        $p2SignaturePath = $p2Signature ? $this->convertBase64ToImage($p2Signature->tanda_tangan, 'p2_' . $seminar->id) : null;
+        $pembahasSignaturePath = $pembahasSignature ? $this->convertBase64ToImage($pembahasSignature->tanda_tangan, 'pembahas_' . $seminar->id) : null;
+        
+        // Generate hari (day name) dan tahun from tanggal
+        $hariNama = '';
+        $tahun = '';
+        if ($seminar->tanggal) {
+            // Set locale to Indonesian
+            $hariIndo = [
+                'Sunday' => 'Minggu',
+                'Monday' => 'Senin',
+                'Tuesday' => 'Selasa',
+                'Wednesday' => 'Rabu',
+                'Thursday' => 'Kamis',
+                'Friday' => 'Jumat',
+                'Saturday' => 'Sabtu'
+            ];
+            $hariNama = $hariIndo[$seminar->tanggal->format('l')] ?? '';
+            $tahun = $seminar->tanggal->format('Y');
+        }
+
+        return [
+            'mahasiswa_nama' => $seminar->mahasiswa->nama ?? '',
+            'mahasiswa_npm' => $seminar->mahasiswa->npm ?? '',
+            'mahasiswa_prodi' => $seminar->mahasiswa->prodi ?? '',
+            'mahasiswa_email' => $seminar->mahasiswa->email ?? '',
+            'mahasiswa_no_hp' => $seminar->mahasiswa->no_hp ?? '',
+            'seminar_no_surat' => $seminar->no_surat ?? '',
+            'seminar_judul' => $seminar->judul ?? '',
+            'seminar_tanggal' => $seminar->tanggal ? $seminar->tanggal->format('d F Y') : '',
+            'seminar_tahun' => $tahun,
+            'seminar_hari' => $hariNama,
+            'seminar_waktu_mulai' => $seminar->waktu_mulai ?? '',
+            'seminar_lokasi' => $seminar->lokasi ?? '',
+            'seminar_status' => $seminar->status ?? '',
+            'seminar_jenis_nama' => $seminar->seminarJenis->nama ?? '',
+            'p1_nama' => $seminar->p1Dosen->nama ?? '',
+            'p1_nip' => $seminar->p1Dosen->nip ?? '',
+            'p1_email' => $seminar->p1Dosen->email ?? '',
+            'p1_ttd' => $p1SignaturePath ?? '',
+            'p2_nama' => $seminar->p2Dosen->nama ?? '',
+            'p2_nip' => $seminar->p2Dosen->nip ?? '',
+            'p2_email' => $seminar->p2Dosen->email ?? '',
+            'p2_ttd' => $p2SignaturePath ?? '',
+            'pembahas_nama' => $seminar->pembahasDosen->nama ?? '',
+            'pembahas_nip' => $seminar->pembahasDosen->nip ?? '',
+            'pembahas_email' => $seminar->pembahasDosen->email ?? '',
+            'pembahas_ttd' => $pembahasSignaturePath ?? '',
+            'nilai_akhir' => $nilaiData['nilai_akhir'] ?? '',
+            'nilai_huruf' => $nilaiData['nilai_huruf'] ?? '',
+            'nilai_p1' => $nilaiData['nilai_p1'] ?? '',
+            'nilai_p2' => $nilaiData['nilai_p2'] ?? '',
+            'nilai_pembahas' => $nilaiData['nilai_pembahas'] ?? '',
+        ];
+    }
+
+    /**
+     * Convert base64 signature OR file path to temporary image file
+     */
+    private function convertBase64ToImage($signatureData, $prefix = 'signature')
+    {
+        if (empty($signatureData)) {
+            return null;
+        }
+        
+        // Check if it's a file path (not base64)
+        if (strpos($signatureData, 'signatures/') === 0 || strpos($signatureData, '/') !== false || strpos($signatureData, '\\') !== false) {
+            // It's a file path
+            \Log::info("Signature is a file path: {$signatureData}");
+            
+            // Try to find the file in storage
+            $possiblePaths = [
+                storage_path('app/public/' . $signatureData),
+                storage_path('app/' . $signatureData),
+                public_path('storage/' . $signatureData),
+                $signatureData // Absolute path
+            ];
+            
+            foreach ($possiblePaths as $path) {
+                if (file_exists($path)) {
+                    \Log::info("✓ Found signature file at: {$path}");
+                    return $path;
+                }
+            }
+            
+            \Log::error("Signature file not found in any location: {$signatureData}");
+            return null;
+        }
+        
+        // It's base64 data - proceed with conversion
+        \Log::info("Signature is base64 data, converting...");
+        
+        // Ensure temp directory exists
+        $tempDir = storage_path('app/public/temp/signatures');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        
+        // Remove data:image/png;base64, prefix if exists
+        $signatureData = preg_replace('/^data:image\/\w+;base64,/', '', $signatureData);
+        
+        // Decode base64
+        $imageData = base64_decode($signatureData, true);
+        
+        if ($imageData === false || strlen($imageData) < 100) {
+            \Log::warning('Failed to decode base64 signature for: ' . $prefix);
+            return null;
+        }
+        
+        // Verify it's a valid image
+        $tempCheckPath = $tempDir . '/check_' . time() . '.tmp';
+        file_put_contents($tempCheckPath, $imageData);
+        $imageInfo = @getimagesize($tempCheckPath);
+        unlink($tempCheckPath);
+        
+        if (!$imageInfo) {
+            \Log::warning('Decoded data is not a valid image for: ' . $prefix);
+            return null;
+        }
+        
+        // Generate unique filename
+        $filename = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.png';
+        $filePath = $tempDir . '/' . $filename;
+        
+        // Save to file
+        if (file_put_contents($filePath, $imageData) === false) {
+            \Log::warning('Failed to save signature image to: ' . $filePath);
+            return null;
+        }
+        
+        \Log::info('Signature converted and saved to: ' . $filePath);
+        return $filePath;
+    }
+    
+    /**
+     * Calculate nilai from seminar
+     */
+    private function calculateNilai($seminar)
+    {
+        $nilaiP1 = $seminar->nilai()->where('dosen_id', $seminar->p1_dosen_id)->first();
+        $nilaiP2 = $seminar->nilai()->where('dosen_id', $seminar->p2_dosen_id)->first();
+        $nilaiPembahas = $seminar->nilai()->where('dosen_id', $seminar->pembahas_dosen_id)->first();
+
+        $avgP1 = $nilaiP1 ? $nilaiP1->nilai_akhir : 0;
+        $avgP2 = $nilaiP2 ? $nilaiP2->nilai_akhir : 0;
+        $avgPembahas = $nilaiPembahas ? $nilaiPembahas->nilai_akhir : 0;
+
+        $p1Weight = $seminar->seminarJenis->p1_weight ?? 40;
+        $p2Weight = $seminar->seminarJenis->p2_weight ?? 40;
+        $pembahasWeight = $seminar->seminarJenis->pembahas_weight ?? 20;
+
+        $nilaiAkhir = ($avgP1 * $p1Weight / 100) + 
+                      ($avgP2 * $p2Weight / 100) + 
+                      ($avgPembahas * $pembahasWeight / 100);
+
+        $nilaiHuruf = $this->getNilaiHuruf($nilaiAkhir, $seminar);
+
+        return [
+            'nilai_p1' => number_format($avgP1, 2),
+            'nilai_p2' => number_format($avgP2, 2),
+            'nilai_pembahas' => number_format($avgPembahas, 2),
+            'nilai_akhir' => number_format($nilaiAkhir, 2),
+            'nilai_huruf' => $nilaiHuruf,
+        ];
+    }
+
+    /**
+     * Get nilai huruf from nilai angka using grading scheme from seminar jenis
+     * With rounding: 75.5 rounds to 76 (A), 75.4 rounds to 75 (B+)
+     */
+    private function getNilaiHuruf($nilai, $seminar)
+    {
+        // Round to 1 decimal place for comparison (standard rounding)
+        $nilaiRounded = round($nilai, 1);
+        
+        // Get grading scheme from seminar jenis
+        $gradingScheme = $seminar->seminarJenis->grading_scheme ?? null;
+        
+        // If grading scheme exists, use it
+        if ($gradingScheme && is_array($gradingScheme)) {
+            foreach ($gradingScheme as $grade) {
+                if ($nilaiRounded >= $grade['min'] && $nilaiRounded <= $grade['max']) {
+                    return $grade['grade'];
+                }
+            }
+        }
+        
+        // Fallback to default scheme if no custom scheme
+        // Default: 76+ = A, 71-75 = B+, 66-70 = B, 61-65 = C+, 56-60 = C, 50-55 = D, 0-49 = E
+        if ($nilaiRounded >= 76) return 'A';
+        if ($nilaiRounded >= 71) return 'B+';
+        if ($nilaiRounded >= 66) return 'B';
+        if ($nilaiRounded >= 61) return 'C+';
+        if ($nilaiRounded >= 56) return 'C';
+        if ($nilaiRounded >= 50) return 'D';
+        return 'E';
+    }
+
+    /**
+     * Generate document and show preview
+     */
+    public function previewDocument($templateId, $seminarId)
+    {
+        try {
+            $template = DocumentTemplate::findOrFail($templateId);
+            $seminar = Seminar::with(['mahasiswa', 'seminarJenis', 'p1Dosen', 'p2Dosen', 'pembahasDosen'])->findOrFail($seminarId);
+            
+            $templatePath = storage_path('app/private/' . $template->file_path);
+            if (!file_exists($templatePath)) {
+                return redirect()->back()->with('error', 'Template file tidak ditemukan di storage: ' . $templatePath);
+            }
+
+            return view('admin.document.preview', compact('template', 'seminar'));
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.document.templates')
+                ->with('error', 'Template atau Seminar tidak ditemukan.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate DOCX from template using OpenTBS (supports <<>> format)
+     */
+    private function generateDocxFromTemplate($template, $data)
+    {
+        $templatePath = storage_path('app/private/' . $template->file_path);
+        
+        if (!file_exists($templatePath)) {
+            throw new \Exception('Template file not found: ' . $templatePath);
+        }
+        
+        // Ensure temp directory exists
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $fileName = $template->kode . '_' . time() . '.docx';
+        $outputPath = $tempDir . '/' . $fileName;
+        
+        try {
+            // WORKAROUND: Convert template from <<>> to [] format
+            // PHP 8.3 doesn't support VarPrefix/VarSuffix properly
+            // So we'll convert the template format before processing
+            
+            $convertedTemplatePath = $tempDir . '/converted_template_' . time() . '.docx';
+            copy($templatePath, $convertedTemplatePath);
+            
+            // Extract font information from template before conversion
+            $templateFontInfo = $this->extractTemplateFontInfo($convertedTemplatePath);
+            \Log::info("Extracted template font info", $templateFontInfo);
+            
+            // Get list of image tags from tag_types
+            $imageTags = [];
+            
+            // Decode if JSON strings
+            $tagMappings = $template->tag_mappings;
+            if (is_string($tagMappings)) {
+                $tagMappings = json_decode($tagMappings, true);
+            }
+            
+            $tagTypes = $template->tag_types ?? [];
+            if (is_string($tagTypes)) {
+                $tagTypes = json_decode($tagTypes, true);
+            }
+            
+            \Log::info("DEBUG: Checking tag types for images", [
+                'tag_types_type' => gettype($tagTypes),
+                'tag_types_count' => is_array($tagTypes) ? count($tagTypes) : 0,
+                'tag_types_keys' => is_array($tagTypes) ? array_keys($tagTypes) : []
+            ]);
+            
+            if ($tagTypes && is_array($tagTypes)) {
+                foreach ($tagTypes as $tag => $type) {
+                    \Log::info("Checking tag type", ['tag' => $tag, 'type' => $type]);
+                    if ($type === 'image') {
+                        $imageTags[] = $tag;
+                        \Log::info("✓ Image tag added: {$tag}");
+                    }
+                }
+            }
+            
+            \Log::info("Image tags detected", ['count' => count($imageTags), 'tags' => $imageTags]);
+            
+            // Convert << >> to [ ] in the template
+            $this->convertTemplateDelimiters($convertedTemplatePath, $imageTags);
+            
+            \Log::info("Template delimiters converted from <<>> to []");
+            
+            // Initialize OpenTBS with default delimiters []
+            $TBS = new \clsTinyButStrong;
+            
+            // Install OpenTBS plugin
+            $TBS->Plugin(TBS_INSTALL, OPENTBS_PLUGIN);
+            
+            // Load the converted template
+            $TBS->LoadTemplate($convertedTemplatePath, OPENTBS_ALREADY_UTF8);
+            
+            \Log::info("Template loaded with OpenTBS (using default [] delimiters)");
+            
+            // Prepare data for merge
+            $mergeData = [];
+            
+            if ($tagMappings && is_array($tagMappings)) {
+                foreach ($tagMappings as $tag => $field) {
+                    $tagType = isset($template->tag_types[$tag]) ? $template->tag_types[$tag] : 'standard';
+                    $tagProps = isset($template->tag_properties[$tag]) ? $template->tag_properties[$tag] : [];
+                    
+                    \Log::info("Processing tag: {$tag} mapped to field: {$field} type: {$tagType}");
+                    
+                    // Handle different tag types
+                    switch ($tagType) {
+                        case 'image':
+                            // For image type, prepare the image path
+                            $imagePath = null;
+                            
+                            // Priority 1: Use manual image_url if provided
+                            if (!empty($tagProps['image_url'])) {
+                                $imageUrl = $tagProps['image_url'];
+                                
+                                if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                                    // Download image from URL to temp
+                                    try {
+                                        $tempImageDir = storage_path('app/temp');
+                                        if (!is_dir($tempImageDir)) {
+                                            mkdir($tempImageDir, 0755, true);
+                                        }
+                                        
+                                        $tempImagePath = $tempImageDir . '/img_' . time() . '_' . rand(1000, 9999) . '.png';
+                                        $imageContent = file_get_contents($imageUrl);
+                                        
+                                        if ($imageContent !== false) {
+                                            file_put_contents($tempImagePath, $imageContent);
+                                            $imagePath = $tempImagePath;
+                                        }
+                                    } catch (\Exception $e) {
+                                        \Log::warning('Failed to download image from URL: ' . $imageUrl . ' - ' . $e->getMessage());
+                                    }
+                                } else {
+                                    // Local path
+                                    if (file_exists($imageUrl)) {
+                                        $imagePath = $imageUrl;
+                                    } else {
+                                        \Log::warning("Manual image URL not found: " . $imageUrl);
+                                    }
+                                }
+                            }
+                            
+                            // Priority 2: Use image from database mapping field
+                            if (!$imagePath && isset($data[$field])) {
+                                $dbImagePath = $data[$field];
+                                \Log::info("Checking database image path for field {$field}: " . ($dbImagePath ?: 'empty'));
+                                
+                                if ($dbImagePath && file_exists($dbImagePath)) {
+                                    $imagePath = $dbImagePath;
+                                    \Log::info("Image found at: " . $imagePath);
+                                } elseif ($dbImagePath) {
+                                    \Log::warning("Image path in database but file not found: " . $dbImagePath);
+                                }
+                            }
+                            
+                            // Assign image path for OpenTBS changepic operation
+                            // OpenTBS will replace [var.ttdp1;ope=changepic] with actual image
+                            if ($imagePath && file_exists($imagePath)) {
+                                // For OpenTBS ope=changepic, we need to assign just the file path
+                                $mergeData[$tag] = $imagePath;
+                                \Log::info("Image path assigned for tag <<{$tag}>>: " . $imagePath);
+                            } else {
+                                // If no image, assign empty string
+                                $mergeData[$tag] = '';
+                                \Log::warning("Image not found for tag: <<{$tag}>> mapped to field: {$field}");
+                            }
+                            break;
+                            
+                        case 'checkbox':
+                            // For checkbox type, insert checkbox symbol (checked or unchecked)
+                            $isChecked = !empty($data[$field]) && $data[$field] !== '0' && $data[$field] !== 'false';
+                            $mergeData[$tag] = $isChecked ? '☑' : '☐';
+                            \Log::info("Checkbox set for tag <<{$tag}>>: " . ($isChecked ? 'checked' : 'unchecked'));
+                            break;
+                            
+                        case 'standard':
+                        default:
+                            // Standard text replacement
+                            $fieldValue = isset($data[$field]) ? $data[$field] : '';
+                            
+                            // Check if contains HTML formatting (bold, italic, etc)
+                            if ($fieldValue !== strip_tags($fieldValue)) {
+                                // Contains HTML - convert to Word XML format to preserve formatting
+                                \Log::info("HTML formatting detected for tag <<{$tag}>>, original: " . substr($fieldValue, 0, 150));
+                                $fieldValue = $this->convertHtmlToWordXml($fieldValue, $templateFontInfo);
+                                \Log::info("Converted to Word XML, length: " . strlen($fieldValue) . ", preview: " . substr($fieldValue, 0, 200));
+                            }
+                            
+                            // Add to merge data
+                            $mergeData[$tag] = $fieldValue;
+                            \Log::info("Text prepared for tag <<{$tag}>>: " . substr(strip_tags($fieldValue), 0, 100));
+                            break;
+                    }
+                }
+            }
+            
+            // Split data into formatted and plain text
+            $formattedFields = [];
+            $plainFields = [];
+            
+            foreach ($mergeData as $key => $value) {
+                // Check if value contains Word XML (formatted)
+                // But skip if it's an image tag (image paths are plain text)
+                $isImageTag = in_array($key, $imageTags);
+                
+                if (!$isImageTag && strpos($value, '<w:r>') !== false) {
+                    $formattedFields[$key] = $value;
+                    // For formatted fields, assign unique placeholder that we can find later
+                    $plainFields[$key] = '###FORMATTED_' . $key . '###';
+                } else {
+                    $plainFields[$key] = $value;
+                }
+            }
+            
+            \Log::info("Merging data", [
+                'plain_fields' => count($plainFields) - count($formattedFields),
+                'formatted_fields' => count($formattedFields)
+            ]);
+            
+            // Assign ALL fields to VarRef for TBS (formatted ones get placeholders)
+            foreach ($plainFields as $key => $value) {
+                $TBS->VarRef[$key] = $value;
+            }
+            
+            // Merge all fields with TBS
+            $TBS->MergeField('var');
+            
+            // For formatted fields, replace placeholder with actual Word XML
+            if (!empty($formattedFields)) {
+                \Log::info("Replacing placeholders with formatted XML", ['fields' => array_keys($formattedFields)]);
+                foreach ($formattedFields as $key => $xmlContent) {
+                    // Replace placeholder text with actual Word XML
+                    $placeholder = '###FORMATTED_' . $key . '###';
+                    
+                    if (strpos($TBS->Source, $placeholder) !== false) {
+                        \Log::info("Found placeholder for [{$key}], injecting Word XML");
+                        $TBS->Source = str_replace($placeholder, $xmlContent, $TBS->Source);
+                    } else {
+                        \Log::warning("Placeholder not found for [{$key}]: {$placeholder}");
+                    }
+                }
+            }
+            
+            \Log::info("Fields merged successfully");
+            
+            // Save the processed document
+            $TBS->Show(OPENTBS_FILE, $outputPath);
+            
+            \Log::info("Document saved, checking for image post-processing", [
+                'image_tags_count' => count($imageTags),
+                'image_tags' => $imageTags,
+                'output_path' => $outputPath
+            ]);
+            
+            // Post-process: Insert images directly via XML manipulation
+            if (!empty($imageTags)) {
+                \Log::info("Post-processing: Inserting images via XML manipulation", [
+                    'tags' => $imageTags,
+                    'has_data' => !empty($plainFields)
+                ]);
+                $this->insertImagesDirectly($outputPath, $imageTags, $plainFields);
+            } else {
+                \Log::warning("No image tags to process - imageTags is empty");
+            }
+            
+            // Cleanup converted template
+            if (isset($convertedTemplatePath) && file_exists($convertedTemplatePath)) {
+                unlink($convertedTemplatePath);
+                \Log::info("Cleaned up converted template");
+            }
+            
+            \Log::info("Document generated successfully: " . $outputPath);
+            return $outputPath;
+            
+        } catch (\Exception $e) {
+            // Cleanup converted template on error
+            if (isset($convertedTemplatePath) && file_exists($convertedTemplatePath)) {
+                unlink($convertedTemplatePath);
+            }
+            
+            \Log::error("Error generating document: " . $e->getMessage());
+            \Log::error("Stack trace: " . $e->getTraceAsString());
+            throw $e;
+        }
+    }
+
+    /**
+     * Convert HTML formatting to Word XML format
+     * Converts <strong>, <b>, <em>, <i>, <p> tags to Word XML
+     */
+    private function convertHtmlToWordXml($html, $fontInfo = [])
+    {
+        if (empty($html)) {
+            return '';
+        }
+        
+        // Remove paragraph tags
+        $html = preg_replace('/<\/?p[^>]*>/i', '', $html);
+        
+        // Decode HTML entities first
+        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // Get font settings from template or use defaults
+        $fontName = $fontInfo['font_name'] ?? 'Times New Roman';
+        $fontSize = $fontInfo['font_size'] ?? 12;
+        
+        // Convert HTML to Word XML format
+        // Word XML structure for formatted text:
+        // <w:r><w:rPr><w:b/></w:rPr><w:t>Bold Text</w:t></w:r>
+        // <w:r><w:rPr><w:i/></w:rPr><w:t>Italic Text</w:t></w:r>
+        
+        $wordXml = '';
+        
+        // Parse HTML with DOMDocument
+        $dom = new \DOMDocument();
+        // Suppress warnings for malformed HTML
+        @$dom->loadHTML('<?xml encoding="UTF-8"><body>' . $html . '</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        
+        $body = $dom->getElementsByTagName('body')->item(0);
+        if ($body) {
+            // Use detected font from template
+            $wordXml = $this->processHtmlNode($body, false, false, $fontName, $fontSize);
+        }
+        
+        // If conversion failed, fallback to plain text
+        if (empty($wordXml)) {
+            $wordXml = strip_tags($html);
+        }
+        
+        return $wordXml;
+    }
+    
+    /**
+     * Process HTML node and convert to Word XML
+     */
+    private function processHtmlNode($node, $bold = false, $italic = false, $fontName = 'Times New Roman', $fontSize = 12)
+    {
+        $result = '';
+        
+        foreach ($node->childNodes as $child) {
+            $isBold = $bold;
+            $isItalic = $italic;
+            
+            // Check node type
+            if ($child->nodeType === XML_TEXT_NODE) {
+                // Text node - wrap in Word XML
+                $text = $child->textContent;
+                if (!empty(trim($text))) {
+                    $result .= $this->createWordXmlRun($text, $isBold, $isItalic, $fontName, $fontSize);
+                }
+            } elseif ($child->nodeType === XML_ELEMENT_NODE) {
+                // Element node - check for formatting
+                $tagName = strtolower($child->nodeName);
+                
+                if ($tagName === 'strong' || $tagName === 'b') {
+                    $isBold = true;
+                } elseif ($tagName === 'em' || $tagName === 'i') {
+                    $isItalic = true;
+                }
+                
+                // Recursively process children
+                $result .= $this->processHtmlNode($child, $isBold, $isItalic, $fontName, $fontSize);
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Create Word XML run with formatting
+     */
+    private function createWordXmlRun($text, $bold = false, $italic = false, $fontName = 'Times New Roman', $fontSize = null)
+    {
+        // Escape XML special characters
+        $text = htmlspecialchars($text, ENT_XML1, 'UTF-8');
+        
+        $xml = '<w:r>';
+        
+        // Always add formatting properties to preserve font
+        $xml .= '<w:rPr>';
+        
+        // Add font information
+        $xml .= '<w:rFonts w:ascii="' . $fontName . '" w:eastAsia="' . $fontName . '" w:hAnsi="' . $fontName . '" w:cs="' . $fontName . '"/>';
+        
+        // Add size if specified
+        if ($fontSize) {
+            $xml .= '<w:sz w:val="' . ($fontSize * 2) . '"/>';
+            $xml .= '<w:szCs w:val="' . ($fontSize * 2) . '"/>';
+        }
+        
+        // Add bold/italic
+        if ($bold) {
+            $xml .= '<w:b/>';
+        }
+        if ($italic) {
+            $xml .= '<w:i/>';
+        }
+        
+        $xml .= '</w:rPr>';
+        
+        $xml .= '<w:t xml:space="preserve">' . $text . '</w:t>';
+        $xml .= '</w:r>';
+        
+        return $xml;
+    }
+    
+    /**
+     * Insert images using PHPWord post-processing
+     * Replaces ${tag} markers with actual images
+     */
+    private function insertImagesWithPHPWord($docxPath, $imageTags, $imageData)
+    {
+        try {
+            \Log::info("=== PHPWord Image Insertion START ===");
+            \Log::info("Input params", [
+                'docx_path' => $docxPath,
+                'image_tags' => $imageTags,
+                'image_data_keys' => array_keys($imageData)
+            ]);
+            
+            // Check if file exists
+            if (!file_exists($docxPath)) {
+                \Log::error("DOCX file not found: {$docxPath}");
+                return;
+            }
+            
+            // Load document with PHPWord TemplateProcessor
+            \Log::info("Loading document with PHPWord...");
+            $phpWord = new TemplateProcessor($docxPath);
+            \Log::info("Document loaded successfully");
+            
+            $insertedCount = 0;
+            $errorCount = 0;
+            
+            foreach ($imageTags as $imageTag) {
+                \Log::info("Processing image tag: {$imageTag}");
+                
+                if (!isset($imageData[$imageTag])) {
+                    \Log::warning("Image tag {$imageTag} not found in imageData");
+                    continue;
+                }
+                
+                $imagePath = $imageData[$imageTag];
+                \Log::info("Image path for {$imageTag}: {$imagePath}");
+                
+                if (!file_exists($imagePath)) {
+                    \Log::warning("Image file not found: {$imagePath}");
+                    $errorCount++;
+                    continue;
+                }
+                
+                try {
+                    \Log::info("Attempting to insert image for {$imageTag}...");
+                    
+                    // Use simple format first - just path
+                    $phpWord->setImageValue($imageTag, $imagePath);
+                    
+                    \Log::info("✓ Image inserted successfully for {$imageTag}");
+                    $insertedCount++;
+                    
+                } catch (\Exception $e) {
+                    \Log::error("✗ Failed to insert image for {$imageTag}: " . $e->getMessage());
+                    \Log::error("Exception class: " . get_class($e));
+                    $errorCount++;
+                }
+            }
+            
+            // Save the modified document
+            \Log::info("Saving modified document...");
+            $phpWord->saveAs($docxPath);
+            \Log::info("Document saved");
+            
+            \Log::info("=== PHPWord Image Insertion COMPLETE ===", [
+                'inserted' => $insertedCount,
+                'errors' => $errorCount,
+                'total' => count($imageTags)
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error("=== PHPWord post-processing FATAL ERROR ===");
+            \Log::error("Message: " . $e->getMessage());
+            \Log::error("File: " . $e->getFile() . ":" . $e->getLine());
+            \Log::error("Stack trace: " . $e->getTraceAsString());
+        }
+    }
+    
+    /**
+     * Insert images directly by XML manipulation
+     * Replace ###IMAGE_tag### with actual Word XML image elements
+     */
+    private function insertImagesDirectly($docxPath, $imageTags, $imageData)
+    {
+        try {
+            \Log::info("=== Direct XML Image Insertion START ===");
+            
+            $zip = new \ZipArchive();
+            if ($zip->open($docxPath) !== true) {
+                \Log::error("Failed to open DOCX for image insertion");
+                return false;
+            }
+            
+            // Get document.xml
+            $documentXml = $zip->getFromName('word/document.xml');
+            if ($documentXml === false) {
+                $zip->close();
+                \Log::error("Failed to read document.xml");
+                return false;
+            }
+            
+            // Get relationships
+            $relsXml = $zip->getFromName('word/_rels/document.xml.rels');
+            if ($relsXml === false) {
+                // Create new relationships file if doesn't exist
+                $relsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+            }
+            
+            // Get content types
+            $contentTypesXml = $zip->getFromName('[Content_Types].xml');
+            
+            $relsDoc = new \DOMDocument();
+            $relsDoc->loadXML($relsXml);
+            
+            $contentTypesDoc = new \DOMDocument();
+            $contentTypesDoc->loadXML($contentTypesXml);
+            
+            // Get next relationship ID
+            $relIdCounter = 1;
+            $relationships = $relsDoc->getElementsByTagName('Relationship');
+            foreach ($relationships as $rel) {
+                $id = $rel->getAttribute('Id');
+                if (preg_match('/rId(\d+)/', $id, $matches)) {
+                    $relIdCounter = max($relIdCounter, intval($matches[1]) + 1);
+                }
+            }
+            
+            // Get next image counter and ensure media folder exists
+            $imageCounter = 1;
+            $mediaFolderExists = false;
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $filename = $zip->getNameIndex($i);
+                if (strpos($filename, 'word/media/') === 0) {
+                    $mediaFolderExists = true;
+                }
+                if (preg_match('/word\/media\/image(\d+)\./', $filename, $matches)) {
+                    $imageCounter = max($imageCounter, intval($matches[1]) + 1);
+                }
+            }
+            
+            // Create media folder if doesn't exist
+            if (!$mediaFolderExists) {
+                $zip->addEmptyDir('word/media');
+                \Log::info("Created word/media folder");
+            }
+            
+            $insertedCount = 0;
+            
+            foreach ($imageTags as $tag) {
+                if (!isset($imageData[$tag]) || empty($imageData[$tag])) {
+                    \Log::warning("No image data for tag: {$tag}");
+                    continue;
+                }
+                
+                $imagePath = $imageData[$tag];
+                if (!file_exists($imagePath)) {
+                    \Log::warning("Image file not found: {$imagePath}");
+                    continue;
+                }
+                
+                $placeholder = '###IMAGE_' . $tag . '###';
+                
+                if (strpos($documentXml, $placeholder) === false) {
+                    \Log::warning("Placeholder not found: {$placeholder}");
+                    continue;
+                }
+                
+                \Log::info("Processing image: {$tag}");
+                
+                // Get image info
+                $imageInfo = getimagesize($imagePath);
+                if (!$imageInfo) {
+                    \Log::error("Invalid image file: {$imagePath}");
+                    continue;
+                }
+                
+                $imageExt = image_type_to_extension($imageInfo[2], false);
+                $imageMime = $imageInfo['mime'];
+                
+                // Calculate dimensions (max 200x100 points, maintain aspect ratio)
+                $maxWidth = 200 * 9525; // Convert points to EMUs (English Metric Units)
+                $maxHeight = 100 * 9525;
+                $imgWidth = $imageInfo[0];
+                $imgHeight = $imageInfo[1];
+                $ratio = min($maxWidth / $imgWidth, $maxHeight / $imgHeight);
+                $width = intval($imgWidth * $ratio);
+                $height = intval($imgHeight * $ratio);
+                
+                // Create relationship ID and filename
+                $relId = 'rId' . $relIdCounter++;
+                $imageFileName = 'image' . $imageCounter++ . '.' . $imageExt;
+                
+                // Add image to zip
+                $imageContent = file_get_contents($imagePath);
+                $zip->addFromString('word/media/' . $imageFileName, $imageContent);
+                \Log::info("Added image to zip: word/media/{$imageFileName}");
+                
+                // Add relationship
+                $relElement = $relsDoc->createElement('Relationship');
+                $relElement->setAttribute('Id', $relId);
+                $relElement->setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image');
+                $relElement->setAttribute('Target', 'media/' . $imageFileName);
+                $relsDoc->documentElement->appendChild($relElement);
+                
+                // Add content type if not exists
+                $override = $contentTypesDoc->createElement('Override');
+                $override->setAttribute('PartName', '/word/media/' . $imageFileName);
+                $override->setAttribute('ContentType', $imageMime);
+                $contentTypesDoc->documentElement->appendChild($override);
+                
+                // WORKING VERSION: Full namespaces (Word shows warning but auto-recovers)
+                // This is the STABLE version - images work, file opens
+                $imageXml = '<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' .
+                    '<w:r>' .
+                    '<w:drawing>' .
+                    '<wp:inline>' .
+                    '<wp:extent cx="' . $width . '" cy="' . $height . '"/>' .
+                    '<wp:docPr id="' . $imageCounter . '" name="' . $tag . '"/>' .
+                    '<a:graphic>' .
+                    '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' .
+                    '<pic:pic>' .
+                    '<pic:nvPicPr>' .
+                    '<pic:cNvPr id="' . $imageCounter . '" name="' . $tag . '"/>' .
+                    '<pic:cNvPicPr/>' .
+                    '</pic:nvPicPr>' .
+                    '<pic:blipFill>' .
+                    '<a:blip r:embed="' . $relId . '"/>' .
+                    '<a:stretch><a:fillRect/></a:stretch>' .
+                    '</pic:blipFill>' .
+                    '<pic:spPr>' .
+                    '<a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $width . '" cy="' . $height . '"/></a:xfrm>' .
+                    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>' .
+                    '</pic:spPr>' .
+                    '</pic:pic>' .
+                    '</a:graphicData>' .
+                    '</a:graphic>' .
+                    '</wp:inline>' .
+                    '</w:drawing>' .
+                    '</w:r>' .
+                    '</w:p>';
+                
+                // Replace placeholder
+                $documentXml = str_replace($placeholder, $imageXml, $documentXml);
+                
+                \Log::info("✓ Image XML inserted for {$tag}");
+                $insertedCount++;
+            }
+            
+            // Save updated XML files
+            $zip->deleteName('word/document.xml');
+            $zip->addFromString('word/document.xml', $documentXml);
+            
+            $zip->deleteName('word/_rels/document.xml.rels');
+            $zip->addFromString('word/_rels/document.xml.rels', $relsDoc->saveXML());
+            
+            $zip->deleteName('[Content_Types].xml');
+            $zip->addFromString('[Content_Types].xml', $contentTypesDoc->saveXML());
+            
+            $zip->close();
+            
+            \Log::info("=== Direct XML Image Insertion COMPLETE ===", [
+                'inserted' => $insertedCount,
+                'total' => count($imageTags)
+            ]);
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            \Log::error("=== Direct XML Image Insertion FAILED ===");
+            \Log::error("Error: " . $e->getMessage());
+            \Log::error("File: " . $e->getFile() . ":" . $e->getLine());
+            return false;
+        }
+    }
+    
+    /**
+     * Convert ###IMAGE_tag### placeholders to ${tag} format for PHPWord
+     * This is done AFTER OpenTBS merge to preserve the placeholders
+     */
+    private function convertImagePlaceholders($docxPath, $imageTags)
+    {
+        try {
+            $zip = new \ZipArchive();
+            if ($zip->open($docxPath) !== true) {
+                \Log::error("Failed to open DOCX for image placeholder conversion");
+                return false;
+            }
+            
+            // Get document.xml
+            $documentXml = $zip->getFromName('word/document.xml');
+            if ($documentXml === false) {
+                $zip->close();
+                return false;
+            }
+            
+            $modified = false;
+            
+            // Convert each image tag
+            foreach ($imageTags as $tag) {
+                $placeholder = '###IMAGE_' . $tag . '###';
+                $phpwordFormat = '${' . $tag . '}';
+                
+                if (strpos($documentXml, $placeholder) !== false) {
+                    $documentXml = str_replace($placeholder, $phpwordFormat, $documentXml);
+                    $modified = true;
+                    \Log::info("Converted placeholder {$placeholder} to {$phpwordFormat}");
+                }
+            }
+            
+            if ($modified) {
+                // Save back to zip
+                $zip->deleteName('word/document.xml');
+                $zip->addFromString('word/document.xml', $documentXml);
+                \Log::info("Image placeholders converted successfully");
+            } else {
+                \Log::warning("No image placeholders found to convert");
+            }
+            
+            $zip->close();
+            return true;
+            
+        } catch (\Exception $e) {
+            \Log::error("Failed to convert image placeholders: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Extract font information from template
+     * Detects the font used in template to preserve it
+     */
+    private function extractTemplateFontInfo($docxPath)
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($docxPath) !== true) {
+            \Log::warning("Failed to open DOCX for font detection");
+            return ['font_name' => 'Times New Roman', 'font_size' => 12];
+        }
+        
+        // Get document.xml
+        $documentXml = $zip->getFromName('word/document.xml');
+        $zip->close();
+        
+        if ($documentXml === false) {
+            return ['font_name' => 'Times New Roman', 'font_size' => 12];
+        }
+        
+        // Find first occurrence of a tag and extract its font
+        // Look for pattern: <w:rFonts w:ascii="FontName" ...
+        if (preg_match('/<w:rFonts[^>]*w:ascii="([^"]+)"/', $documentXml, $matches)) {
+            $fontName = $matches[1];
+        } else {
+            $fontName = 'Times New Roman';
+        }
+        
+        // Find font size: <w:sz w:val="24"/> (24 = 12pt, it's in half-points)
+        if (preg_match('/<w:sz\s+w:val="(\d+)"/', $documentXml, $matches)) {
+            $fontSize = intval($matches[1]) / 2; // Convert half-points to points
+        } else {
+            $fontSize = 12;
+        }
+        
+        \Log::info("Detected template font: {$fontName}, size: {$fontSize}pt");
+        
+        return [
+            'font_name' => $fontName,
+            'font_size' => $fontSize
+        ];
+    }
+    
+    /**
+     * Convert template delimiters from <<>> to []
+     * Workaround for PHP 8.3 VarPrefix/VarSuffix deprecation
+     * 
+     * @param string $docxPath Path to DOCX file
+     * @param array $imageTags List of tag names that are images
+     */
+    private function convertTemplateDelimiters($docxPath, $imageTags = [])
+    {
+        // Extract DOCX to temp directory
+        $tempExtractDir = storage_path('app/temp/extract_' . time() . '_' . rand(1000, 9999));
+        
+        $zip = new \ZipArchive();
+        if ($zip->open($docxPath) !== true) {
+            \Log::error("Failed to open DOCX for delimiter conversion");
+            return false;
+        }
+        
+        $zip->extractTo($tempExtractDir);
+        $zip->close();
+        
+        \Log::info("DOCX extracted to: " . $tempExtractDir);
+        
+        // Convert main document
+        // First, fix split tags, then convert to [var.Tag;noerr] or [var.Tag;ope=changepic] format
+        $documentPath = $tempExtractDir . '/word/document.xml';
+        if (file_exists($documentPath)) {
+            $xml = file_get_contents($documentPath);
+            $originalXml = $xml;
+            
+            // STEP 1: Fix split tags by removing XML elements between << and >>
+            // This handles cases like: <<</w:t><w:t>Name>>
+            // We need to extract just the text content between << and >>
+            $xml = preg_replace_callback(
+                '/&lt;&lt;(.*?)&gt;&gt;/s',
+                function($matches) use ($imageTags) {
+                    $content = $matches[1];
+                    // Remove all XML tags, keep only text content
+                    $cleanContent = preg_replace('/<[^>]+>/', '', $content);
+                    // Remove XML entities except &lt; &gt; &amp;
+                    $cleanContent = html_entity_decode($cleanContent, ENT_XML1, 'UTF-8');
+                    $cleanContent = trim($cleanContent);
+                    
+                    // Check if this is an image tag
+                    if (in_array($cleanContent, $imageTags)) {
+                        // Image tag: use ###IMAGE_tag### format - OpenTBS will skip this
+                        // We'll replace it with ${tag} AFTER OpenTBS merge
+                        return '###IMAGE_' . $cleanContent . '###';
+                    } else {
+                        // Regular tag: use [var.tag;noerr] for OpenTBS
+                        return '[var.' . $cleanContent . ';noerr]';
+                    }
+                },
+                $xml
+            );
+            
+            file_put_contents($documentPath, $xml);
+            
+            $count = preg_match_all('/&lt;&lt;(.*?)&gt;&gt;/s', $originalXml, $matches);
+            \Log::info("Fixed and converted {$count} tags in document.xml");
+            
+            // Log first few for debugging
+            if ($count > 0 && isset($matches[1])) {
+                $samples = [];
+                foreach (array_slice($matches[1], 0, 5) as $match) {
+                    $clean = preg_replace('/<[^>]+>/', '', $match);
+                    $clean = html_entity_decode($clean, ENT_XML1, 'UTF-8');
+                    $samples[] = trim($clean);
+                }
+                \Log::info("Sample tags: " . implode(', ', $samples));
+            }
+        }
+        
+        // Convert headers - fix split tags first
+        $headerIndex = 1;
+        while (file_exists($tempExtractDir . "/word/header{$headerIndex}.xml")) {
+            $headerPath = $tempExtractDir . "/word/header{$headerIndex}.xml";
+            $xml = file_get_contents($headerPath);
+            $xml = preg_replace_callback(
+                '/&lt;&lt;(.*?)&gt;&gt;/s',
+                function($matches) use ($imageTags) {
+                    $cleanContent = preg_replace('/<[^>]+>/', '', $matches[1]);
+                    $cleanContent = html_entity_decode($cleanContent, ENT_XML1, 'UTF-8');
+                    $cleanContent = trim($cleanContent);
+                    
+                    if (in_array($cleanContent, $imageTags)) {
+                        return '###IMAGE_' . $cleanContent . '###';
+                    } else {
+                        return '[var.' . $cleanContent . ';noerr]';
+                    }
+                },
+                $xml
+            );
+            file_put_contents($headerPath, $xml);
+            $headerIndex++;
+        }
+        
+        // Convert footers - fix split tags first
+        $footerIndex = 1;
+        while (file_exists($tempExtractDir . "/word/footer{$footerIndex}.xml")) {
+            $footerPath = $tempExtractDir . "/word/footer{$footerIndex}.xml";
+            $xml = file_get_contents($footerPath);
+            $xml = preg_replace_callback(
+                '/&lt;&lt;(.*?)&gt;&gt;/s',
+                function($matches) use ($imageTags) {
+                    $cleanContent = preg_replace('/<[^>]+>/', '', $matches[1]);
+                    $cleanContent = html_entity_decode($cleanContent, ENT_XML1, 'UTF-8');
+                    $cleanContent = trim($cleanContent);
+                    
+                    if (in_array($cleanContent, $imageTags)) {
+                        return '###IMAGE_' . $cleanContent . '###';
+                    } else {
+                        return '[var.' . $cleanContent . ';noerr]';
+                    }
+                },
+                $xml
+            );
+            file_put_contents($footerPath, $xml);
+            $footerIndex++;
+        }
+        
+        // Repack into DOCX
+        $newZip = new \ZipArchive();
+        if ($newZip->open($docxPath, \ZipArchive::OVERWRITE) !== true) {
+            \Log::error("Failed to repack DOCX");
+            return false;
+        }
+        
+        // Add all files back
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($tempExtractDir),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+        
+        foreach ($files as $file) {
+            if (!$file->isDir()) {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen($tempExtractDir) + 1);
+                $relativePath = str_replace('\\', '/', $relativePath);
+                $newZip->addFile($filePath, $relativePath);
+            }
+        }
+        
+        $newZip->close();
+        
+        // Cleanup extracted files
+        $this->deleteDirectory($tempExtractDir);
+        
+        \Log::info("Template delimiters converted successfully");
+        return true;
+    }
+    
+    /**
+     * Recursively delete directory
+     */
+    private function deleteDirectory($dir)
+    {
+        if (!is_dir($dir)) {
+            return false;
+        }
+        
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            is_dir($path) ? $this->deleteDirectory($path) : unlink($path);
+        }
+        
+        return rmdir($dir);
+    }
+
+    /**
+     * Download generated document as DOCX
+     */
+    public function downloadDocx($templateId, $seminarId)
+    {
+        $template = DocumentTemplate::findOrFail($templateId);
+        $data = $this->getSeminarData($seminarId);
+        $docxPath = $this->generateDocxFromTemplate($template, $data);
+
+        $fileName = $template->kode . '_' . date('Y-m-d') . '.docx';
+        
+        return response()->download($docxPath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Convert and download as PDF
+     */
+    public function downloadPdf($templateId, $seminarId)
+    {
+        $template = DocumentTemplate::findOrFail($templateId);
+        $data = $this->getSeminarData($seminarId);
+        $docxPath = $this->generateDocxFromTemplate($template, $data);
+
+        $pdfPath = $this->convertDocxToPdf($docxPath, $template->kode);
+
+        $fileName = $template->kode . '_' . date('Y-m-d') . '.pdf';
+        
+        return response()->download($pdfPath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Convert DOCX to PDF using the best available method
+     */
+    private function convertDocxToPdf($docxPath, $fileName)
+    {
+        // Try conversion methods in order of quality:
+        // 1. Microsoft Word COM (Windows only - best quality, preserves all formatting)
+        // 2. LibreOffice (cross-platform - good quality)
+        // 3. MPDF via HTML (fallback - acceptable quality)
+        
+        // Try Microsoft Word COM first (if on Windows and COM is available)
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' && class_exists('COM')) {
+            try {
+                return $this->convertDocxToPdfWithWord($docxPath, $fileName);
+            } catch (\Exception $e) {
+                \Log::warning('Microsoft Word PDF conversion failed, trying other methods: ' . $e->getMessage());
+            }
+        }
+        
+        // Try LibreOffice
+        $libreOfficePath = $this->findLibreOffice();
+        if ($libreOfficePath) {
+            try {
+                return $this->convertDocxToPdfWithLibreOffice($docxPath, $fileName, $libreOfficePath);
+            } catch (\Exception $e) {
+                \Log::warning('LibreOffice PDF conversion failed, using MPDF fallback: ' . $e->getMessage());
+            }
+        }
+        
+        // Fallback to MPDF
+        return $this->convertDocxToPdfManual($docxPath, $fileName);
+    }
+    
+    /**
+     * Convert DOCX to PDF using Microsoft Word COM object (Windows only - BEST QUALITY)
+     */
+    private function convertDocxToPdfWithWord($docxPath, $fileName)
+    {
+        // Ensure temp directory exists
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        
+        // Generate PDF path - must be absolute Windows path
+        $pdfPath = $tempDir . DIRECTORY_SEPARATOR . $fileName . '_' . time() . '.pdf';
+        
+        // Get absolute paths and normalize to Windows format
+        $docxPath = realpath($docxPath);
+        if (!$docxPath) {
+            throw new \Exception('DOCX file not found');
+        }
+        
+        // Ensure PDF path is absolute
+        $pdfPath = realpath($tempDir) . DIRECTORY_SEPARATOR . basename($pdfPath);
+        
+        $word = null;
+        $doc = null;
+        
+        try {
+            // Create Word COM object
+            $word = new \COM("Word.Application");
+            
+            // Set Word to run in background (no UI)
+            $word->Visible = false;
+            $word->DisplayAlerts = 0; // wdAlertsNone
+            
+            // Open the DOCX file (read-only)
+            $doc = $word->Documents->Open($docxPath, false, true);
+            
+            // Export/Save as PDF
+            // Use ExportAsFixedFormat method (more reliable than SaveAs)
+            // wdExportFormatPDF = 17
+            // wdExportOptimizeForPrint = 0
+            $doc->ExportAsFixedFormat($pdfPath, 17, false, 0);
+            
+            // Close document without saving
+            $doc->Close(false);
+            $doc = null;
+            
+            // Quit Word application
+            $word->Quit(false);
+            $word = null;
+            
+            // Check if PDF was created
+            if (!file_exists($pdfPath)) {
+                throw new \Exception('PDF file was not created by Word');
+            }
+            
+            // Delete the temporary DOCX file
+            if (file_exists($docxPath)) {
+                unlink($docxPath);
+            }
+            
+            return $pdfPath;
+            
+        } catch (\Exception $e) {
+            // Clean up Word process if it's still running
+            if ($doc !== null) {
+                try {
+                    $doc->Close(false);
+                } catch (\Exception $cleanupEx) {
+                    // Ignore
+                }
+                $doc = null;
+            }
+            
+            if ($word !== null) {
+                try {
+                    $word->Quit(false);
+                } catch (\Exception $cleanupEx) {
+                    // Ignore
+                }
+                $word = null;
+            }
+            
+            throw new \Exception('Word COM conversion failed: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Find LibreOffice installation
+     */
+    private function findLibreOffice()
+    {
+        $possiblePaths = [
+            'C:\Program Files\LibreOffice\program\soffice.exe',
+            'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
+            '/usr/bin/soffice',
+            '/usr/bin/libreoffice',
+        ];
+        
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+        
+        // Try to find in PATH
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            exec('where soffice 2>nul', $output, $returnCode);
+        } else {
+            exec('which soffice 2>/dev/null', $output, $returnCode);
+        }
+        
+        if ($returnCode === 0 && !empty($output[0]) && file_exists($output[0])) {
+            return $output[0];
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Convert DOCX to PDF using LibreOffice (best quality)
+     */
+    private function convertDocxToPdfWithLibreOffice($docxPath, $fileName, $libreOfficePath)
+    {
+        // Ensure temp directory exists
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        
+        // Generate PDF path
+        $pdfPath = $tempDir . '/' . $fileName . '_' . time() . '.pdf';
+        
+        // LibreOffice command to convert DOCX to PDF
+        $command = sprintf(
+            '"%s" --headless --convert-to pdf --outdir "%s" "%s" 2>&1',
+            $libreOfficePath,
+            $tempDir,
+            $docxPath
+        );
+        
+        exec($command, $output, $returnCode);
+        
+        // LibreOffice creates PDF with same name as DOCX but .pdf extension
+        $docxBaseName = pathinfo($docxPath, PATHINFO_FILENAME);
+        $libreOfficePdfPath = $tempDir . '/' . $docxBaseName . '.pdf';
+        
+        // Check if conversion was successful
+        if ($returnCode !== 0 || !file_exists($libreOfficePdfPath)) {
+            throw new \Exception('LibreOffice conversion failed: ' . implode("\n", $output));
+        }
+        
+        // Rename to our desired filename
+        if ($libreOfficePdfPath !== $pdfPath) {
+            rename($libreOfficePdfPath, $pdfPath);
+        }
+        
+        // Delete the temporary DOCX file
+        if (file_exists($docxPath)) {
+            unlink($docxPath);
+        }
+        
+        return $pdfPath;
+    }
+    
+    /**
+     * Manual DOCX to PDF conversion using MPDF (fallback method)
+     */
+    private function convertDocxToPdfManual($docxPath, $fileName)
+    {
+        // Ensure temp directory exists
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        
+        // Load DOCX and convert to HTML
+        $phpWord = IOFactory::load($docxPath);
+        $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
+        
+        $tempHtmlPath = $tempDir . '/temp_' . time() . '.html';
+        $htmlWriter->save($tempHtmlPath);
+        
+        $htmlContent = file_get_contents($tempHtmlPath);
+        unlink($tempHtmlPath);
+        
+        // Clean up and enhance HTML content
+        $htmlContent = $this->cleanHtmlForPdf($htmlContent);
+        
+        // Create MPDF instance with proper configuration
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'orientation' => 'P',
+            'margin_left' => 25.4,  // 1 inch = 25.4mm (standard Word margin)
+            'margin_right' => 25.4,
+            'margin_top' => 25.4,
+            'margin_bottom' => 25.4,
+            'margin_header' => 0,
+            'margin_footer' => 0,
+            'default_font' => 'dejavusans',
+            'default_font_size' => 11,
+            'tempDir' => $tempDir,
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+        ]);
+        
+        // Set document properties
+        $mpdf->SetTitle($fileName);
+        $mpdf->SetAuthor('Protekta Apps');
+        
+        // Write HTML to PDF
+        $mpdf->WriteHTML($htmlContent);
+        
+        // Generate PDF path
+        $pdfPath = $tempDir . '/' . $fileName . '_' . time() . '.pdf';
+        
+        // Output PDF to file
+        $mpdf->Output($pdfPath, \Mpdf\Output\Destination::FILE);
+        
+        // Delete the temporary DOCX file
+        if (file_exists($docxPath)) {
+            unlink($docxPath);
+        }
+        
+        return $pdfPath;
+    }
+    
+    /**
+     * Clean HTML content for better PDF rendering
+     */
+    private function cleanHtmlForPdf($html)
+    {
+        // Extract and preserve styles from head
+        $styles = '';
+        if (preg_match('/<head[^>]*>(.*?)<\/head>/is', $html, $matches)) {
+            $headContent = $matches[1];
+            if (preg_match_all('/<style[^>]*>(.*?)<\/style>/is', $headContent, $styleMatches)) {
+                foreach ($styleMatches[1] as $style) {
+                    $styles .= $style . "\n";
+                }
+            }
+        }
+        
+        // Extract body content only
+        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $html, $matches)) {
+            $html = $matches[1];
+        }
+        
+        // Remove any remaining HTML/head/body tags
+        $html = preg_replace('/<\!DOCTYPE[^>]*>/i', '', $html);
+        $html = preg_replace('/<html[^>]*>/i', '', $html);
+        $html = preg_replace('/<\/html>/i', '', $html);
+        $html = preg_replace('/<head[^>]*>.*?<\/head>/is', '', $html);
+        $html = preg_replace('/<body[^>]*>/i', '', $html);
+        $html = preg_replace('/<\/body>/i', '', $html);
+        
+        // Clean up excessive whitespace
+        $html = preg_replace('/\s+/', ' ', $html);
+        $html = preg_replace('/>\s+</', '><', $html);
+        
+        // Enhanced CSS for better PDF rendering matching Word defaults
+        $enhancedCss = '
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                font-family: "DejaVu Sans", "Arial", sans-serif;
+                font-size: 11pt;
+                line-height: 1.5;
+                color: #000000;
+                margin: 0;
+                padding: 0;
+            }
+            p {
+                margin: 0 0 10pt 0;
+                line-height: 1.5;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 8pt 0;
+                font-size: 10pt;
+                page-break-inside: avoid;
+            }
+            table td, table th {
+                padding: 5pt 8pt;
+                border: 1px solid #000000;
+                vertical-align: top;
+                word-wrap: break-word;
+            }
+            table th {
+                font-weight: bold;
+                background-color: #f0f0f0;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                margin: 12pt 0 6pt 0;
+                font-weight: bold;
+                color: #000000;
+                page-break-after: avoid;
+            }
+            h1 { font-size: 18pt; }
+            h2 { font-size: 16pt; }
+            h3 { font-size: 14pt; }
+            h4 { font-size: 12pt; }
+            h5, h6 { font-size: 11pt; }
+            ul, ol {
+                margin: 0 0 10pt 20pt;
+                padding: 0;
+            }
+            li {
+                margin: 0 0 5pt 0;
+                line-height: 1.5;
+            }
+            strong, b { font-weight: bold; }
+            em, i { font-style: italic; }
+            u { text-decoration: underline; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .text-left { text-align: left; }
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+        ';
+        
+        // Combine all styles
+        $fullStyles = '<style>' . $enhancedCss . $styles . '</style>';
+        
+        // Build clean HTML structure
+        $cleanHtml = $fullStyles . $html;
+        
+        return $cleanHtml;
+    }
+
+    /**
+     * Generate PDF from Blade template using Mpdf
+     * NEW METHOD - HTML → PDF Solution
+     * 
+     * @param string $templateView - Blade view name (e.g., 'documents.sertifikat-example')
+     * @param int $seminarId - Seminar ID
+     * @return \Illuminate\Http\Response - PDF download response
+     */
+    public function generatePdf($templateView, $seminarId)
+    {
+        try {
+            $seminar = Seminar::with([
+                'mahasiswa',
+                'p1Dosen',
+                'p2Dosen',
+                'pembahasDosen',
+                'seminarJenis',
+                'nilai',
+                'signatures'
+            ])->findOrFail($seminarId);
+            
+            // Get seminar data
+            $data = $this->getSeminarData($seminarId);
+            
+            // Convert image paths to base64 for HTML embedding
+            $data['p1_ttd'] = $this->getImageBase64($data['p1_ttd']);
+            $data['p2_ttd'] = $this->getImageBase64($data['p2_ttd']);
+            $data['pembahas_ttd'] = $this->getImageBase64($data['pembahas_ttd']);
+            
+            // Render Blade template to HTML
+            $html = view($templateView, $data)->render();
+            
+            // Initialize Mpdf
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'margin_left' => 20,
+                'margin_right' => 20,
+                'margin_top' => 20,
+                'margin_bottom' => 20,
+                'margin_header' => 10,
+                'margin_footer' => 10,
+                'default_font' => 'times',
+            ]);
+            
+            // Set document properties
+            $mpdf->SetTitle('Dokumen ' . ($seminar->seminarJenis->nama ?? 'Seminar'));
+            $mpdf->SetAuthor('Sistem Seminar');
+            $mpdf->SetCreator('Protekta Apps');
+            
+            // Write HTML to PDF
+            $mpdf->WriteHTML($html);
+            
+            // Generate filename
+            $filename = 'dokumen_' . 
+                        ($seminar->mahasiswa->npm ?? 'unknown') . '_' . 
+                        date('Ymd_His') . '.pdf';
+            
+            // Output PDF for download
+            return response($mpdf->Output($filename, 'S'))
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+                
+        } catch (\Exception $e) {
+            \Log::error('Error generating PDF: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return redirect()->back()
+                ->with('error', 'Gagal generate PDF: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Convert image file path or base64 to base64 data URI for HTML embedding
+     * 
+     * @param string|null $imagePath - File path or base64 data
+     * @return string - Base64 data URI or empty string
+     */
+    private function getImageBase64($imagePath)
+    {
+        if (empty($imagePath)) {
+            return '';
+        }
+        
+        // Check if already base64 data URI
+        if (strpos($imagePath, 'data:image') === 0) {
+            return $imagePath;
+        }
+        
+        // Check if it's a file path
+        if (!file_exists($imagePath)) {
+            \Log::warning("Image file not found: {$imagePath}");
+            return '';
+        }
+        
+        try {
+            // Read image file
+            $imageData = file_get_contents($imagePath);
+            
+            if ($imageData === false) {
+                \Log::warning("Failed to read image file: {$imagePath}");
+                return '';
+            }
+            
+            // Detect mime type
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $imagePath);
+            finfo_close($finfo);
+            
+            // Convert to base64 data URI
+            $base64 = base64_encode($imageData);
+            $dataUri = 'data:' . $mimeType . ';base64,' . $base64;
+            
+            \Log::info("Image converted to base64, size: " . strlen($dataUri) . " bytes");
+            
+            return $dataUri;
+            
+        } catch (\Exception $e) {
+            \Log::error("Error converting image to base64: " . $e->getMessage());
+            return '';
+        }
+    }
+
+    /**
+     * Send document via email
+     */
+    public function sendEmail(Request $request, $templateId, $seminarId)
+    {
+        $request->validate([
+            'recipients' => 'required|array',
+            'recipients.*' => 'email',
+            'subject' => 'required|string',
+            'message' => 'nullable|string',
+            'format' => 'required|in:docx,pdf',
+        ]);
+
+        $template = DocumentTemplate::findOrFail($templateId);
+        $seminar = Seminar::findOrFail($seminarId);
+        $data = $this->getSeminarData($seminarId);
+        
+        $docxPath = $this->generateDocxFromTemplate($template, $data);
+        
+        $attachmentPath = $docxPath;
+        $fileName = $template->kode . '_' . date('Y-m-d') . '.' . $request->format;
+        
+        if ($request->format === 'pdf') {
+            $attachmentPath = $this->convertDocxToPdf($docxPath, $template->kode);
+        }
+
+        foreach ($request->recipients as $recipient) {
+            Mail::send([], [], function ($message) use ($request, $recipient, $attachmentPath, $fileName) {
+                $message->to($recipient)
+                    ->subject($request->subject)
+                    ->attach($attachmentPath, ['as' => $fileName])
+                    ->html($request->message ?? '');
+            });
+        }
+
+        if (file_exists($attachmentPath)) {
+            unlink($attachmentPath);
+        }
+        if (isset($docxPath) && $docxPath !== $attachmentPath && file_exists($docxPath)) {
+            unlink($docxPath);
+        }
+
+        return redirect()->back()->with('success', 'Email berhasil dikirim ke ' . count($request->recipients) . ' penerima!');
+    }
+}
