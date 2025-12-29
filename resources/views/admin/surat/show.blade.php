@@ -323,7 +323,10 @@
 
                     const data = await response.json();
                     
-                    document.getElementById('preview-recipient').textContent = to;
+                    const recipientEl = document.getElementById('preview-recipient');
+                    if (recipientEl) {
+                        recipientEl.textContent = to;
+                    }
                     document.getElementById('preview-subject').value = data.subject;
                     document.getElementById('preview-body').value = data.body;
 
