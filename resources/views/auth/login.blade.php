@@ -32,7 +32,7 @@
         <div class="grid gap-0 md:grid-cols-2">
             <div class="flex flex-col items-center justify-center gap-4 px-8 py-10 text-center text-slate-700">
                 @if($logo)
-                    <img src="{{ $logo }}" alt="Logo" class="h-16 w-16 rounded-2xl object-cover">
+                    <img src="{{ $logo }}?v={{ optional($branding)->updated_at?->timestamp ?? time() }}" alt="Logo" class="h-16 w-16 rounded-2xl object-cover">
                 @else
                     <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl font-semibold text-white">PA</div>
                 @endif

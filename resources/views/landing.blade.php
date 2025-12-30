@@ -8,6 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+    @if(optional($settings)->favicon_url)
+        <link rel="icon" href="{{ $settings->favicon_url }}?v={{ optional($settings)->updated_at?->timestamp ?? time() }}" type="image/png">
+    @endif
     <script src="https://cdn.tailwindcss.com"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @php
@@ -708,7 +711,7 @@
                     <div class="flex-1 space-y-6 text-center">
                         <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
                             @if(optional($settings)->logo_url)
-                                <img src="{{ $settings->logo_url }}" alt="Logo" class="h-12 w-12 rounded-xl object-cover shadow-lg">
+                                <img src="{{ $settings->logo_url }}?v={{ optional($settings)->updated_at?->timestamp ?? time() }}" alt="Logo" class="h-12 w-12 rounded-xl object-cover shadow-lg">
                             @else
                                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-lg font-bold backdrop-blur-md">
                                     PA
