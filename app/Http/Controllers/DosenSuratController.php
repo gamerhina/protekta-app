@@ -263,7 +263,7 @@ class DosenSuratController extends Controller
         $stored = [];
         foreach ($files as $k => $file) {
             if (!$file) continue;
-            $stored[$k] = $file->store('documents/surat/attachments', 'public');
+            $stored[$k] = $file->store('documents/surat/attachments', 'uploads');
         }
 
         $payload['data'] = array_merge($data, $stored);
@@ -368,7 +368,7 @@ class DosenSuratController extends Controller
 
         $stored = [];
         foreach ($files as $k => $file) {
-            if ($file) $stored[$k] = $file->store('documents/surat/attachments', 'public');
+            if ($file) $stored[$k] = $file->store('documents/surat/attachments', 'uploads');
         }
 
         $payload['data'] = array_merge($surat->data ?? [], $data, $stored);

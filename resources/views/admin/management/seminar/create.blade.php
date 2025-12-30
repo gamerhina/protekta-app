@@ -56,6 +56,111 @@
                     @enderror
                 </div>
 
+                <div>
+                    <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                    <input 
+                        type="date" 
+                        name="tanggal" 
+                        id="tanggal" 
+                        value="{{ old('tanggal') }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('tanggal') border-red-500 @enderror"
+                        required
+                    />
+                    @error('tanggal')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="waktu_mulai" class="block text-sm font-medium text-gray-700 mb-1">Waktu Mulai</label>
+                    <input 
+                        type="time" 
+                        name="waktu_mulai" 
+                        id="waktu_mulai" 
+                        value="{{ old('waktu_mulai') }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('waktu_mulai') border-red-500 @enderror"
+                        required
+                    />
+                    @error('waktu_mulai')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="lokasi" class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
+                    <input 
+                        type="text" 
+                        name="lokasi" 
+                        id="lokasi" 
+                        value="{{ old('lokasi') }}" 
+                        placeholder="Contoh: Ruang Rapat Lt. 2"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('lokasi') border-red-500 @enderror"
+                        required
+                    />
+                    @error('lokasi')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select name="status" id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('status') border-red-500 @enderror" required>
+                        <option value="diajukan" {{ old('status') == 'diajukan' ? 'selected' : '' }}>Diajukan</option>
+                        <option value="disetujui" {{ old('status') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                        <option value="ditolak" {{ old('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                        <option value="belum_lengkap" {{ old('status') == 'belum_lengkap' ? 'selected' : '' }}>Belum Lengkap</option>
+                        <option value="selesai" {{ old('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                    </select>
+                    @error('status')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="p1_dosen_id" class="block text-sm font-medium text-gray-700 mb-1">Pembimbing 1</label>
+                    <select name="p1_dosen_id" id="p1_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('p1_dosen_id') border-red-500 @enderror" required>
+                        <option value="">Pilih Pembimbing 1</option>
+                        @foreach($dosens as $dosen)
+                            <option value="{{ $dosen->id }}" {{ old('p1_dosen_id') == $dosen->id ? 'selected' : '' }}>
+                                {{ $dosen->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('p1_dosen_id')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="p2_dosen_id" class="block text-sm font-medium text-gray-700 mb-1">Pembimbing 2</label>
+                    <select name="p2_dosen_id" id="p2_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('p2_dosen_id') border-red-500 @enderror">
+                        <option value="">Pilih Pembimbing 2</option>
+                        @foreach($dosens as $dosen)
+                            <option value="{{ $dosen->id }}" {{ old('p2_dosen_id') == $dosen->id ? 'selected' : '' }}>
+                                {{ $dosen->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('p2_dosen_id')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="pembahas_dosen_id" class="block text-sm font-medium text-gray-700 mb-1">Pembahas</label>
+                    <select name="pembahas_dosen_id" id="pembahas_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('pembahas_dosen_id') border-red-500 @enderror">
+                        <option value="">Pilih Pembahas</option>
+                        @foreach($dosens as $dosen)
+                            <option value="{{ $dosen->id }}" {{ old('pembahas_dosen_id') == $dosen->id ? 'selected' : '' }}>
+                                {{ $dosen->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('pembahas_dosen_id')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <div class="md:col-span-2">
                     <label for="judul" class="block text-sm font-medium text-gray-700 mb-1">Judul</label>
                     <div id="judul-editor" 
@@ -63,19 +168,13 @@
                          class="@error('judul') border-red-500 @enderror ql-editor">
                     </div>
                     
-                    <!-- Additional CSS for spellcheck removal -->
                     <style>
                         #judul-editor {
                             spellcheck: false !important;
                             -webkit-user-modify: read-write-plaintext-only;
                         }
-                        #judul-editor::selection {
-                            background: #b3d4fc;
-                        }
-                        #judul-editor:focus {
-                            outline: none;
-                            border-color: #4a90e2;
-                        }
+                        #judul-editor::selection { background: #b3d4fc; }
+                        #judul-editor:focus { outline: none; border-color: #4a90e2; }
                     </style>
                     <textarea name="judul" id="judul" class="hidden" required>{{ old('judul') }}</textarea>
                     @error('judul')
@@ -99,9 +198,14 @@
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
 <!-- Data for JavaScript -->
-<div id="seminar-jenis-berkas-items" class="hidden">
-    {!! json_encode(collect($seminarJenis)->mapWithKeys(fn($j) => [$j->id => $j->berkas_syarat_items ?: []])->all()) !!}
-</div>
+<script>
+    window.seminarJenisMap = {!! json_encode(collect($seminarJenis)->mapWithKeys(fn($j) => [
+        $j->id => [
+            'items' => $j->berkas_syarat_items ?: [],
+            'info' => $j->syarat_seminar ?: ''
+        ]
+    ])->all()) !!};
+</script>
 @endsection
 
 @section('scripts')
@@ -173,31 +277,54 @@
         }
 
         const berkasContainer = document.getElementById('admin-berkas-syarat-dynamic');
-        const itemsEl = document.getElementById('seminar-jenis-berkas-items');
-        let itemsMap = {};
-        try {
-            itemsMap = JSON.parse(itemsEl?.textContent || '{}') || {};
-        } catch (e) { itemsMap = {}; }
+        const itemsMap = window.seminarJenisMap || {};
 
         const renderUploads = () => {
             const id = seminarJenisSelect.value;
-            const items = (id && Array.isArray(itemsMap[id])) ? itemsMap[id] : [];
-            if (berkasContainer) {
-                if (items.length === 0) {
-                    berkasContainer.innerHTML = '';
-                    return;
-                }
+            const data = itemsMap[id] || {};
+            const items = Array.isArray(data.items) ? data.items : [];
+            const info = data.info || '';
 
-                berkasContainer.innerHTML = `
-                    <div class="mt-8 pt-8 border-t border-gray-100">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                            <i class="fas fa-file-upload text-blue-500"></i>
-                            Berkas Persyaratan
-                        </h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="berkas-grid-container"></div>
+            if (!berkasContainer) return;
+
+            if (items.length === 0 && !info) {
+                berkasContainer.innerHTML = '';
+                berkasContainer.classList.add('hidden');
+                return;
+            }
+
+            berkasContainer.classList.remove('hidden');
+            let html = '<div class="mt-8 pt-8 border-t border-gray-100">';
+            
+            if (info) {
+                html += `
+                    <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+                        <p class="text-sm font-semibold text-blue-800 flex items-center gap-2">
+                            <i class="fas fa-info-circle"></i>
+                            Syarat Seminar
+                        </p>
+                        <div class="mt-2 text-sm text-blue-900 whitespace-pre-line prose prose-sm max-w-none">
+                            ${info}
+                        </div>
                     </div>
                 `;
-                const grid = document.getElementById('berkas-grid-container');
+            }
+
+            if (items.length > 0) {
+                html += `
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                        <i class="fas fa-file-upload text-blue-500"></i>
+                        Unggah Berkas Persyaratan
+                    </h2>
+                    <div class="grid grid-cols-1 gap-6" id="berkas-grid-container"></div>
+                `;
+            }
+            
+            html += '</div>';
+            berkasContainer.innerHTML = html;
+            
+            const grid = document.getElementById('berkas-grid-container');
+            if (grid && items.length > 0) {
 
                 items.forEach((it) => {
                     if (!it || !it.key || !it.label) return;

@@ -89,7 +89,7 @@ class SignatureController extends Controller
             $signatureImage = str_replace(' ', '+', $signatureImage);
 
             $signatureFileName = 'signatures/seminar-' . $seminar->id . '-' . $evaluatorType . '-' . time() . '.png';
-            Storage::disk('public')->put($signatureFileName, base64_decode($signatureImage));
+            Storage::disk('uploads')->put($signatureFileName, base64_decode($signatureImage));
         } else {
             // Assume already a stored path (fallback for older data or future changes)
             $signatureFileName = $signatureImage;
@@ -104,7 +104,7 @@ class SignatureController extends Controller
         if ($existingSignature) {
             // Delete old file if we are switching to a new stored file path
             if ($existingSignature->tanda_tangan && $existingSignature->tanda_tangan !== $signatureFileName) {
-                Storage::disk('public')->delete($existingSignature->tanda_tangan);
+                Storage::disk('uploads')->delete($existingSignature->tanda_tangan);
             }
 
             $existingSignature->update([

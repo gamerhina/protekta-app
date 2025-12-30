@@ -142,7 +142,7 @@ class NilaiController extends Controller
                 $signatureImage = str_replace(' ', '+', $signatureImage);
                 $signatureFileName = 'signatures/seminar-' . $seminar->id . '-' . $evaluatorType . '-' . time() . '.png';
                 
-                Storage::disk('public')->put($signatureFileName, base64_decode($signatureImage));
+                Storage::disk('uploads')->put($signatureFileName, base64_decode($signatureImage));
                 
                 // Check if signature record already exists
                 $existingSignature = $seminar->signatures()
@@ -153,7 +153,7 @@ class NilaiController extends Controller
                 if ($existingSignature) {
                     // Delete old file
                     if ($existingSignature->tanda_tangan) {
-                        Storage::disk('public')->delete($existingSignature->tanda_tangan);
+                        Storage::disk('uploads')->delete($existingSignature->tanda_tangan);
                     }
                     
                     $existingSignature->update([

@@ -88,10 +88,10 @@ class LandingPageSettingController extends Controller
         ] as $input => $column) {
             if ($request->hasFile($input)) {
                 if ($settings->{$column}) {
-                    Storage::disk('public')->delete($settings->{$column});
+                    Storage::disk('uploads')->delete($settings->{$column});
                 }
 
-                $data[$column] = $request->file($input)->store('branding', 'public');
+                $data[$column] = $request->file($input)->store('branding', 'uploads');
             }
         }
 
@@ -111,7 +111,7 @@ class LandingPageSettingController extends Controller
                     }
 
                     if ($remove) {
-                        Storage::disk('public')->delete($path);
+                        Storage::disk('uploads')->delete($path);
                         continue;
                     }
 
@@ -125,7 +125,7 @@ class LandingPageSettingController extends Controller
                         continue;
                     }
 
-                    $stored = $file->store('branding', 'public');
+                    $stored = $file->store('branding', 'uploads');
                     $nextSlides[] = ['path' => $stored, 'order' => 999];
                 }
             }
@@ -155,7 +155,7 @@ class LandingPageSettingController extends Controller
         ] as $input => $column) {
             if ($request->boolean('remove_' . $input)) {
                 if ($settings->{$column}) {
-                    Storage::disk('public')->delete($settings->{$column});
+                    Storage::disk('uploads')->delete($settings->{$column});
                 }
                 $data[$column] = null;
             }

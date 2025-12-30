@@ -55,9 +55,8 @@ class ProfileController extends Controller
 
         if ($request->hasFile('foto')) {
             if ($user->foto) {
-                $oldPath = storage_path('app/public/' . $user->foto);
-                if (file_exists($oldPath)) {
-                    @unlink($oldPath);
+                if (Storage::disk('uploads')->exists($user->foto)) {
+                    Storage::disk('uploads')->delete($user->foto);
                 }
             }
 
@@ -68,7 +67,7 @@ class ProfileController extends Controller
                 default => 'profile-photos',
             };
 
-            $data['foto'] = $request->file('foto')->store($folder, 'public');
+            $data['foto'] = $request->file('foto')->store($folder, 'uploads');
         }
 
         // If user filled new password fields, verify and update password

@@ -164,7 +164,7 @@
                                 @foreach($slidePaths as $i => $path)
                                     <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
                                         <div class="h-14 w-24 overflow-hidden rounded-lg bg-slate-200 flex-shrink-0">
-                                            <img src="{{ \Illuminate\Support\Facades\Storage::url($path) }}" class="w-full h-full object-cover" alt="Slide {{ $i + 1 }}">
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('uploads')->url($path) }}" class="w-full h-full object-cover" alt="Slide {{ $i + 1 }}">
                                         </div>
                                         <div class="flex-1 grid grid-cols-2 gap-3">
                                             <div>

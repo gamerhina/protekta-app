@@ -221,7 +221,7 @@ class SeminarRegistrationController extends Controller
                 $key = $item['key'];
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('documents/seminar', 'public');
+                    $stored[$key] = $file->store('documents/seminar', 'uploads');
                 }
             }
             $seminar->berkas_syarat = $stored;
@@ -314,11 +314,11 @@ class SeminarRegistrationController extends Controller
             abort(403);
         }
 
-        if (!Storage::disk('public')->exists($normalizedPath)) {
+        if (!Storage::disk('uploads')->exists($normalizedPath)) {
             abort(404);
         }
 
-        $absolutePath = Storage::disk('public')->path($normalizedPath);
+        $absolutePath = Storage::disk('uploads')->path($normalizedPath);
 
         if (ob_get_length()) {
             ob_end_clean();
@@ -395,7 +395,7 @@ class SeminarRegistrationController extends Controller
                 $key = $item['key'];
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('documents/seminar', 'public');
+                    $stored[$key] = $file->store('documents/seminar', 'uploads');
                 }
             }
 

@@ -95,7 +95,7 @@ class ManagementController extends Controller
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
-            $data['foto'] = $request->file('foto')->store('photos/dosen', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/dosen', 'uploads');
         }
 
         Dosen::create($data);
@@ -178,7 +178,7 @@ class ManagementController extends Controller
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
-            $data['foto'] = $request->file('foto')->store('photos/mahasiswa', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/mahasiswa', 'uploads');
         }
 
         Mahasiswa::create($data);
@@ -264,7 +264,7 @@ class ManagementController extends Controller
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
-            $data['foto'] = $request->file('foto')->store('photos/admin', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/admin', 'uploads');
         }
 
         $admin = Admin::create($data);
@@ -321,7 +321,7 @@ class ManagementController extends Controller
                 }
             }
 
-            $data['foto'] = $request->file('foto')->store('photos/dosen', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/dosen', 'uploads');
         }
 
         $dosen->update($data);
@@ -392,7 +392,7 @@ class ManagementController extends Controller
                 }
             }
 
-            $data['foto'] = $request->file('foto')->store('photos/mahasiswa', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/mahasiswa', 'uploads');
         }
 
         $mahasiswa->update($data);
@@ -457,7 +457,7 @@ class ManagementController extends Controller
                 }
             }
 
-            $data['foto'] = $request->file('foto')->store('photos/admin', 'public');
+            $data['foto'] = $request->file('foto')->store('photos/admin', 'uploads');
         }
 
         $admin->update($data);
@@ -646,16 +646,13 @@ class ManagementController extends Controller
                 }),
             ],
             'judul' => 'required|string|max:500', // Increased length to accommodate HTML
-            'tanggal' => 'required|date|after_or_equal:today',
+            'tanggal' => 'required|date',
             'waktu_mulai' => 'required|date_format:H:i',
             'lokasi' => 'required|string|max:255',
             'p1_dosen_id' => 'required|exists:dosen,id',
-            'p2_dosen_id' => 'required|exists:dosen,id|different:p1_dosen_id',
-            'pembahas_dosen_id' => 'required|exists:dosen,id|different:p1_dosen_id|different:p2_dosen_id',
-            'status' => 'required|in:diajukan,disetujui,ditolak,belum_lengkap,selesai',
-            'p1_dosen_id' => 'required|exists:dosen,id',
             'p2_dosen_id' => 'nullable|exists:dosen,id|different:p1_dosen_id',
             'pembahas_dosen_id' => 'nullable|exists:dosen,id|different:p1_dosen_id|different:p2_dosen_id',
+            'status' => 'required|in:diajukan,disetujui,ditolak,belum_lengkap,selesai',
         ] + $uploadRules);
 
         $data = [
@@ -686,7 +683,7 @@ class ManagementController extends Controller
                 }
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('documents/seminar', 'public');
+                    $stored[$key] = $file->store('documents/seminar', 'uploads');
                 }
             }
             $data['berkas_syarat'] = $stored;
@@ -929,7 +926,7 @@ class ManagementController extends Controller
                 }
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('documents/seminar', 'public');
+                    $stored[$key] = $file->store('documents/seminar', 'uploads');
                 }
             }
 
@@ -1111,7 +1108,7 @@ class ManagementController extends Controller
                     $image = str_replace(' ', '+', $image);
                     $imageName = 'signatures/seminar-' . $seminar->id . '-' . $signatureData['jenis_penilai'] . '-' . time() . '.png';
 
-                    Storage::disk('public')->put($imageName, base64_decode($image));
+                    Storage::disk('uploads')->put($imageName, base64_decode($image));
 
                     // Check if signature record already exists
                     $existingSignature = $seminar->signatures()
@@ -1122,7 +1119,7 @@ class ManagementController extends Controller
                     if ($existingSignature) {
                         // Delete old file
                         if ($existingSignature->tanda_tangan) {
-                            Storage::disk('public')->delete($existingSignature->tanda_tangan);
+                            Storage::disk('uploads')->delete($existingSignature->tanda_tangan);
                         }
 
                         $existingSignature->update([
@@ -1226,7 +1223,7 @@ class ManagementController extends Controller
             // Delete all files and set to empty array (migration to new format)
             foreach ($berkasSyarat as $path) {
                 if (is_string($path) && $path !== '') {
-                    Storage::disk('public')->delete(ltrim($path, '/'));
+                    Storage::disk('uploads')->delete(ltrim($path, '/'));
                 }
             }
             $seminar->update(['berkas_syarat' => []]);
@@ -1237,7 +1234,7 @@ class ManagementController extends Controller
         if (array_key_exists($filename, $berkasSyarat)) {
             $path = $berkasSyarat[$filename];
             if (is_string($path) && $path !== '') {
-                Storage::disk('public')->delete(ltrim($path, '/'));
+                Storage::disk('uploads')->delete(ltrim($path, '/'));
             }
             unset($berkasSyarat[$filename]);
             $seminar->update(['berkas_syarat' => $berkasSyarat]);
@@ -1247,7 +1244,7 @@ class ManagementController extends Controller
         // Backward compatibility: try find by value
         foreach ($berkasSyarat as $key => $path) {
             if ($path === $filename) {
-                Storage::disk('public')->delete(ltrim((string) $path, '/'));
+                Storage::disk('uploads')->delete(ltrim((string) $path, '/'));
                 unset($berkasSyarat[$key]);
                 $seminar->update(['berkas_syarat' => $berkasSyarat]);
                 return redirect()->back()->with('success', 'Berkas berhasil dihapus!');
@@ -1273,18 +1270,18 @@ class ManagementController extends Controller
             abort(404);
         }
 
-        if (!Storage::disk('public')->exists($normalizedPath)) {
+        if (!Storage::disk('uploads')->exists($normalizedPath)) {
             abort(404);
         }
 
-        $absolutePath = Storage::disk('public')->path($normalizedPath);
+        $absolutePath = Storage::disk('uploads')->path($normalizedPath);
 
         if (ob_get_length()) {
             ob_end_clean();
         }
 
         return response()->file($absolutePath, [
-            'Content-Type' => Storage::disk('public')->mimeType($normalizedPath) ?: 'application/octet-stream',
+            'Content-Type' => Storage::disk('uploads')->mimeType($normalizedPath) ?: 'application/octet-stream',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
         ]);
     }
