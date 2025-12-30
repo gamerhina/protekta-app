@@ -14,6 +14,13 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+
+    // ⬇️ INI KUNCI UTAMA
+    build: {
+        outDir: 'build',      // hasil build → public_html/build
+        emptyOutDir: true,
+    },
+
     server: {
         host: '0.0.0.0',
         cors: true,

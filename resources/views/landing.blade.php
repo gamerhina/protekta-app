@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ optional($settings)->hero_title ?? 'Landing Page Seminar Protekta' }}</title>
+    <title>{{ optional($settings)->hero_title ?: config('app.name') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
@@ -32,7 +32,7 @@
             ? ($settings->landing_background_slide_urls ?? [])
             : (optional($settings)->landing_background_url ? [optional($settings)->landing_background_url] : []);
         $contentBackground = optional($settings)->content_background_url;
-        $heroSuperTitle = optional($settings)->hero_super_title ?? 'Protekta Apps';
+        $heroSuperTitle = optional($settings)->hero_super_title;
         $sliderEnabled = (bool) (optional($settings)->landing_slider_enabled ?? true);
         $sliderIntervalMs = (int) (optional($settings)->landing_slider_interval_ms ?? 6000);
 
@@ -715,17 +715,21 @@
                                 </div>
                             @endif
                             <h1 class="text-2xl font-bold leading-tight sm:text-3xl md:text-4xl">
-                                {{ optional($settings)->hero_title ?? 'Pusat Informasi Seminar Jurusan Proteksi Tanaman FP Unila' }}
+                                {{ optional($settings)->hero_title }}
                             </h1>
                         </div>
                         
                         <div class="mx-auto max-w-5xl space-y-2">
-                            <p class="text-base text-white/90 sm:text-lg font-medium">
-                                {{ optional($settings)->hero_subtitle ?? 'Semua data seminar akademik, jadwal, dan statistik utama tersedia dalam satu halaman modern.' }}
-                            </p>
-                            <p class="text-xs text-white/70 sm:text-sm leading-relaxed">
-                                {{ optional($settings)->app_description ?? 'Dashboard responsif yang membantu civitas akademika memantau progres seminar hari ini dan yang akan datang.' }}
-                            </p>
+                            @if(optional($settings)->hero_subtitle)
+                                <p class="text-base text-white/90 sm:text-lg font-medium">
+                                    {{ $settings->hero_subtitle }}
+                                </p>
+                            @endif
+                            @if(optional($settings)->app_description)
+                                <p class="text-xs text-white/70 sm:text-sm leading-relaxed">
+                                    {{ $settings->app_description }}
+                                </p>
+                            @endif
                         </div>
 
                         <div class="flex flex-row flex-wrap items-center justify-center gap-4 sm:gap-6">
@@ -1039,10 +1043,20 @@
             };
 
             // Search functionality
-            const highlightText = (text, term) => {
-                if (!term) return escapeHTML(text);
-                const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
-                return escapeHTML(text).replace(regex, '<span class="search-match">$1</span>');
+            const highlightText = (text, term, isHTML = false) => {
+                if (!text) return '';
+                if (!term) return isHTML ? text : escapeHTML(text);
+                
+                const safeText = isHTML ? text : escapeHTML(text);
+                const escapedTerm = escapeRegex(term);
+                
+                // Use a regex that avoids matching inside tag names or attributes if isHTML is true
+                const regexPattern = isHTML 
+                    ? `(${escapedTerm})(?![^<]*>)`
+                    : `(${escapedTerm})`;
+                const regex = new RegExp(regexPattern, 'gi');
+                
+                return safeText.replace(regex, '<span class="search-match">$1</span>');
             };
 
             const escapeRegex = (string) => {
@@ -1211,7 +1225,7 @@
                             <td class="px-5 py-3 text-sm font-semibold">${searchTerm ? highlightText(row.tanggal, searchTerm) : escapeHTML(row.tanggal)}</td>
                             <td class="px-5 py-3 text-sm">${searchTerm ? highlightText(row.waktu, searchTerm) : escapeHTML(row.waktu)}</td>
                             <td class="px-5 py-3 text-sm">
-                                <div class="text-slate-900">${searchTerm ? highlightText(row.judul, searchTerm) : (row.judul ?? '')}</div>
+                                <div class="text-slate-900">${searchTerm ? highlightText(row.judul, searchTerm, true) : (row.judul ?? '')}</div>
                             </td>
                             <td class="px-5 py-3 text-sm">${searchTerm ? highlightText(row.jenis, searchTerm) : escapeHTML(row.jenis)}</td>
                             <td class="px-5 py-3 text-sm">${searchTerm ? highlightText(row.mahasiswa, searchTerm) : escapeHTML(row.mahasiswa)}</td>
@@ -1242,7 +1256,7 @@
                                     </div>
                                     <span class="mobile-card-jenis">${searchTerm ? highlightText(row.jenis, searchTerm) : escapeHTML(row.jenis)}</span>
                                 </div>
-                                <div class="mobile-card-title">${searchTerm ? highlightText(row.judul, searchTerm) : (row.judul ?? '')}</div>
+                                <div class="mobile-card-title">${searchTerm ? highlightText(row.judul, searchTerm, true) : (row.judul ?? '')}</div>
                                 <div class="mobile-card-info">
                                     <div class="mobile-card-info-item">
                                         <span class="mobile-card-info-label">Mahasiswa</span>
