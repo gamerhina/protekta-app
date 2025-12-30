@@ -670,6 +670,8 @@ class ManagementController extends Controller
             'berkas_syarat' => [],
         ];
 
+        $seminar = Seminar::create($data);
+
         // Handle file uploads (item-based)
         if ($jenis && is_array($jenis->berkas_syarat_items) && count($jenis->berkas_syarat_items)) {
             $stored = [];
@@ -683,13 +685,17 @@ class ManagementController extends Controller
                 }
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('documents/seminar', 'uploads');
+                    $ext = $file->getClientOriginalExtension();
+                    
+                    // Simple counter for key if it's too long
+                    $shortKey = Str::startsWith($key, 'item_') ? 'file_' . ($loop->iteration ?? 1) : $key;
+                    $filename = "seminar_{$seminar->id}_{$shortKey}_" . Str::random(4) . ".{$ext}";
+                    
+                    $stored[$key] = $file->storeAs('documents/seminar', $filename, 'uploads');
                 }
             }
-            $data['berkas_syarat'] = $stored;
+            $seminar->update(['berkas_syarat' => $stored]);
         }
-
-        $seminar = Seminar::create($data);
 
         return redirect()->route('admin.seminar.index')->with('success', 'Seminar berhasil ditambahkan!');
     }
@@ -926,7 +932,19 @@ class ManagementController extends Controller
                 }
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('documents/seminar', 'uploads');
+                    $ext = $file->getClientOriginalExtension();
+                    
+                    // Simple counter for key if it's too long
+                    $loopIndex = array_search($item, $jenis->berkas_syarat_items) + 1;
+                    $shortKey = Str::startsWith($key, 'item_') ? 'file_' . $loopIndex : $key;
+                    $filename = "seminar_{$seminar->id}_{$shortKey}_" . Str::random(4) . ".{$ext}";
+                    
+                    // Optional: Delete old file if exists
+                    if (isset($stored[$key]) && !empty($stored[$key])) {
+                        Storage::disk('uploads')->delete($stored[$key]);
+                    }
+
+                    $stored[$key] = $file->storeAs('documents/seminar', $filename, 'uploads');
                 }
             }
 
@@ -1142,7 +1160,7 @@ class ManagementController extends Controller
             }
         }
 
-        return redirect()->route('admin.seminar.index')->with('success', 'Seminar berhasil diperbarui!');
+        return redirect()->route('admin.seminar.edit', $seminar->id)->with('success', 'Seminar berhasil diperbarui!');
     }
 
     /**
@@ -1266,7 +1284,20 @@ class ManagementController extends Controller
             abort(403);
         }
 
-        if (!Str::startsWith($normalizedPath, ['signatures/', 'seminar-berkas/'])) {
+        // Strip leading /uploads/ if it exists in the path
+        if (Str::startsWith($normalizedPath, 'uploads/')) {
+            $normalizedPath = Str::after($normalizedPath, 'uploads/');
+        }
+
+        $allowedPrefixes = [
+            'signatures/', 
+            'seminar-berkas/', 
+            'documents/', 
+            'branding/', 
+            'photos/'
+        ];
+
+        if (!Str::startsWith($normalizedPath, $allowedPrefixes)) {
             abort(404);
         }
 

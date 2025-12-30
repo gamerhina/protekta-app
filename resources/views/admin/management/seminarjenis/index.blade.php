@@ -5,13 +5,13 @@
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <h1 class="text-2xl font-semibold text-gray-800">Manage Seminar Types</h1>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin.document.templates') }}" class="btn-gradient inline-flex items-center gap-2 justify-center sm:justify-start">
+            <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
+                <a href="{{ route('admin.document.templates') }}" class="btn-gradient inline-flex items-center gap-2 justify-center">
                     <i class="fas fa-file-word"></i> Template Dokumen
                 </a>
-                <a href="{{ route('admin.seminarjenis.create') }}" class="btn-gradient inline-flex items-center gap-2 justify-center sm:justify-start">
+                <a href="{{ route('admin.seminarjenis.create') }}" class="btn-gradient inline-flex items-center gap-2 justify-center">
                     <i class="fas fa-plus"></i> Tambah Jenis
                 </a>
             </div>

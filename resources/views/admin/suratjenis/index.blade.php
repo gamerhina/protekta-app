@@ -5,11 +5,13 @@
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <h1 class="text-2xl font-semibold text-gray-800">Manage Jenis Surat</h1>
-            <a href="{{ route('admin.suratjenis.create') }}" class="btn-gradient inline-flex items-center gap-2">
-                <i class="fas fa-plus"></i> Buat Jenis Surat
-            </a>
+            <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
+                <a href="{{ route('admin.suratjenis.create') }}" class="btn-gradient inline-flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Buat Jenis Surat
+                </a>
+            </div>
         </div>
 
         <div class="overflow-x-auto border border-gray-100 rounded-2xl shadow-sm">

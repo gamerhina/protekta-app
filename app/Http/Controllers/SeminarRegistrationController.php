@@ -221,7 +221,14 @@ class SeminarRegistrationController extends Controller
                 $key = $item['key'];
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('documents/seminar', 'uploads');
+                    $ext = $file->getClientOriginalExtension();
+                    
+                    // Simple counter for key if it's too long
+                    $loopIndex = array_search($item, $items) + 1;
+                    $shortKey = Str::startsWith($key, 'item_') ? 'file_' . $loopIndex : $key;
+                    $filename = "seminar_{$seminar->id}_{$shortKey}_" . Str::random(4) . ".{$ext}";
+                    
+                    $stored[$key] = $file->storeAs('documents/seminar', $filename, 'uploads');
                 }
             }
             $seminar->berkas_syarat = $stored;
@@ -296,6 +303,11 @@ class SeminarRegistrationController extends Controller
 
         if (Str::contains($normalizedPath, '..')) {
             abort(403);
+        }
+
+        // Strip leading /uploads/ if it exists in the path
+        if (Str::startsWith($normalizedPath, 'uploads/')) {
+            $normalizedPath = Str::after($normalizedPath, 'uploads/');
         }
 
         // Security check: ensure the file belongs to a seminar owned by this student
@@ -391,11 +403,24 @@ class SeminarRegistrationController extends Controller
             $existing = is_array($seminar->berkas_syarat) ? $seminar->berkas_syarat : [];
             $stored = is_array($existing) ? $existing : [];
 
-            foreach ($this->normalizeJenisItems($jenis) as $item) {
+            $items = $this->normalizeJenisItems($jenis);
+            foreach ($items as $item) {
                 $key = $item['key'];
                 if ($request->hasFile("berkas_syarat_items.{$key}")) {
                     $file = $request->file("berkas_syarat_items.{$key}");
-                    $stored[$key] = $file->store('documents/seminar', 'uploads');
+                    $ext = $file->getClientOriginalExtension();
+
+                    // Simple counter for key if it's too long
+                    $loopIndex = array_search($item, $items) + 1;
+                    $shortKey = Str::startsWith($key, 'item_') ? 'file_' . $loopIndex : $key;
+                    $filename = "seminar_{$seminar->id}_{$shortKey}_" . Str::random(4) . ".{$ext}";
+
+                    // Optional: Delete old file if exists
+                    if (isset($stored[$key]) && !empty($stored[$key])) {
+                        Storage::disk('uploads')->delete($stored[$key]);
+                    }
+
+                    $stored[$key] = $file->storeAs('documents/seminar', $filename, 'uploads');
                 }
             }
 

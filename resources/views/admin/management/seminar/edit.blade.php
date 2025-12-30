@@ -210,7 +210,7 @@
                     @endphp
 
                     @if(is_array($items) && count($items))
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 gap-6">
                             @foreach($items as $item)
                                 @php
                                     if (!is_array($item)) continue;
@@ -259,7 +259,7 @@
                                                     </a>
                                                 </div>
                                             </div>
-                                            <button type="button" class="w-full text-center px-4 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 hover:border-red-200 transition-all flex items-center justify-center gap-2" onclick="if(confirm('Hapus berkas ini?')) { window.location.href='{{ route('admin.seminar.delete-berkas', [$seminar->id, $key]) }}'; }">
+                                            <button type="button" class="w-full text-center px-4 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 hover:border-red-200 transition-all flex items-center justify-center gap-2" onclick="deleteBerkas('{{ $key }}')">
                                                 <i class="fas fa-trash-alt"></i> Hapus Berkas Saat Ini
                                             </button>
                                         @endif
@@ -670,6 +670,31 @@
 @section('scripts')
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script>
+        // Global function to handle deletion via form submit
+        window.deleteBerkas = function(key) {
+            if (!confirm('Apakah Anda yakin ingin menghapus berkas ini?')) return;
+            
+            const deleteRoute = "{{ route('admin.seminar.delete-berkas', [$seminar->id, 'KEY_PLACEHOLDER']) }}";
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = deleteRoute.replace('KEY_PLACEHOLDER', key);
+            
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = "{{ csrf_token() }}";
+            form.appendChild(csrf);
+            
+            const method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = 'DELETE';
+            form.appendChild(method);
+            
+            document.body.appendChild(form);
+            form.submit();
+        };
+
         (function() {
             function initSeminarEdit() {
                 const editor = document.getElementById('judul-editor');
@@ -735,7 +760,7 @@
                             <i class="fas fa-file-upload text-blue-500"></i>
                             Berkas Persyaratan
                         </h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="berkas-grid-container"></div>
+                        <div class="grid grid-cols-1 gap-6" id="berkas-grid-container"></div>
                     `;
                     const grid = document.getElementById('berkas-grid-container');
 
@@ -761,7 +786,7 @@
                                 </div>
                             </div>
                             <button type="button" class="w-full text-center px-4 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 shadow-sm transition-all" 
-                                    onclick="if(confirm('Hapus berkas lama?')) { window.location.href='${deleteRoute.replace('KEY_PLACEHOLDER', 'old_format_file')}'; }">
+                                    onclick="deleteBerkas('old_format_file')">
                                 <i class="fas fa-trash-alt mr-1"></i> Hapus Berkas Lama
                             </button>
                         `;
@@ -808,13 +833,13 @@
                                                 <p class="text-sm text-gray-700 truncate font-mono font-medium" title="${fileName}">${fileName}</p>
                                             </div>
                                         </div>
-                                        <a href="/admin/seminars/files/show?path=${encodeURIComponent(existingPath)}" target="_blank" class="flex-shrink-0 bg-white text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 p-2 rounded-lg transition-all shadow-sm">
+                                        <a href="/admin/seminars/files/${encodeURIComponent(existingPath)}" target="_blank" class="flex-shrink-0 bg-white text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 p-2 rounded-lg transition-all shadow-sm">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </div>
                                 </div>
                                 <button type="button" class="w-full text-center px-4 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2" 
-                                        onclick="if(confirm('Hapus berkas ini?')) { window.location.href='${deleteRoute.replace('KEY_PLACEHOLDER', item.key)}'; }">
+                                        onclick="deleteBerkas('${item.key}')">
                                     <i class="fas fa-trash-alt"></i> Hapus Berkas Saat Ini
                                 </button>
                             `;
