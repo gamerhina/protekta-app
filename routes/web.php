@@ -25,6 +25,13 @@ Route::get('/api/terbilang/{number}', function ($number) {
     ]);
 });
 
+Route::get('/favicon.ico', [App\Http\Controllers\ManagementController::class, 'showSeminarFile'])
+    ->defaults('path', 'favicon.ico');
+
+Route::get('/uploads/{path}', [App\Http\Controllers\ManagementController::class, 'showSeminarFile'])
+    ->where('path', '.*')
+    ->name('uploads.show');
+
 // Additional public routes can go here if needed
 Route::get('/impersonate/leave', [ImpersonateController::class, 'leave'])->name('impersonate.leave');
 

@@ -52,7 +52,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $appName }} - @yield('title')</title>
     @if($brandingSettings && $brandingSettings->favicon_url)
-        <link rel="icon" href="{{ $brandingSettings->favicon_url }}" type="image/png">
+        <link rel="icon" href="{{ $brandingSettings->favicon_url }}?v={{ $brandingSettings->updated_at?->timestamp ?? time() }}" type="image/png">
     @endif
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
@@ -715,7 +715,6 @@
 </head>
 
 <body class="min-h-screen bg-gray-50" data-user-role="{{ $currentGuard ?? 'guest' }}">
-<body class="min-h-screen bg-gray-50" data-user-role="{{ $currentGuard ?? 'guest' }}">
     @if($isImpersonating)
     <div class="impersonate-banner">
         <div class="container-fluid flex items-center justify-between">
@@ -749,7 +748,7 @@
             ">
                 <span class="modern-brand-icon overflow-hidden">
                     @if($appIcon)
-                        <img src="{{ $appIcon }}" alt="App Icon" class="h-8 w-8 object-cover rounded-lg" loading="eager"
+                        <img src="{{ $appIcon }}?v={{ optional($brandingSettings)->updated_at?->timestamp ?? time() }}" alt="App Icon" class="h-8 w-8 object-cover rounded-lg" loading="eager"
                             decoding="async">
                     @else
                         <i class="fas fa-university"></i>

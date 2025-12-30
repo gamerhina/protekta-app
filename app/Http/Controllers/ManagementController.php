@@ -1278,13 +1278,22 @@ class ManagementController extends Controller
     public function showSeminarFile($path)
     {
         $decodedPath = rawurldecode($path);
+        
+        // Handle direct favicon request if it bypasses static file serving
+        if ($decodedPath === 'favicon.ico') {
+            $settings = \App\Models\LandingPageSetting::first();
+            if ($settings && $settings->favicon_path) {
+                $decodedPath = $settings->favicon_path;
+            }
+        }
+
         $normalizedPath = ltrim($decodedPath, '/');
 
         if (Str::contains($normalizedPath, '..')) {
             abort(403);
         }
 
-        // Strip leading /uploads/ if it exists in the path
+        // Strip leading uploads/ if present (for urls using the route manually)
         if (Str::startsWith($normalizedPath, 'uploads/')) {
             $normalizedPath = Str::after($normalizedPath, 'uploads/');
         }
@@ -1306,8 +1315,10 @@ class ManagementController extends Controller
         }
 
         $absolutePath = Storage::disk('uploads')->path($normalizedPath);
+        // Normalize path for Windows/Unix compatibility
+        $absolutePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $absolutePath);
 
-        if (ob_get_length()) {
+        if (ob_get_level()) {
             ob_end_clean();
         }
 
