@@ -92,20 +92,14 @@
                                 @endif
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm">
-                            <div class="flex gap-2">
-                                <a href="{{ route('admin.seminar.show', $seminar->id) }}" class="text-blue-600 hover:text-blue-800 font-semibold" title="Lihat">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.seminar.edit', $seminar->id) }}" class="text-green-600 hover:text-green-800 font-semibold" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.seminar.destroy', $seminar->id) }}" method="POST" class="inline"
-                                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus seminar ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 font-semibold" title="Hapus">
-                                        <i class="fas fa-trash"></i>
+                        <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <a href="{{ route('admin.seminar.show', $seminar->id) }}" class="hover:scale-110 transition-transform" title="Lihat" style="color: #2563eb !important;"><i class="fas fa-eye fa-fw"></i></a>
+                                <a href="{{ route('admin.seminar.edit', $seminar->id) }}" class="hover:scale-110 transition-transform" title="Edit" style="color: #f59e0b !important;"><i class="fas fa-edit fa-fw"></i></a>
+                                <form action="{{ route('admin.seminar.destroy', $seminar->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus seminar ini?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="hover:scale-110 transition-transform" title="Hapus" style="color: #f43f5e !important; border: none; background: none; padding: 0;">
+                                        <i class="fas fa-trash fa-fw"></i>
                                     </button>
                                 </form>
                             </div>

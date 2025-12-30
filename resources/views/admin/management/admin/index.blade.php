@@ -14,6 +14,15 @@
         @php
             $defaultSort = 'nama';
             $defaultDirection = 'asc';
+            
+            if (!function_exists('formatWhatsAppNumber')) {
+                function formatWhatsAppNumber($phone) {
+                    $phone = preg_replace('/[^0-9]/', '', $phone);
+                    if (substr($phone, 0, 1) === '0') { $phone = '62' . substr($phone, 1); }
+                    elseif (substr($phone, 0, 2) !== '62') { $phone = '62' . $phone; }
+                    return $phone;
+                }
+            }
         @endphp
 
         <form method="GET" class="mb-6">
@@ -64,17 +73,17 @@
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $admin->nip ?? 'N/A' }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $admin->email }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $admin->hp ?? 'N/A' }}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <div class="flex flex-wrap gap-3">
-                                <a href="{{ route('admin.admins.edit', $admin->id) }}" class="text-blue-600 hover:text-blue-800 font-semibold" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.admins.destroy', $admin->id) }}" method="POST" class="inline"
-                                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus admin ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 font-semibold" title="Hapus">
-                                        <i class="fas fa-trash"></i>
+                        <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                @if($admin->hp)
+                                    <a href="tel:{{ $admin->hp }}" class="hover:opacity-80 transition-all" title="Telepon" style="color: #2563eb !important;"><i class="fas fa-phone fa-fw"></i></a>
+                                    <a href="https://wa.me/{{ formatWhatsAppNumber($admin->hp) }}" target="_blank" rel="noopener" class="hover:opacity-80 transition-all" title="WhatsApp" style="color: #10b981 !important;"><i class="fa-brands fa-whatsapp fa-fw"></i></a>
+                                @endif
+                                <a href="{{ route('admin.admins.edit', $admin->id) }}" class="hover:opacity-80 transition-all" title="Edit" style="color: #f59e0b !important;"><i class="fas fa-edit fa-fw"></i></a>
+                                <form action="{{ route('admin.admins.destroy', $admin->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus admin ini?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="hover:opacity-80 transition-all" title="Hapus" style="color: #f43f5e !important; border: none; background: none; padding: 0;">
+                                        <i class="fas fa-trash fa-fw"></i>
                                     </button>
                                 </form>
                             </div>

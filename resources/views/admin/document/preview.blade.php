@@ -18,17 +18,7 @@
             </a>
         </div>
 
-        @if(session('success'))
-            <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                {{ session('success') }}
-            </div>
-        @endif
 
-        @if(session('error'))
-            <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {{ session('error') }}
-            </div>
-        @endif
 
         @php
             $prefilledSubject = old('subject', $emailDefaults['subject'] ?? ('Dokumen ' . $template->nama));
@@ -151,7 +141,7 @@
                 <h2 class="text-lg font-semibold text-gray-800 mb-1">Kirim Dokumen via Email</h2>
                 <p class="text-sm text-gray-600 mb-5">Pilih penerima, atur pesan email, lalu kirim dokumen.</p>
 
-                <form action="{{ route('admin.document.send', [$template->id, $seminar->id]) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <form action="{{ route('admin.document.send', [$template->id, $seminar->id]) }}" method="POST" enctype="multipart/form-data" class="space-y-6" data-no-ajax>
                     @csrf
                     <input type="hidden" name="preview_token" id="preview_token_input" value="{{ old('preview_token') }}">
 
@@ -202,20 +192,21 @@
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Lampiran Dokumen</label>
-                        <div class="space-y-2 text-sm text-gray-700">
-                            <label class="flex items-center">
-                                <input type="radio" name="attachment_mode" value="auto" class="h-4 w-4 text-indigo-600 border-gray-300" {{ $selectedAttachmentMode === 'auto' ? 'checked' : '' }}>
-                                <span class="ml-2">Gunakan file DOCX hasil template</span>
+                        <div class="flex items-center gap-6 mt-2 text-sm text-gray-700">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="attachment_mode" value="auto" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" {{ $selectedAttachmentMode === 'auto' ? 'checked' : '' }}>
+                                <span>Gunakan file DOCX hasil template</span>
                             </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="attachment_mode" value="custom" class="h-4 w-4 text-indigo-600 border-gray-300" {{ $selectedAttachmentMode === 'custom' ? 'checked' : '' }}>
-                                <span class="ml-2">Unggah file sendiri</span>
+                            
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="attachment_mode" value="custom" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" {{ $selectedAttachmentMode === 'custom' ? 'checked' : '' }}>
+                                <span>Unggah file sendiri</span>
                             </label>
-                            @error('attachment_mode')
+                        </div>@error('attachment_mode')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                             <div id="custom_attachment_group" class="mt-2 {{ $selectedAttachmentMode === 'custom' ? '' : 'hidden' }}">
-                                <input type="file" name="custom_attachment" id="custom_attachment" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" {{ $selectedAttachmentMode === 'custom' ? 'required' : '' }}>
+                                <input type="file" name="custom_attachment" id="custom_attachment" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all shadow-sm" {{ $selectedAttachmentMode === 'custom' ? 'required' : '' }}>
                                 <p class="text-xs text-gray-500 mt-1">Maksimum 15MB. Format umum seperti .docx, .pdf, .zip diperbolehkan.</p>
                                 @error('custom_attachment')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -224,33 +215,39 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label for="subject" class="block text-sm font-semibold text-gray-700 mb-1">Subject Email</label>
-                        <input type="text" name="subject" id="subject" value="{{ $prefilledSubject }}" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('subject') border-red-500 @enderror" required>
-                        @error('subject')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mt-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            Konten Email
+                        </h3>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Pesan Email</label>
-                        <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
-                            <span>Mode Editor:</span>
-                            <button type="button" data-email-editor-mode="visual" onclick="setEmailEditorMode('visual')" class="px-2 py-1 rounded border border-transparent bg-gray-200">Visual</button>
-                            <button type="button" data-email-editor-mode="html" onclick="setEmailEditorMode('html')" class="px-2 py-1 rounded border border-transparent">HTML</button>
-                            <button type="button" onclick="triggerEmailImageUpload()" class="px-2 py-1 rounded border border-blue-200 bg-blue-50 text-blue-700">Insert Gambar</button>
+                        <div class="mb-5">
+                            <label for="subject" class="block text-sm font-semibold text-gray-700 mb-1">Subject Email</label>
+                            <input type="text" name="subject" id="subject" value="{{ $prefilledSubject }}" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('subject') border-red-500 @enderror" required>
+                            @error('subject')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
-                        <div id="email_message_editor_container" class="border border-gray-300 rounded-md">
-                            <div id="email_message_editor" class="min-h-[220px]"></div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pesan Email</label>
+                            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
+                                <span>Mode Editor:</span>
+                                <button type="button" data-email-editor-mode="visual" onclick="setEmailEditorMode('visual')" class="px-2 py-1 rounded border border-transparent bg-gray-200">Visual</button>
+                                <button type="button" data-email-editor-mode="html" onclick="setEmailEditorMode('html')" class="px-2 py-1 rounded border border-transparent">HTML</button>
+                                <button type="button" onclick="triggerEmailImageUpload()" class="px-2 py-1 rounded border border-blue-200 bg-blue-50 text-blue-700">Insert Gambar</button>
+                            </div>
+                            <div id="email_message_editor_container" class="border border-gray-300 rounded-md bg-white">
+                                <div id="email_message_editor" class="min-h-[220px]"></div>
+                            </div>
+                            <textarea id="email_message_html" class="hidden w-full mt-2 px-3 py-2 border border-gray-300 rounded-md text-sm font-mono" rows="8"></textarea>
+                            <textarea name="message" id="message" class="hidden">@php echo old('message', $prefilledMessage); @endphp</textarea>
+                            <input type="file" id="email_image_uploader" accept="image/*" class="hidden">
                         </div>
-                        <textarea id="email_message_html" class="hidden w-full mt-2 px-3 py-2 border border-gray-300 rounded-md text-sm font-mono" rows="8"></textarea>
-                        <textarea name="message" id="message" class="hidden">@php echo old('message', $prefilledMessage); @endphp</textarea>
-                        <input type="file" id="email_image_uploader" accept="image/*" class="hidden">
                     </div>
 
                     <div class="flex flex-col gap-4">
                         @if(count($waOptions) > 0)
-                            <div class="flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3 pb-2 border-b border-gray-100">
+                            <div class="flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3 pb-2 border-b border-gray-100 mt-3">
                                 <label for="wa_recipient_select" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">
                                     <i class="fab fa-whatsapp mr-1"></i> Pilih Penerima WhatsApp
                                 </label>
@@ -270,7 +267,9 @@
                                 <i class="fab fa-whatsapp mr-2"></i> Kirim via WA
                             </button>
 
-                            <button type="submit" class="w-full sm:w-auto btn-pill btn-pill-info min-w-[180px]">
+                            <button type="submit" 
+                                    onclick="this.closest('form').submit()" 
+                                    class="w-full sm:w-auto btn-pill btn-pill-info min-w-[180px]">
                                 <i class="fas fa-paper-plane mr-2"></i> Kirim via Email
                             </button>
                         </div>
@@ -287,7 +286,15 @@
     </div>
 </div>
 
-<!-- Ensure Quill is loaded -->
+<style>
+    .ql-editor {
+        color: #374151 !important;
+        min-height: 220px;
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+</style>
+
 <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
 <script>
@@ -307,7 +314,8 @@ function sendViaWhatsapp() {
     // 1. Get content from editor
     let bodyText = '';
     if (emailEditorMode === 'visual' && emailEditorQuill) {
-        bodyText = emailEditorQuill.getText();
+        // Use innerText to preserve visual line breaks better for WhatsApp
+        bodyText = emailEditorQuill.root.innerText || emailEditorQuill.getText();
     } else {
         const html = document.getElementById('email_message_html').value;
         const temp = document.createElement('div');
@@ -455,9 +463,61 @@ window.addEventListener('pagehide', cleanupPreviewBeforeUnload);
 let emailEditorQuill = null;
 let emailEditorMode = 'visual';
 
-document.addEventListener('DOMContentLoaded', () => {
+// Simple, robust initialization
+// Ultimate Robust Initialization Pattern (matching signature-pad.js)
+function safeInitQuill() {
+    // 1. Check if container exists (if not, we might be on wrong page or too early)
+    if (!document.getElementById('email_message_editor')) {
+        return;
+    }
+
+    // 2. Check if Quill is loaded
+    if (typeof Quill === 'undefined') {
+        // Poll for it, as it might be loading async/deferred
+        let checks = 0;
+        const waiter = setInterval(() => {
+            checks++;
+            if (typeof Quill !== 'undefined') {
+                clearInterval(waiter);
+                initEmailMessageEditor();
+            } else if (checks > 50) { // 5 seconds max
+                clearInterval(waiter);
+                console.error("Quill failed to load.");
+                fallbackToTextarea();
+            }
+        }, 100);
+        return;
+    }
+
+    // 3. Ready to go
     initEmailMessageEditor();
-});
+}
+
+// Attach to standard events
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', safeInitQuill);
+} else {
+    safeInitQuill();
+}
+
+// Attach to framework-specific custom events (like signature-pad.js does)
+window.addEventListener('page-loaded', safeInitQuill);
+window.addEventListener('app:init', safeInitQuill);
+window.addEventListener('turbolinks:load', safeInitQuill); // Just in case
+window.addEventListener('turbo:load', safeInitQuill);     // Just in case
+
+function fallbackToTextarea() {
+    const containerWrapper = document.getElementById('email_message_editor_container');
+    const htmlTextarea = document.getElementById('email_message_html');
+    const hiddenInput = document.getElementById('message');
+    
+    if (containerWrapper && htmlTextarea && hiddenInput) {
+        containerWrapper.classList.add('hidden');
+        htmlTextarea.classList.remove('hidden');
+        htmlTextarea.value = hiddenInput.value;
+        emailEditorMode = 'html';
+    }
+}
 
 function initEmailMessageEditor() {
     const container = document.getElementById('email_message_editor');
@@ -479,7 +539,15 @@ function initEmailMessageEditor() {
         return;
     }
 
+    // Prevent double initialization
+    if (containerWrapper.querySelector('.ql-toolbar')) {
+        return; 
+    }
+
     try {
+        // Clear potential partial renders
+        container.innerHTML = '';
+        
         emailEditorQuill = new Quill(container, {
             theme: 'snow',
             modules: {
@@ -500,7 +568,11 @@ function initEmailMessageEditor() {
     }
 
     const initialValue = hiddenInput.value || '';
-    emailEditorQuill.root.innerHTML = initialValue;
+    
+    // Direct assignment - simplest and often most robust for initialization
+    if (initialValue) {
+        emailEditorQuill.root.innerHTML = initialValue;
+    }
     htmlTextarea.value = initialValue;
 
     emailEditorQuill.on('text-change', () => {
@@ -518,11 +590,14 @@ function initEmailMessageEditor() {
     });
 
     const form = container.closest('form');
-    if (form) {
+    // Ensure form exists and hasn't already been wired
+    if (form && !form.dataset.quillSubmitWired) {
+        form.dataset.quillSubmitWired = 'true'; // Prevent duplicate listeners
         form.addEventListener('submit', () => {
-            if (emailEditorMode === 'visual') {
+             // Sync Quill content to hidden input right before submit
+            if (emailEditorMode === 'visual' && emailEditorQuill) {
                 hiddenInput.value = emailEditorQuill.root.innerHTML;
-            } else {
+            } else if (htmlTextarea) {
                 hiddenInput.value = htmlTextarea.value;
             }
         });
@@ -629,30 +704,52 @@ document.getElementById('custom_email')?.addEventListener('keypress', function(e
     }
 });
 
-const attachmentRadios = document.querySelectorAll('input[name="attachment_mode"]');
-const customAttachmentGroup = document.getElementById('custom_attachment_group');
-const customAttachmentInput = document.getElementById('custom_attachment');
+// Attachment Toggle Logic
+function initAttachmentToggle() {
+    const attachmentRadios = document.querySelectorAll('input[name="attachment_mode"]');
+    const customAttachmentGroup = document.getElementById('custom_attachment_group');
+    const customAttachmentInput = document.getElementById('custom_attachment');
 
-attachmentRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-        if (!radio.checked) {
-            return;
+    if (!customAttachmentGroup || !customAttachmentInput) return;
+
+    // Prevent duplicate initialization
+    if (customAttachmentGroup.dataset.toggleInitialized === 'true') return;
+    customAttachmentGroup.dataset.toggleInitialized = 'true';
+
+    function updateVisibility() {
+        const selected = document.querySelector('input[name="attachment_mode"]:checked');
+        if (!selected) return;
+
+        const isCustom = selected.value === 'custom';
+        if (isCustom) {
+            customAttachmentGroup.classList.remove('hidden');
+        } else {
+            customAttachmentGroup.classList.add('hidden');
         }
-        const isCustom = radio.value === 'custom';
-        if (customAttachmentGroup) {
-            if (isCustom) {
-                customAttachmentGroup.classList.remove('hidden');
-            } else {
-                customAttachmentGroup.classList.add('hidden');
-            }
-        }
-        if (customAttachmentInput) {
-            customAttachmentInput.required = isCustom;
-            if (!isCustom) {
-                customAttachmentInput.value = '';
-            }
-        }
+        customAttachmentInput.required = isCustom;
+        if (!isCustom) customAttachmentInput.value = '';
+    }
+
+    // Attach listener
+    attachmentRadios.forEach(radio => {
+        radio.addEventListener('change', updateVisibility);
     });
-});
+
+    // Run once on init to set correct state
+    updateVisibility();
+}
+
+// Attach to standard events
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAttachmentToggle);
+} else {
+    initAttachmentToggle();
+}
+
+// Attach to framework-specific custom events
+window.addEventListener('page-loaded', initAttachmentToggle);
+window.addEventListener('app:init', initAttachmentToggle);
+window.addEventListener('turbolinks:load', initAttachmentToggle);
+window.addEventListener('turbo:load', initAttachmentToggle);
 </script>
 @endsection

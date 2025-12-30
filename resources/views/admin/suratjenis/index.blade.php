@@ -36,19 +36,19 @@
                                     <span class="text-gray-400">Belum</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm">
-                                <div class="flex items-center gap-4 text-lg">
-                                    <a class="text-blue-600 hover:text-blue-900 font-semibold" href="{{ route('admin.suratjenis.edit', $item) }}" title="Edit">
-                                        <i class="fas fa-edit"></i>
+                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                                <div class="flex items-center gap-3">
+                                    <a class="hover:scale-110 transition-transform" href="{{ route('admin.suratjenis.edit', $item) }}" title="Edit" style="color: #f59e0b !important;">
+                                        <i class="fas fa-edit fa-fw"></i>
                                     </a>
-                                    <a class="text-indigo-600 hover:text-indigo-900 font-semibold" href="{{ route('admin.surattemplate.index', $item) }}" title="Template">
-                                        <i class="fas fa-file-word"></i>
+                                    <a class="hover:scale-110 transition-transform" href="{{ route('admin.surattemplate.index', $item) }}" title="Template" style="color: #6366f1 !important;">
+                                        <i class="fas fa-file-word fa-fw"></i>
                                     </a>
                                     <form action="{{ route('admin.suratjenis.destroy', $item) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jenis surat ini?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-500 hover:text-red-700 font-semibold" title="Hapus">
-                                            <i class="fas fa-trash"></i>
+                                        <button type="submit" class="hover:scale-110 transition-transform" title="Hapus" style="color: #f43f5e !important; border: none; background: none; padding: 0;">
+                                            <i class="fas fa-trash fa-fw"></i>
                                         </button>
                                     </form>
                                 </div>

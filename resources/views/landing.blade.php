@@ -11,7 +11,6 @@
     @if(optional($settings)->favicon_url)
         <link rel="icon" href="{{ $settings->favicon_url }}?v={{ optional($settings)->updated_at?->timestamp ?? time() }}" type="image/png">
     @endif
-    <script src="https://cdn.tailwindcss.com"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @php
         $primary = optional($settings)->primary_color ?? '#1d4ed8';

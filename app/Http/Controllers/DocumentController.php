@@ -401,7 +401,7 @@ class DocumentController extends Controller
                 Mail::send([], [], function ($message) use ($recipient, $attachmentPath, $attachmentName, $renderedSubject, $renderedBody) {
                     $message->to($recipient)
                         ->subject($renderedSubject)
-                        ->setBody($renderedBody, 'text/html')
+                        ->html($renderedBody)
                         ->attach($attachmentPath, ['as' => $attachmentName]);
                 });
             }

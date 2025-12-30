@@ -1,35 +1,96 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
 
-/* Add any custom styles here */
-
-
-/**
-    The lines above are intact.
-    The lines below were added by maryUI installer.
-*/
-
-/** daisyUI */
 @plugin "daisyui" {
     themes: light --default, dark --prefersdark;
 }
 
-/* maryUI */
+/* 
+  Tailwind v4 Scanning
+*/
+@source "../../resources/views/**/*.blade.php";
+@source "../../resources/js/**/*.js";
+@source "../../app/**/*.php";
 @source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
 
-/* Theme toggle */
-@custom-variant dark (&:where(.dark, .dark *));
+/* 
+  BASE CSS LAYER
+*/
+@layer base {
+    h1, h2, h3, h4, h5, h6 {
+        font-size: inherit;
+        font-weight: inherit;
+        margin: 0;
+    }
 
-/**
-* Paginator - Traditional style
-* Because Laravel defaults does not match well the design of daisyUI.
+    /* 
+       Optimized Reset: 
+       Avoid forcing 'solid' on everything to prevent unwanted borders on badges/inputs.
+    */
+    *, ::after, ::before {
+        border-color: #e5e7eb;
+        border-width: 0;
+    }
+
+    a, button, .btn {
+        text-decoration: none !important;
+    }
+    
+    button, .btn {
+        border-radius: inherit;
+    }
+
+    body {
+        @apply bg-gray-50 text-gray-900;
+    }
+}
+
+/* 
+  UTILITIES LAYER
+*/
+@layer utilities {
+    .rounded-xl { border-radius: 0.75rem !important; }
+    .rounded-2xl { border-radius: 1rem !important; }
+    .rounded-full { border-radius: 9999px !important; }
+    .rounded-lg { border-radius: 0.5rem !important; }
+
+    .bg-gray-50 { background-color: #f9fafb !important; }
+    .bg-white { background-color: #ffffff !important; }
+    
+    .text-xs { font-size: 0.75rem !important; }
+    .text-sm { font-size: 0.875rem !important; }
+    .text-base { font-size: 1rem !important; }
+    .text-lg { font-size: 1.125rem !important; }
+    .text-xl { font-size: 1.25rem !important; }
+    .text-2xl { font-size: 1.5rem !important; }
+    .text-3xl { font-size: 1.875rem !important; }
+
+    .divide-y > :not([hidden]) ~ :not([hidden]) {
+        border-top-width: 1px !important;
+    }
+}
+
+/* 
+  SPECIFIC FIXES
 */
 
+/* Remove unwanted border on notification badges */
+.badge {
+    border: none !important;
+}
+
+footer.border-t {
+    border-top-color: #f3f4f6 !important;
+}
+
+th.bg-gray-50 {
+    background-color: #f9fafb !important;
+}
+
+/* MaryUI Paginator */
 .mary-table-pagination span[aria-current="page"] > span {
     @apply bg-primary text-base-100
 }
-
 .mary-table-pagination button {
     @apply cursor-pointer
 }

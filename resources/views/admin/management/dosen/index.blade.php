@@ -19,6 +19,15 @@
         @php
             $defaultSort = 'nama';
             $defaultDirection = 'asc';
+
+            if (!function_exists('formatWhatsAppNumber')) {
+                function formatWhatsAppNumber($phone) {
+                    $phone = preg_replace('/[^0-9]/', '', $phone);
+                    if (substr($phone, 0, 1) === '0') { $phone = '62' . substr($phone, 1); }
+                    elseif (substr($phone, 0, 2) !== '62') { $phone = '62' . $phone; }
+                    return $phone;
+                }
+            }
         @endphp
 
         <form method="GET" class="mb-6">
@@ -67,42 +76,19 @@
                         <td class="px-6 py-4 text-sm text-gray-800 font-medium">{{ $dosen->nama }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $dosen->nip }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $dosen->email }}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <div class="flex flex-wrap items-center gap-3">
-                                <a
-                                    href="tel:{{ $dosen->hp }}"
-                                    class="text-blue-600 hover:text-blue-800 font-semibold"
-                                    title="Hubungi via Telepon"
-                                >
-                                    <i class="fas fa-phone"></i>
-                                </a>
+                        <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <div class="flex items-center gap-3">
                                 @if($dosen->hp)
-                                    <a
-                                        href="https://wa.me/{{ formatWhatsAppNumber($dosen->hp) }}"
-                                        target="_blank"
-                                        rel="noopener"
-                                        class="text-green-600 hover:text-green-700 font-semibold"
-                                        title="Hubungi via WhatsApp"
-                                    >
-                                        <i class="fab fa-whatsapp"></i>
-                                    </a>
+                                    <a href="tel:{{ $dosen->hp }}" class="hover:scale-110 transition-transform" title="Telepon" style="color: #2563eb !important;"><i class="fas fa-phone fa-fw"></i></a>
+                                    <a href="https://wa.me/{{ formatWhatsAppNumber($dosen->hp) }}" target="_blank" rel="noopener" class="hover:scale-110 transition-transform" title="WhatsApp" style="color: #10b981 !important;"><i class="fa-brands fa-whatsapp fa-fw"></i></a>
                                 @endif
+                                <a href="{{ route('admin.dosen.edit', $dosen->id) }}" class="hover:scale-110 transition-transform" title="Edit" style="color: #f59e0b !important;"><i class="fas fa-edit fa-fw"></i></a>
                                 @role('admin')
-                                <a href="{{ route('admin.impersonate', ['type' => 'dosen', 'id' => $dosen->id]) }}" 
-                                   class="text-amber-500 hover:text-amber-700 font-semibold" 
-                                   title="Login Sebagai Dosen"
-                                   data-no-ajax>
-                                    <i class="fas fa-user-secret"></i>
-                                </a>
-                                <a href="{{ route('admin.dosen.edit', $dosen->id) }}" class="text-blue-600 hover:text-blue-800 font-semibold" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.dosen.destroy', $dosen->id) }}" method="POST" class="inline"
-                                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus dosen ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 font-semibold" title="Hapus">
-                                        <i class="fas fa-trash"></i>
+                                <a href="{{ route('admin.impersonate', ['type' => 'dosen', 'id' => $dosen->id]) }}" class="hover:scale-110 transition-transform" title="Login Sebagai" style="color: #6366f1 !important;" data-no-ajax><i class="fas fa-user-secret fa-fw"></i></a>
+                                <form action="{{ route('admin.dosen.destroy', $dosen->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus dosen ini?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="hover:scale-110 transition-transform" title="Hapus" style="color: #f43f5e !important; border: none; background: none; padding: 0;">
+                                        <i class="fas fa-trash fa-fw"></i>
                                     </button>
                                 </form>
                                 @endrole

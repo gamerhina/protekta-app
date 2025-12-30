@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Protekta Apps</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     @php
         $logo = optional($branding)->logo_url;
         $bgImage = optional($branding)->login_background_url;
@@ -25,6 +26,16 @@
         .btn-primary {
             background-color: {{ $primary }};
         }
+
+        /* Override Chrome/Edge Autofill Background & Text Color */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            -webkit-text-fill-color: #334155 !important; /* text-slate-700 */
+            transition: background-color 5000s ease-in-out 0s;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center px-4 py-10">
@@ -40,7 +51,7 @@
                 <p class="text-sm text-slate-500">Silahkan masuk menggunakan kredensial anda untuk mengelola seminar dan data akademik.</p>
             </div>
             <div class="rounded-3xl bg-white p-8">
-                <h2 class="text-xl font-semibold text-slate-900">Login</h2>
+                <h2 class="text-xl font-semibold text-black">Login</h2>
                 <form method="POST" action="{{ route('login.post') }}" class="mt-6 space-y-4">
                     @csrf
                     <div>
@@ -52,7 +63,12 @@
                     </div>
                     <div>
                         <label for="password" class="block text-sm font-semibold text-slate-600">Password</label>
-                        <input type="password" id="password" name="password" required class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-700 focus:border-slate-400 focus:outline-none">
+                        <div class="relative mt-2">
+                            <input type="password" id="password" name="password" required class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-700 focus:border-slate-400 focus:outline-none pr-10">
+                            <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         @error('password')
                             <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                         @enderror
@@ -64,6 +80,23 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Password Toggle
+            const togglePassword = document.querySelector('#togglePassword');
+            const password = document.querySelector('#password');
+
+            if (togglePassword && password) {
+                togglePassword.addEventListener('click', function (e) {
+                    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                    password.setAttribute('type', type);
+                    
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.classList.toggle('fa-eye');
+                        icon.classList.toggle('fa-eye-slash');
+                    }
+                });
+            }
+
             const loginError = document.querySelector('p.text-red-500');
             if (loginError && loginError.textContent.includes('detik')) {
                 let message = loginError.textContent;

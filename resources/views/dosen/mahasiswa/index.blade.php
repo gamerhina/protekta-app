@@ -12,6 +12,15 @@
             @php
                 $defaultSort = 'nama';
                 $defaultDirection = 'asc';
+                
+                if (!function_exists('formatWhatsAppNumber')) {
+                    function formatWhatsAppNumber($phone) {
+                        $phone = preg_replace('/[^0-9]/', '', $phone);
+                        if (substr($phone, 0, 1) === '0') { $phone = '62' . substr($phone, 1); }
+                        elseif (substr($phone, 0, 2) !== '62') { $phone = '62' . $phone; }
+                        return $phone;
+                    }
+                }
             @endphp
 
             <form method="GET" class="mb-6">
@@ -66,27 +75,13 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-600">{{ $mahasiswa->email }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex flex-wrap items-center gap-3">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex items-center gap-3">
                                     @if($mahasiswa->hp)
-                                        <a
-                                            href="tel:{{ $mahasiswa->hp }}"
-                                            class="text-blue-600 hover:text-blue-800 font-semibold"
-                                            title="Hubungi via Telepon"
-                                        >
-                                            <i class="fas fa-phone text-lg"></i>
-                                        </a>
-                                    @endif
-                                    @if($mahasiswa->hp)
-                                        <a
-                                            href="https://wa.me/{{ formatWhatsAppNumber($mahasiswa->hp) }}"
-                                            target="_blank"
-                                            rel="noopener"
-                                            class="text-green-600 hover:text-green-700 font-semibold"
-                                            title="Hubungi via WhatsApp"
-                                        >
-                                            <i class="fab fa-whatsapp text-lg"></i>
-                                        </a>
+                                        <a href="tel:{{ $mahasiswa->hp }}" class="hover:scale-110 transition-transform" title="Telepon" style="color: #2563eb !important;"><i class="fas fa-phone fa-fw"></i></a>
+                                        <a href="https://wa.me/{{ formatWhatsAppNumber($mahasiswa->hp) }}" target="_blank" rel="noopener" class="hover:scale-110 transition-transform" title="WhatsApp" style="color: #10b981 !important;"><i class="fa-brands fa-whatsapp fa-fw"></i></a>
+                                    @else
+                                        <span class="text-xs text-gray-400">-</span>
                                     @endif
                                 </div>
                             </td>

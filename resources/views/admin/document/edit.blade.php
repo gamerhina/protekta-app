@@ -23,12 +23,7 @@
             $defaultEmailBodyTemplate = "Yth. {{mahasiswa_nama}},\n\nBerikut kami kirimkan dokumen {{template_nama}}.\n\nTerima kasih.";
         @endphp
 
-        @if(!$fileExists && !session()->has('success'))
-            <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                <p class="font-semibold">⚠️ File Template Tidak Ditemukan!</p>
-                <p class="text-sm mt-1">File template di storage tidak ada. Upload file template baru di bawah ini.</p>
-            </div>
-        @endif
+
         
         <form action="{{ route('admin.document.update', $template->id) }}" method="POST" enctype="multipart/form-data">
             @csrf

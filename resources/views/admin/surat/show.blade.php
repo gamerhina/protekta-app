@@ -48,9 +48,8 @@
                             <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input name="to" id="input-recipient" value="{{ $surat->penerima_email ?? $applicantEmail }}" class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white" placeholder="{{ $applicantEmail ?: 'email@penerima.com' }}" required title="Email Penerima">
                         </div>
-                        <button id="btn-show-email-preview" class="btn-pill btn-pill-primary w-full md:w-auto px-6 text-sm" type="button">
-                            <i class="fab fa-whatsapp mr-1 text-green-300"></i>
-                            <i class="fas fa-paper-plane mr-2"></i> 
+                        <button id="btn-show-email-preview" class="btn-pill btn-pill-primary w-full md:w-auto px-6 text-sm flex items-center justify-center gap-2" type="button">
+                            <i class="fa-solid fa-paper-plane"></i> 
                             Kirim WA / Email
                         </button>
                         {{-- Hidden fields for subject and body from preview modal --}}
@@ -278,7 +277,10 @@
         // Global toggle function
         window.toggleEmailPreviewModal = function(show) {
             const modal = document.getElementById('email-preview-modal');
-            if (!modal) return;
+            if (!modal) {
+                console.error('Modal email-preview-modal not found in DOM');
+                return;
+            }
             if (show) {
                 modal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
@@ -289,12 +291,16 @@
         };
 
         // Event Delegation for all preview-related clicks
-        // This is robust against AJAX content replacement
         document.addEventListener('click', async function(e) {
             // 1. Show Preview Click
             const triggerBtn = e.target.closest('#btn-show-email-preview');
             if (triggerBtn) {
-                const to = document.getElementById('input-recipient').value;
+                e.preventDefault();
+                
+                const toInput = document.getElementById('input-recipient');
+                if (!toInput) return;
+                
+                const to = toInput.value.trim();
                 if (!to || !to.includes('@')) {
                     alert('Harap masukkan alamat email yang valid.');
                     return;
@@ -310,16 +316,24 @@
                 if (confirmBtn) confirmBtn.disabled = true;
 
                 try {
-                    const response = await fetch(`{{ route('admin.surattemplate.preview-email', [$surat->jenis, $surat->jenis->template ?? 0, $surat]) }}`, {
+                    // Use model instances for safer route generation
+                    const url = `{{ route('admin.surattemplate.preview-email', [$surat->jenis, $surat->jenis->template, $surat]) }}`;
+                    console.log('Fetching preview from:', url);
+                    
+                    const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
                             'Accept': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify({ recipient: to })
                     });
 
-                    if (!response.ok) throw new Error('Gagal mengambil pratinjau email.');
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        throw new Error(errData.message || 'Gagal mengambil pratinjau email dari server.');
+                    }
 
                     const data = await response.json();
                     
@@ -327,20 +341,28 @@
                     if (recipientEl) {
                         recipientEl.textContent = to;
                     }
-                    document.getElementById('preview-subject').value = data.subject;
-                    document.getElementById('preview-body').value = data.body;
+                    
+                    const subjectInput = document.getElementById('preview-subject');
+                    const bodyTextarea = document.getElementById('preview-body');
+                    
+                    if (subjectInput) subjectInput.value = data.subject || '';
+                    if (bodyTextarea) bodyTextarea.value = data.body || '';
 
                     if (loadingState) loadingState.classList.add('hidden');
-                    if (editorState) editorState.classList.remove('hidden');
+                    if (editorState) {
+                        editorState.classList.remove('hidden');
+                        editorState.classList.add('flex', 'flex-col');
+                    }
                     if (confirmBtn) confirmBtn.disabled = false;
                 } catch (error) {
-                    alert(error.message);
+                    console.error('Error fetching email preview:', error);
+                    alert('Gagal membuka pratinjau: ' + error.message);
                     window.toggleEmailPreviewModal(false);
                 }
                 return;
             }
 
-            // 2. Confirm Send Click
+            // 2. Confirm Send Click (Email)
             const confirmBtn = e.target.closest('#btn-confirm-send');
             if (confirmBtn) {
                 const subject = document.getElementById('preview-subject').value;
@@ -349,6 +371,9 @@
                 document.getElementById('hidden-email-subject').value = subject;
                 document.getElementById('hidden-email-body').value = body;
 
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Mengirim...';
+                
                 document.getElementById('email-send-form').submit();
                 return;
             }
@@ -361,14 +386,12 @@
                 let phoneNumber = '';
 
                 if (recipientSelect && recipientSelect.value) {
-                    let raw = recipientSelect.value.replace(/\D/g, '');
-                    if (raw.startsWith('0')) {
-                        raw = '62' + raw.substring(1);
+                    phoneNumber = recipientSelect.value.replace(/\D/g, '');
+                    if (phoneNumber.startsWith('0')) {
+                        phoneNumber = '62' + phoneNumber.substring(1);
                     }
-                    phoneNumber = raw;
                 }
                 
-                // Open WhatsApp FIRST
                 const encodedText = encodeURIComponent(body);
                 const waUrl = phoneNumber 
                     ? `https://wa.me/${phoneNumber}?text=${encodedText}` 
@@ -376,7 +399,6 @@
 
                 window.open(waUrl, '_blank');
 
-                // Trigger download & Alert after delay
                 setTimeout(() => {
                     const downloadBtn = document.getElementById('btn-download-docx-surat');
                     if (downloadBtn) {
@@ -398,11 +420,13 @@
 </script>
 
 <!-- Email Preview Modal -->
-<div id="email-preview-modal" class="fixed inset-0 z-[100] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="toggleEmailPreviewModal(false)"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-middle bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+<div id="email-preview-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+        <!-- Premium Glassmorphism Backdrop -->
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" aria-hidden="true" onclick="toggleEmailPreviewModal(false)"></div>
+
+        <!-- Modal Content -->
+        <div class="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full z-10">
             <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="flex items-center justify-between mb-4 border-b pb-4">
                     <h3 class="text-lg font-bold text-gray-900" id="modal-title">Kirim WA / Email</h3>
@@ -431,7 +455,7 @@
                     </div>
                     <div id="wa-recipient-container" class="pt-3 border-t border-gray-100">
                         <label class="block text-xs font-bold text-blue-500 uppercase tracking-widest mb-2">
-                            <i class="fab fa-whatsapp mr-1"></i> Kirim WhatsApp Ke:
+                            <i class="fa-brands fa-whatsapp mr-1"></i> Kirim WhatsApp Ke:
                         </label>
                         <select id="wa-recipient-select-surat" class="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm bg-blue-50 text-blue-700 font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
                             @if($surat->pemohon_type === 'mahasiswa' && $surat->pemohonMahasiswa && $surat->pemohonMahasiswa->wa)
@@ -451,10 +475,10 @@
             </div>
             <div class="bg-gray-50 px-6 py-4 flex flex-col md:flex-row-reverse gap-3 rounded-b-2xl">
                 <button type="button" id="btn-confirm-send" class="btn-pill btn-pill-info px-8 min-w-[160px]">
-                    <i class="fas fa-paper-plane mr-2"></i> Kirim via Email
+                    <i class="fa-solid fa-paper-plane mr-2"></i> Kirim via Email
                 </button>
                 <button type="button" id="btn-send-wa" class="btn-pill btn-pill-success px-8 min-w-[160px]">
-                    <i class="fab fa-whatsapp mr-2"></i> Kirim via WA
+                    <i class="fa-brands fa-whatsapp mr-2"></i> Kirim via WA
                 </button>
                 <button type="button" class="btn-close-preview btn-pill btn-pill-secondary px-8">
                     <i class="fas fa-times mr-2"></i> Batal
