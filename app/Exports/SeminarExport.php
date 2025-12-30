@@ -28,6 +28,7 @@ class SeminarExport implements FromCollection, WithHeadings, WithMapping, Should
     {
         return [
             'ID',
+            'No. Surat',
             'Mahasiswa',
             'NPM',
             'Jenis Seminar',
@@ -57,6 +58,7 @@ class SeminarExport implements FromCollection, WithHeadings, WithMapping, Should
 
         return [
             $seminar->id,
+            $seminar->no_surat ?? '-',
             $seminar->mahasiswa?->nama ?? '-',
             $seminar->mahasiswa?->npm ?? '-',
             $seminar->seminarJenis?->nama ?? '-',

@@ -15,23 +15,7 @@
             </a>
         </div>
 
-        @if(session('success'))
-            <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                {{ session('success') }}
-            </div>
-        @endif
 
-        @if(session('error'))
-            <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        @if(session('warning'))
-            <div class="mb-6 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-                {{ session('warning') }}
-            </div>
-        @endif
 
         @php
             $fileExists = file_exists(storage_path('app/private/' . $template->file_path));
@@ -113,8 +97,8 @@
                                         <option value="{{ $tag }}">{{ $tag }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" onclick="insertEmailTag('subject')" class="px-3 py-2 bg-blue-100 text-blue-800 rounded-md text-xs font-semibold hover:bg-blue-200">Ke Subject ${TAG}</button>
-                                <button type="button" onclick="insertEmailTag('body')" class="px-3 py-2 bg-purple-100 text-purple-800 rounded-md text-xs font-semibold hover:bg-purple-200">Ke Isi ${TAG}</button>
+                                <button type="button" class="email-tag-btn px-3 py-2 bg-blue-100 text-blue-800 rounded-md text-xs font-semibold hover:bg-blue-200" data-target="subject">Ke Subject ${TAG}</button>
+                                <button type="button" class="email-tag-btn px-3 py-2 bg-purple-100 text-purple-800 rounded-md text-xs font-semibold hover:bg-purple-200" data-target="body">Ke Isi ${TAG}</button>
                             </div>
                             <p class="text-xs text-gray-500">Gunakan tombol di atas untuk menyisipkan placeholder secara otomatis.</p>
                         </div>
@@ -225,7 +209,7 @@
                                    placeholder="Nama tag (contoh: NAMA_MAHASISWA)" 
                                    class="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
                             <button type="button" 
-                                    onclick="addManualTag()" 
+                                    id="add_tag_btn" 
                                     class="btn-pill btn-pill-primary text-sm">
                                 Tambah Tag
                             </button>
@@ -244,8 +228,8 @@
                                     <span class="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
                                         <code>{{ '${' . $tag . '}' }}</code>
                                         <button type="button" 
-                                                onclick="removeTag('{{ $tag }}')" 
-                                                class="ml-2 text-blue-600 hover:text-blue-900 font-bold">×</button>
+                                                class="remove-tag-btn ml-2 text-blue-600 hover:text-blue-900 font-bold" 
+                                                data-tag="{{ $tag }}">×</button>
                                         <input type="hidden" name="available_tags[]" value="{{ $tag }}">
                                     </span>
                                 @endforeach
@@ -315,7 +299,6 @@
                                                         <option value="standard" {{ $currentType == 'standard' ? 'selected' : '' }}>Standard (Text)</option>
                                                         <option value="hyperlink" {{ $currentType == 'hyperlink' ? 'selected' : '' }}>Hyperlink</option>
                                                         <option value="image" {{ $currentType == 'image' ? 'selected' : '' }}>Image</option>
-                                                        <option value="checkbox" {{ $currentType == 'checkbox' ? 'selected' : '' }}>Checkbox</option>
                                                     </select>
                                                     
                                                     <!-- Hyperlink Properties -->
@@ -401,212 +384,277 @@
 </div>
 
 @section('scripts')
+{{-- Scripts moved to bottom of content to ensure AJAX execution --}}
+@endsection
+
 <script>
 (function() {
-    window.availableFields = @json($availableFields);
+    // Global Error Handler for this specific page component
+    try {
+        console.log("Document Edit Script Loading...");
+        // State management
+        const availableFields = @json($availableFields) || {};
+        // initialized check removed to allow fresh runs
 
-    window.handleTagTypeChange = function(tagName) {
-        const select = document.querySelector(`.tag-type-select[data-tag="${tagName}"]`);
-        if (!select) return;
-        
-        const selectedType = select.value;
-        const row = select.closest('tr');
-        
-        const allPropsInRow = row.querySelectorAll('.tag-properties');
-        allPropsInRow.forEach(prop => prop.style.display = 'none');
-        
-        if (selectedType === 'hyperlink') {
-            const hyperlinkProps = row.querySelector('.hyperlink-props');
-            if (hyperlinkProps) hyperlinkProps.style.display = 'block';
-        } else if (selectedType === 'image') {
-            const imageProps = row.querySelector('.image-props');
-            if (imageProps) imageProps.style.display = 'block';
-        }
-    }
-
-    window.addManualTag = function() {
-        const input = document.getElementById('manual_tag_input');
-        const tagName = input.value.trim();
-        
-        if (!tagName) {
-            alert('Masukkan nama tag!');
-            return;
-        }
-        
-        const existingTags = Array.from(document.querySelectorAll('input[name="available_tags[]"]')).map(el => el.value);
-        if (existingTags.includes(tagName)) {
-            alert('Tag sudah ada!');
-            return;
-        }
-        
-        const tagsDisplay = document.getElementById('tags_display');
-        const emptyMsg = tagsDisplay.querySelector('p.text-gray-400');
-        if (emptyMsg) emptyMsg.remove();
-        
-        const span = document.createElement('span');
-        span.className = 'inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm';
-        span.innerHTML = `
-            <code>${'${'}${tagName}${'}'}</code>
-            <button type="button" onclick="window.removeTag('${tagName}')" class="ml-2 text-blue-600 hover:text-blue-900 font-bold">×</button>
-            <input type="hidden" name="available_tags[]" value="${tagName}">
-        `;
-        tagsDisplay.appendChild(span);
-        
-        addMappingSection(tagName);
-        input.value = '';
-    }
-
-    window.removeTag = function(tagName) {
-        if (!confirm(`Hapus tag ${'${'}${tagName}${'}'} ?`)) return;
-        
-        const tagsDisplay = document.getElementById('tags_display');
-        const tagSpans = tagsDisplay.querySelectorAll('span');
-        tagSpans.forEach(span => {
-            const hiddenInput = span.querySelector('input[type="hidden"]');
-            if (hiddenInput && hiddenInput.value === tagName) span.remove();
-        });
-        
-        const mappingItem = document.querySelector(`.tag-mapping-item[data-tag="${tagName}"]`);
-        if (mappingItem) mappingItem.remove();
-        
-        const remainingTags = document.querySelectorAll('input[name="available_tags[]"]');
-        if (remainingTags.length === 0) {
-            tagsDisplay.innerHTML = '<p class="text-gray-400 text-sm italic">Tidak ada tags terdeteksi. Gunakan tombol "Re-Extract Tags" atau tambah manual.</p>';
-            
-            const mappingsContainer = document.getElementById('tag_mappings_container');
-            const tableContainer = mappingsContainer.querySelector('.bg-gray-50');
-            if (tableContainer) {
-                tableContainer.innerHTML = `
-                    <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
-                        <p class="font-medium">⚠️ Tidak ada tags untuk dimapping</p>
-                        <p class="text-sm mt-1">Tambahkan tags terlebih dahulu menggunakan "Re-Extract Tags" atau manual add.</p>
-                    </div>
-                `;
-            }
-        }
-    }
-
-    function addMappingSection(tagName) {
-        const mappingsContainer = document.getElementById('tag_mappings_container');
-        let tbody = mappingsContainer.querySelector('tbody');
-        
-        if (!tbody) {
-            const yellowBox = mappingsContainer.querySelector('.bg-yellow-50');
-            if (yellowBox) yellowBox.remove();
-            
-            const newContainer = document.createElement('div');
-            newContainer.className = 'bg-gray-50 p-4 rounded-lg overflow-x-auto';
-            newContainer.innerHTML = `
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-1/4">Tag</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-1/3">Maps ke Field Data</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-5/12">Tipe Tag</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200"></tbody>
-                </table>
-            `;
-            mappingsContainer.appendChild(newContainer);
-            tbody = newContainer.querySelector('tbody');
-        }
-        
-        let optionsHtml = '<option value="">-- Tidak dimapping --</option>';
-        for (const [category, fields] of Object.entries(window.availableFields)) {
-            optionsHtml += `<optgroup label="${category.charAt(0).toUpperCase() + category.slice(1)}">`;
-            for (const [fieldKey, fieldLabel] of Object.entries(fields)) {
-                optionsHtml += `<option value="${fieldKey}">${fieldLabel}</option>`;
-            }
-            optionsHtml += '</optgroup>';
-        }
-        
-        const tr = document.createElement('tr');
-        tr.className = 'tag-mapping-item';
-        tr.setAttribute('data-tag', tagName);
-        tr.innerHTML = `
-            <td class="px-4 py-3 whitespace-nowrap">
-                <code class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">${'${'}${tagName}${'}'}</code>
-            </td>
-            <td class="px-4 py-3">
-                <select name="tag_mappings[${tagName}]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                    ${optionsHtml}
-                </select>
-            </td>
-            <td class="px-4 py-3">
-                <select name="tag_types[${tagName}]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm tag-type-select" data-tag="${tagName}">
-                    <option value="standard">Standard (Text)</option>
-                    <option value="hyperlink">Hyperlink</option>
-                    <option value="image">Image</option>
-                    <option value="checkbox">Checkbox</option>
-                </select>
-                <div class="mt-2 tag-properties hyperlink-props" style="display: none">
-                    <input type="text" name="tag_properties[${tagName}][hyperlink_url]" placeholder="URL (e.g., https://example.com)" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
-                </div>
-                <div class="mt-2 space-y-2 tag-properties image-props" style="display: none">
-                    <input type="text" name="tag_properties[${tagName}][image_url]" placeholder="Image URL" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="number" name="tag_properties[${tagName}][image_width]" placeholder="Width" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
-                        <input type="number" name="tag_properties[${tagName}][image_height]" placeholder="Height" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
-                    </div>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    }
-
-    window.insertEmailTag = function(target) {
-        const select = document.getElementById('email_tag_picker');
-        if (!select) return;
-        const tag = select.value;
-        if (!tag) return;
-        const placeholder = '${' + tag + '}';
-        const fieldId = target === 'subject' ? 'email_subject_template' : 'email_body_template';
-        const field = document.getElementById(fieldId);
-        if (!field) return;
-        insertAtCursor(field, placeholder);
-        field.focus();
-    }
-
-    function insertAtCursor(element, text) {
-        const start = element.selectionStart ?? element.value.length;
-        const end = element.selectionEnd ?? element.value.length;
-        const value = element.value;
-        element.value = value.slice(0, start) + text + value.slice(end);
-        const caret = start + text.length;
-        element.selectionStart = caret;
-        element.selectionEnd = caret;
-    }
-
-    function initDocumentEdit() {
-        const manualInput = document.getElementById('manual_tag_input');
-        if (!manualInput || manualInput.dataset.initialized === 'true') return;
-
-        manualInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                window.addManualTag();
-            }
-        });
-
-        document.querySelectorAll('.tag-type-select').forEach(select => {
+        // Helper Functions
+        function handleTagTypeChange(select) {
             const tagName = select.getAttribute('data-tag');
-            if (tagName) window.handleTagTypeChange(tagName);
-        });
-
-        manualInput.dataset.initialized = 'true';
-    }
-
-    document.addEventListener('change', function(e) {
-        if (e.target.classList.contains('tag-type-select')) {
-            const tagName = e.target.getAttribute('data-tag');
-            if (tagName) window.handleTagTypeChange(tagName);
+            if (!tagName) return;
+            
+            const selectedType = select.value;
+            const row = select.closest('tr');
+            
+            const allPropsInRow = row.querySelectorAll('.tag-properties');
+            allPropsInRow.forEach(prop => prop.style.display = 'none');
+            
+            if (selectedType === 'hyperlink') {
+                const hyperlinkProps = row.querySelector('.hyperlink-props');
+                if (hyperlinkProps) hyperlinkProps.style.display = 'block';
+            } else if (selectedType === 'image') {
+                const imageProps = row.querySelector('.image-props');
+                if (imageProps) imageProps.style.display = 'block';
+            }
         }
-    });
 
-    if (document.readyState !== 'loading') initDocumentEdit();
-    else document.addEventListener('DOMContentLoaded', initDocumentEdit);
-    window.addEventListener('page-loaded', initDocumentEdit);
+        function addManualTag() {
+            const input = document.getElementById('manual_tag_input');
+            if (!input) return;
+
+            const tagName = input.value.trim();
+            
+            if (!tagName) {
+                alert('Masukkan nama tag!');
+                return;
+            }
+            
+            const existingTags = Array.from(document.querySelectorAll('input[name="available_tags[]"]')).map(el => el.value);
+            if (existingTags.includes(tagName)) {
+                alert('Tag sudah ada!');
+                return;
+            }
+            
+            const tagsDisplay = document.getElementById('tags_display');
+            const emptyMsg = tagsDisplay.querySelector('p.text-gray-400');
+            if (emptyMsg) emptyMsg.remove();
+            
+            const span = document.createElement('span');
+            span.className = 'inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm';
+            span.innerHTML = `
+                <code>${'${'}${tagName}${'}'}</code>
+                <button type="button" class="remove-tag-btn ml-2 text-blue-600 hover:text-blue-900 font-bold" data-tag="${tagName}">×</button>
+                <input type="hidden" name="available_tags[]" value="${tagName}">
+            `;
+            tagsDisplay.appendChild(span);
+
+            // Wire up the new button immediately
+            const newBtn = span.querySelector('.remove-tag-btn');
+            if (newBtn) {
+                newBtn.addEventListener('click', function() {
+                    removeTag(this.dataset.tag);
+                });
+            }
+            
+            addMappingSection(tagName);
+            input.value = '';
+        }
+
+        function removeTag(tagName) {
+            if (!confirm(`Hapus tag ${'${'}${tagName}${'}'} ?`)) return;
+            
+            const tagsDisplay = document.getElementById('tags_display');
+            const tagSpans = tagsDisplay.querySelectorAll('span');
+            tagSpans.forEach(span => {
+                const hiddenInput = span.querySelector('input[type="hidden"]');
+                if (hiddenInput && hiddenInput.value === tagName) span.remove();
+            });
+            
+            const mappingItem = document.querySelector(`.tag-mapping-item[data-tag="${tagName}"]`);
+            if (mappingItem) mappingItem.remove();
+            
+            const remainingTags = document.querySelectorAll('input[name="available_tags[]"]');
+            if (remainingTags.length === 0) {
+                tagsDisplay.innerHTML = '<p class="text-gray-400 text-sm italic">Tidak ada tags terdeteksi. Gunakan tombol "Re-Extract Tags" atau tambah manual.</p>';
+                
+                const mappingsContainer = document.getElementById('tag_mappings_container');
+                const tableContainer = mappingsContainer.querySelector('.bg-gray-50');
+                if (tableContainer) {
+                    tableContainer.innerHTML = `
+                        <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
+                            <p class="font-medium">Tidak ada tags untuk dimapping</p>
+                            <p class="text-sm mt-1">Tambahkan tags terlebih dahulu menggunakan "Re-Extract Tags" atau manual add.</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function addMappingSection(tagName) {
+            const mappingsContainer = document.getElementById('tag_mappings_container');
+            let tbody = mappingsContainer.querySelector('tbody');
+            
+            if (!tbody) {
+                const newContainer = document.createElement('div');
+                newContainer.className = 'bg-gray-50 p-4 rounded-lg overflow-x-auto';
+                newContainer.innerHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-1/4">Tag</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-1/3">Maps ke Field Data</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-5/12">Tipe Tag</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                `;
+                mappingsContainer.appendChild(newContainer);
+                tbody = newContainer.querySelector('tbody');
+            }
+            
+            let optionsHtml = '<option value="">-- Tidak dimapping --</option>';
+            for (const [category, fields] of Object.entries(availableFields)) {
+                optionsHtml += `<optgroup label="${category.charAt(0).toUpperCase() + category.slice(1)}">`;
+                for (const [fieldKey, fieldLabel] of Object.entries(fields)) {
+                    optionsHtml += `<option value="${fieldKey}">${fieldLabel}</option>`;
+                }
+                optionsHtml += '</optgroup>';
+            }
+            
+            const tr = document.createElement('tr');
+            tr.className = 'tag-mapping-item';
+            tr.setAttribute('data-tag', tagName);
+            tr.innerHTML = `
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <code class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">${'${'}${tagName}${'}'}</code>
+                </td>
+                <td class="px-4 py-3">
+                    <select name="tag_mappings[${tagName}]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                        ${optionsHtml}
+                    </select>
+                </td>
+                <td class="px-4 py-3">
+                    <select name="tag_types[${tagName}]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm tag-type-select" data-tag="${tagName}">
+                        <option value="standard">Standard (Text)</option>
+                        <option value="hyperlink">Hyperlink</option>
+                        <option value="image">Image</option>
+                    </select>
+                    <div class="mt-2 tag-properties hyperlink-props" style="display: none">
+                        <input type="text" name="tag_properties[${tagName}][hyperlink_url]" placeholder="URL (e.g., https://example.com)" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
+                    </div>
+                    <div class="mt-2 space-y-2 tag-properties image-props" style="display: none">
+                        <input type="text" name="tag_properties[${tagName}][image_url]" placeholder="Image URL" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" name="tag_properties[${tagName}][image_width]" placeholder="Width" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
+                            <input type="number" name="tag_properties[${tagName}][image_height]" placeholder="Height" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
+                        </div>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+
+            // Wire up new select
+            const newSelect = tr.querySelector('.tag-type-select');
+            if (newSelect) {
+                newSelect.addEventListener('change', function() {
+                    handleTagTypeChange(this);
+                });
+            }
+        }
+
+        function insertEmailTag(target) {
+            const select = document.getElementById('email_tag_picker');
+            if (!select) return;
+            const tag = select.value;
+            if (!tag) return;
+            const placeholder = '${' + tag + '}';
+            const fieldId = target === 'subject' ? 'email_subject_template' : 'email_body_template';
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+            insertAtCursor(field, placeholder);
+            field.focus();
+        }
+
+        function insertAtCursor(element, text) {
+            const start = element.selectionStart ?? element.value.length;
+            const end = element.selectionEnd ?? element.value.length;
+            const value = element.value;
+            element.value = value.slice(0, start) + text + value.slice(end);
+            const caret = start + text.length;
+            element.selectionStart = caret;
+            element.selectionEnd = caret;
+        }
+
+        function initDocumentEdit() {
+            // Check manual input primarily
+            const manualInput = document.getElementById('manual_tag_input');
+            if (manualInput && manualInput.dataset.initialized === 'true') {
+                 console.log("Document Edit already initialized on this node. Skipping.");
+                 return;
+            }
+            
+            
+            console.log("Initializing Document Edit...");
+
+            const addTagBtn = document.getElementById('add_tag_btn');
+            
+            // 1. Manual Tag
+            if (addTagBtn) {
+                // Remove existing listeners (clone node trick or assume this function runs only once per DOM load)
+                // With page replacement, nodes are new, so just add.
+                addTagBtn.addEventListener('click', addManualTag);
+            }
+
+            if (manualInput) {
+                manualInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addManualTag();
+                    }
+                });
+            }
+
+            // 2. Tag Types
+            document.querySelectorAll('.tag-type-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    handleTagTypeChange(this);
+                });
+                
+                // Trigger initial state
+                const tagName = select.getAttribute('data-tag');
+                if (tagName) handleTagTypeChange(select);
+            });
+
+            // 3. Email Tag Buttons
+            document.querySelectorAll('.email-tag-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    insertEmailTag(this.dataset.target);
+                });
+            });
+
+            // 4. Remove Tag Buttons
+            document.querySelectorAll('.remove-tag-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    removeTag(this.dataset.tag);
+                });
+            });
+
+            if (manualInput) manualInput.dataset.initialized = 'true';
+            console.log("Document Edit Initialized Successfully.");
+        }
+
+        // Initialization Logic
+        if (document.readyState !== 'loading') {
+            initDocumentEdit();
+        } else {
+            document.addEventListener('DOMContentLoaded', initDocumentEdit);
+        }
+        
+        // Removed window.addEventListener('page-loaded') to prevent leaks.
+        // AJAX injection runs this script immediately after content update, so initDocumentEdit() above suffices.
+
+    } catch (e) {
+        console.error('CRITICAL ERROR in Document Edit Script:', e);
+    }
 })();
 </script>
 @endsection
