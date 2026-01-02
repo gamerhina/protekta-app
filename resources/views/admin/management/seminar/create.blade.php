@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Create Seminar')
+@section('title', 'Tambah Seminar Baru')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Create New Seminar</h1>
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Tambah Seminar Baru</h1>
 
         <form method="POST" action="{{ route('admin.seminar.store') }}" enctype="multipart/form-data">
             @csrf
@@ -14,7 +14,7 @@
                 <div>
                     <label for="mahasiswa_id" class="block text-sm font-medium text-gray-700 mb-1">Mahasiswa</label>
                     <select name="mahasiswa_id" id="mahasiswa_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('mahasiswa_id') border-red-500 @enderror" required>
-                        <option value="">Select Mahasiswa</option>
+                        <option value="">Pilih Mahasiswa</option>
                         @foreach($mahasiswas as $mahasiswa)
                             <option value="{{ $mahasiswa->id }}" {{ old('mahasiswa_id') == $mahasiswa->id ? 'selected' : '' }}>
                                 {{ $mahasiswa->nama }} ({{ $mahasiswa->npm }})
@@ -29,7 +29,7 @@
                 <div>
                     <label for="seminar_jenis_id" class="block text-sm font-medium text-gray-700 mb-1">Jenis Seminar</label>
                     <select name="seminar_jenis_id" id="seminar_jenis_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('seminar_jenis_id') border-red-500 @enderror" required>
-                        <option value="">Select Seminar Type</option>
+                        <option value="">Pilih Jenis Seminar</option>
                         @foreach($seminarJenis as $jenis)
                             <option value="{{ $jenis->id }}" {{ old('seminar_jenis_id') == $jenis->id ? 'selected' : '' }}>
                                 {{ $jenis->nama }}
@@ -58,14 +58,16 @@
 
                 <div>
                     <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                    <input 
-                        type="date" 
-                        name="tanggal" 
-                        id="tanggal" 
-                        value="{{ old('tanggal') }}" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('tanggal') border-red-500 @enderror"
-                        required
-                    />
+                    <div class="relative">
+                        <input 
+                            type="date" 
+                            name="tanggal" 
+                            id="tanggal" 
+                            value="{{ old('tanggal') }}" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 @error('tanggal') border-red-500 @enderror"
+                            required
+                        />
+                    </div>
                     @error('tanggal')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -73,14 +75,16 @@
 
                 <div>
                     <label for="waktu_mulai" class="block text-sm font-medium text-gray-700 mb-1">Waktu Mulai</label>
-                    <input 
-                        type="time" 
-                        name="waktu_mulai" 
-                        id="waktu_mulai" 
-                        value="{{ old('waktu_mulai') }}" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('waktu_mulai') border-red-500 @enderror"
-                        required
-                    />
+                    <div class="relative">
+                        <input 
+                            type="time" 
+                            name="waktu_mulai" 
+                            id="waktu_mulai" 
+                            value="{{ old('waktu_mulai') }}" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 @error('waktu_mulai') border-red-500 @enderror"
+                            required
+                        />
+                    </div>
                     @error('waktu_mulai')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -185,9 +189,12 @@
 
             <div id="admin-berkas-syarat-dynamic" class="mt-6"></div>
 
-            <div class="mt-8 flex justify-end">
+            <div class="mt-8 flex items-center justify-between">
+                <a href="{{ route('admin.seminar.index') }}" class="btn-pill btn-pill-secondary">
+                    Batal
+                </a>
                 <button type="submit" class="btn-pill btn-pill-primary">
-                    Create Seminar
+                    Simpan Seminar
                 </button>
             </div>
         </form>

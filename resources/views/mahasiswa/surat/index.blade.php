@@ -1,16 +1,30 @@
 @extends('layouts.app')
 
-@section('title', 'Riwayat Surat')
+@section('title', 'Permohonan Surat')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-semibold text-gray-800">Riwayat Permohonan Surat</h1>
+            <h1 class="text-2xl font-semibold text-gray-800">Permohonan Surat</h1>
             <a href="{{ route('mahasiswa.surat.create') }}" class="btn-gradient inline-flex items-center gap-2">
                 <i class="fas fa-plus"></i> Buat Permohonan
             </a>
         </div>
+
+        <form method="GET" class="mb-6">
+            <div class="bg-white/70 backdrop-blur border border-gray-100 rounded-2xl shadow-inner p-4 md:p-5">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+                        </svg>
+                    </span>
+                    <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Ketik untuk mencari permohonan surat (No. Surat, Jenis, Perihal, atau Tujuan)..."
+                           class="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
+                </div>
+            </div>
+        </form>
 
         <div class="overflow-x-auto border border-gray-100 rounded-2xl shadow-sm">
             <table class="min-w-full divide-y divide-gray-200">

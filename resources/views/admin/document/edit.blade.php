@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Template')
+@section('title', 'Ubah Template')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-800">Edit Template</h1>
+                <h1 class="text-2xl font-semibold text-gray-800">Ubah Template</h1>
                 <p class="text-sm text-gray-600 mt-1">Template: <strong>{{ $template->nama }}</strong></p>
             </div>
             <a href="{{ route('admin.document.templates') }}" class="btn-pill btn-pill-secondary">
@@ -144,34 +144,66 @@
                 </div>
 
                 @if(!$fileExists)
-                    <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
-                        <h3 class="font-semibold text-yellow-900 mb-2">📎 Upload Ulang File Template</h3>
-                        <input 
-                            type="file" 
-                            name="new_file" 
-                            id="new_file" 
-                            accept=".docx" 
-                            class="w-full px-3 py-2 border border-yellow-300 rounded-md @error('new_file') border-red-500 @enderror"
-                        >
-                        <p class="text-xs text-yellow-800 mt-1">Gunakan format tag Word <code>${NAMA_TAG}</code> (huruf kapital dan underscore).</p>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-5">
+                        <h3 class="font-bold text-yellow-800 mb-2 flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> File Template Hilang
+                        </h3>
+                        <div class="bg-white border border-yellow-300 rounded-xl p-4 group hover:border-yellow-400 transition-all">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-800 truncate">Upload Ulang File</h3>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                        WAJIB • FORMAT .DOCX
+                                    </p>
+                                </div>
+                                <span class="flex-shrink-0 bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded-full">FILE HILANG</span>
+                            </div>
+                            <div class="relative group/input">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Pilih File Template</label>
+                                <input 
+                                    type="file" 
+                                    name="new_file" 
+                                    id="new_file" 
+                                    accept=".docx" 
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-yellow-300 transition-all"
+                                >
+                                <p class="text-[10px] text-gray-400 mt-2 italic px-1">Gunakan format tag Word <code>${NAMA_TAG}</code> (huruf kapital dan underscore).</p>
+                            </div>
+                        </div>
                         @error('new_file')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            <p class="text-red-500 text-xs mt-2 font-semibold">{{ $message }}</p>
                         @enderror
                     </div>
                 @else
-                    <div class="bg-green-50 border border-green-300 rounded-lg p-4">
-                        <h3 class="font-semibold text-green-900 mb-2">✅ File Template Tersedia</h3>
-                        <p class="text-sm text-green-800">File: <code class="bg-green-100 px-2 py-1 rounded">{{ basename($template->file_path) }}</code></p>
-                        <div class="mt-3">
-                            <label class="block text-sm font-medium text-green-900 mb-1">Upload File Baru (Optional)</label>
-                            <input 
-                                type="file" 
-                                name="new_file" 
-                                id="new_file" 
-                                accept=".docx" 
-                                class="w-full px-3 py-2 border border-green-300 rounded-md text-sm"
-                            >
-                            <p class="text-xs text-green-800 mt-1">Upload file baru jika ingin mengganti template. Tags akan di-extract otomatis.</p>
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-5">
+                        <h3 class="font-bold text-emerald-800 mb-2 flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i> File Template Tersedia
+                        </h3>
+                        <p class="text-sm text-emerald-700 mb-4 px-1">
+                            File saat ini: <code class="bg-white border border-emerald-200 px-2 py-1 rounded font-mono font-semibold text-emerald-800">{{ basename($template->file_path) }}</code>
+                        </p>
+                        
+                        <div class="bg-white border border-emerald-200 rounded-xl p-4 group hover:border-emerald-300 transition-all">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-800 truncate">Ganti Template (Opsional)</h3>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                        Simpan FILE • FORMAT .DOCX
+                                    </p>
+                                </div>
+                                <span class="flex-shrink-0 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-full">FILE ADA</span>
+                            </div>
+                            <div class="relative group/input">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Upload File Baru</label>
+                                <input 
+                                    type="file" 
+                                    name="new_file" 
+                                    id="new_file" 
+                                    accept=".docx" 
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-emerald-300 transition-all"
+                                >
+                                <p class="text-[10px] text-gray-400 mt-2 italic px-1">Upload file baru jika ingin mengganti template. Tags akan di-extract otomatis.</p>
+                            </div>
                         </div>
                     </div>
                 @endif
@@ -181,23 +213,23 @@
                 <div>
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h2 class="text-xl font-semibold text-gray-800">Tag Management & Mapping</h2>
+                            <h2 class="text-xl font-semibold text-gray-800">Manajemen & Pemetaan Tag</h2>
                             <p class="text-sm text-gray-600 mt-1">
-                                Kelola tags dari template Word dan mapping ke field data
+                                Kelola tag dari template Word dan petakan ke field data
                             </p>
                         </div>
                         <form action="{{ route('admin.document.re-extract', $template->id) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" class="btn-pill btn-pill-primary text-sm">
-                                🔄 Re-Extract Tags
+                                🔄 Ekstrak Ulang Tag
                             </button>
                         </form>
                     </div>
 
                     <!-- Manual Add Tags Section -->
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <h3 class="font-semibold text-blue-900 mb-2">➕ Manual Add Tags</h3>
-                        <p class="text-xs text-blue-800 mb-3">Tambah tags manual jika auto-extract belum mendeteksi semua tags dari dokumen Word</p>
+                        <h3 class="font-semibold text-blue-900 mb-2">➕ Tambah Tag Manual</h3>
+                        <p class="text-xs text-blue-800 mb-3">Tambah tag manual jika auto-extract belum mendeteksi semua tag dari dokumen Word</p>
                         <div class="flex gap-2">
                             <input type="text" 
                                    id="manual_tag_input" 
@@ -213,7 +245,7 @@
 
                     <!-- Current Tags Display -->
                     <div class="mb-4">
-                        <h3 class="font-semibold text-gray-700 mb-2">📋 Tags yang Terdeteksi:</h3>
+                        <h3 class="font-semibold text-gray-700 mb-2">📋 Tag yang Terdeteksi:</h3>
                         <p class="text-xs text-gray-500 mb-2">
                             Format Tag Word: <code class="bg-gray-100 px-1 rounded">${NAMA_TAG}</code>
                         </p>
@@ -229,16 +261,16 @@
                                     </span>
                                 @endforeach
                             @else
-                                <p class="text-gray-400 text-sm italic">Tidak ada tags terdeteksi. Gunakan tombol "Re-Extract Tags" atau tambah manual.</p>
+                                <p class="text-gray-400 text-sm italic">Tidak ada tag terdeteksi. Gunakan tombol "Ekstrak Ulang Tag" atau tambah manual.</p>
                             @endif
                         </div>
                     </div>
 
                     <!-- Tag Mappings -->
                     <div id="tag_mappings_container">
-                        <h3 class="font-semibold text-gray-700 mb-3">🔗 Mapping Tags ke Data Fields:</h3>
+                        <h3 class="font-semibold text-gray-700 mb-3">🔗 Pemetaan Tag ke Field Data:</h3>
                         <p class="text-xs text-gray-600 mb-3">
-                            Mapping tag dari template Word ke field data yang tersedia. Tags yang tidak dimapping akan tetap kosong di dokumen hasil.
+                            Petakan tag dari template Word ke field data yang tersedia. Tag yang tidak dipetakan akan tetap kosong di dokumen hasil.
                         </p>
                         
                         @if($template->available_tags && count($template->available_tags) > 0)
@@ -250,7 +282,7 @@
                                                 Tag
                                             </th>
                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-1/3">
-                                                Maps ke Field Data
+                                                Petakan ke Field Data
                                             </th>
                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-5/12">
                                                 Tipe Tag
@@ -272,7 +304,7 @@
                                                         name="tag_mappings[{{ $tag }}]" 
                                                         class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                                                     >
-                                                        <option value="">-- Tidak dimapping --</option>
+                                                        <option value="">-- Tidak dipetakan --</option>
                                                         @foreach($availableFields as $category => $fields)
                                                             <optgroup label="{{ ucfirst($category) }}">
                                                                 @foreach($fields as $fieldKey => $fieldLabel)
@@ -316,7 +348,7 @@
                                                             value="{{ $currentProps['image_url'] ?? '' }}"
                                                             class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs"
                                                         >
-                                                        <p class="text-xs text-gray-500 italic">💡 Kosongkan jika ingin menggunakan image dari database berdasarkan mapping field</p>
+                                                        <p class="text-xs text-gray-500 italic">💡 Kosongkan jika ingin menggunakan gambar dari database berdasarkan pemetaan field</p>
                                                         <div class="grid grid-cols-2 gap-2">
                                                             <input 
                                                                 type="number" 
@@ -342,15 +374,15 @@
                             </div>
                         @else
                             <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
-                                <p class="font-medium">⚠️ Tidak ada tags untuk dimapping</p>
-                                <p class="text-sm mt-1">Tambahkan tags terlebih dahulu menggunakan "Re-Extract Tags" atau manual add.</p>
+                                <p class="font-medium">⚠️ Tidak ada tag untuk dipetakan</p>
+                                <p class="text-sm mt-1">Tambahkan tag terlebih dahulu menggunakan "Ekstrak Ulang Tag" atau tambah manual.</p>
                             </div>
                         @endif
                     </div>
                 </div>
 
                 <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                    <h3 class="font-semibold text-blue-900 mb-2">💡 Available Fields Reference</h3>
+                    <h3 class="font-semibold text-blue-900 mb-2">💡 Referensi Field Tersedia</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                         @foreach($availableFields as $category => $fields)
                             <div>
@@ -495,7 +527,7 @@
                         <thead class="bg-gray-100">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-1/4">Tag</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-1/3">Maps ke Field Data</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-1/3">Pemetaan ke Field Data</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-5/12">Tipe Tag</th>
                             </tr>
                         </thead>
@@ -529,18 +561,18 @@
                 </td>
                 <td class="px-4 py-3">
                     <select name="tag_types[${tagName}]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm tag-type-select" data-tag="${tagName}">
-                        <option value="standard">Standard (Text)</option>
+                        <option value="standard">Standar (Teks)</option>
                         <option value="hyperlink">Hyperlink</option>
-                        <option value="image">Image</option>
+                        <option value="image">Gambar</option>
                     </select>
                     <div class="mt-2 tag-properties hyperlink-props" style="display: none">
                         <input type="text" name="tag_properties[${tagName}][hyperlink_url]" placeholder="URL (e.g., https://example.com)" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
                     </div>
                     <div class="mt-2 space-y-2 tag-properties image-props" style="display: none">
-                        <input type="text" name="tag_properties[${tagName}][image_url]" placeholder="Image URL" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
+                        <input type="text" name="tag_properties[${tagName}][image_url]" placeholder="URL Gambar" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
                         <div class="grid grid-cols-2 gap-2">
-                            <input type="number" name="tag_properties[${tagName}][image_width]" placeholder="Width" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
-                            <input type="number" name="tag_properties[${tagName}][image_height]" placeholder="Height" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
+                            <input type="number" name="tag_properties[${tagName}][image_width]" placeholder="Lebar" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
+                            <input type="number" name="tag_properties[${tagName}][image_height]" placeholder="Tinggi" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs">
                         </div>
                     </div>
                 </td>

@@ -3,29 +3,20 @@
 @section('title', 'Profil Mahasiswa')
 
 @section('content')
+@php
+    $defaultSort = 'nama';
+    $defaultDirection = 'asc';
+@endphp
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="py-8">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <h1 class="text-2xl font-semibold text-gray-800">Profil Mahasiswa</h1>
             </div>
-            @php
-                $defaultSort = 'nama';
-                $defaultDirection = 'asc';
-                
-                if (!function_exists('formatWhatsAppNumber')) {
-                    function formatWhatsAppNumber($phone) {
-                        $phone = preg_replace('/[^0-9]/', '', $phone);
-                        if (substr($phone, 0, 1) === '0') { $phone = '62' . substr($phone, 1); }
-                        elseif (substr($phone, 0, 2) !== '62') { $phone = '62' . $phone; }
-                        return $phone;
-                    }
-                }
-            @endphp
 
             <form method="GET" class="mb-6">
                 <div class="bg-white/70 backdrop-blur border border-gray-100 rounded-2xl shadow-inner p-4 md:p-5">
-                    <div class="grid gap-4 md:grid-cols-[1fr_auto]">
+                    <div class="grid gap-4">
                         <div>
                             <label for="search" class="text-sm font-medium text-gray-600">Cari Mahasiswa</label>
                             <div class="relative mt-1">
@@ -34,21 +25,13 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
                                     </svg>
                                 </span>
-                                <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Nama, NPM, atau email"
+                                <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Ketik untuk mencari (Nama, NPM, atau email)..."
                                        class="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
                             </div>
                         </div>
-                        <div class="flex items-end gap-3">
-                            <button type="submit" class="w-full md:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition">
-                                Cari
-                            </button>
-                            <a href="{{ route('dosen.mahasiswa.index') }}" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
-                                Reset
-                            </a>
-                        </div>
                     </div>
-                    <input type="hidden" name="sort" value="{{ request('sort', $defaultSort) }}">
-                    <input type="hidden" name="direction" value="{{ request('direction', $defaultDirection) }}">
+                    <input type="hidden" name="sort" value="{{ request('sort', $defaultSort ?? 'nama') }}">
+                    <input type="hidden" name="direction" value="{{ request('direction', $defaultDirection ?? 'asc') }}">
                     <input type="hidden" name="per_page" value="{{ request('per_page', $perPage ?? 15) }}">
                 </div>
             </form>
@@ -79,7 +62,7 @@
                                 <div class="flex items-center gap-3">
                                     @if($mahasiswa->hp)
                                         <a href="tel:{{ $mahasiswa->hp }}" class="hover:scale-110 transition-transform" title="Telepon" style="color: #2563eb !important;"><i class="fas fa-phone fa-fw"></i></a>
-                                        <a href="https://wa.me/{{ formatWhatsAppNumber($mahasiswa->hp) }}" target="_blank" rel="noopener" class="hover:scale-110 transition-transform" title="WhatsApp" style="color: #10b981 !important;"><i class="fa-brands fa-whatsapp fa-fw"></i></a>
+                                        <a href="#" data-wa="{{ $mahasiswa->hp }}" class="hover:scale-110 transition-transform" title="WhatsApp" style="color: #10b981 !important;"><i class="fa-brands fa-whatsapp fa-fw"></i></a>
                                     @else
                                         <span class="text-xs text-gray-400">-</span>
                                     @endif

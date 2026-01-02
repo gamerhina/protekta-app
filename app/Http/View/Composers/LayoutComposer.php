@@ -229,6 +229,7 @@ class LayoutComposer
         }
 
         $seminars = Seminar::with(['mahasiswa', 'nilai', 'signatures'])
+            ->whereIn('status', ['disetujui', 'belum_lengkap', 'selesai'])
             ->where(function ($q) use ($dosen) {
                 $q->where('p1_dosen_id', $dosen->id)
                     ->orWhere('p2_dosen_id', $dosen->id)

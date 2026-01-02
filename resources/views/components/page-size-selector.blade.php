@@ -15,5 +15,5 @@
     <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25</option>
     <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50</option>
     <option value="100" {{ $perPage == 100 ? 'selected' : '' }}>100</option>
-    <option value="200" {{ $perPage == 200 ? 'selected' : '' }}>200</option>
+    <option value="all" {{ $perPage == 'all' || $perPage >= 10000 ? 'selected' : '' }}>Semua</option>
 </select>

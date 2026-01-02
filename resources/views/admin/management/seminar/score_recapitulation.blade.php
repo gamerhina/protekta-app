@@ -24,8 +24,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <!-- Pembimbing 1 -->
             <div class="border-2 border-blue-200 rounded-lg p-5 {{ $nilaiP1 ? 'bg-blue-50' : 'bg-gray-50' }}">
-                <h4 class="font-semibold text-lg text-blue-900 mb-3">Pembimbing 1</h4>
-                <p class="text-sm text-gray-700 mb-2">{{ $seminar->p1Dosen->nama ?? 'N/A' }}</p>
+                <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0">P1</span>
+                    {{ $seminar->p1Dosen->nama ?? 'N/A' }}
+                </h3>
                 
                 @if($nilaiP1)
                     <!-- Assessment Aspects Breakdown -->
@@ -62,8 +64,10 @@
 
             <!-- Pembimbing 2 -->
             <div class="border-2 border-green-200 rounded-lg p-5 {{ $nilaiP2 ? 'bg-green-50' : 'bg-gray-50' }}">
-                <h4 class="font-semibold text-lg text-green-900 mb-3">Pembimbing 2</h4>
-                <p class="text-sm text-gray-700 mb-2">{{ $seminar->p2Dosen->nama ?? 'N/A' }}</p>
+                <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0">P2</span>
+                    {{ $seminar->p2Dosen->nama ?? 'N/A' }}
+                </h3>
                 
                 @if($nilaiP2)
                     <!-- Assessment Aspects Breakdown -->
@@ -100,8 +104,10 @@
 
             <!-- Pembahas -->
             <div class="border-2 border-purple-200 rounded-lg p-5 {{ $nilaiPembahas ? 'bg-purple-50' : 'bg-gray-50' }}">
-                <h4 class="font-semibold text-lg text-purple-900 mb-3">Pembahas</h4>
-                <p class="text-sm text-gray-700 mb-2">{{ $seminar->pembahasDosen->nama ?? 'N/A' }}</p>
+                <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0">PMB</span>
+                    {{ $seminar->pembahasDosen->nama ?? 'N/A' }}
+                </h3>
                 
                 @if($nilaiPembahas)
                     <!-- Assessment Aspects Breakdown -->

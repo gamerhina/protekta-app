@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Manage Surat')
+@section('title', 'Kelola Surat')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h1 class="text-2xl font-semibold text-gray-800">Manage Surat</h1>
+            <h1 class="text-2xl font-semibold text-gray-800">Kelola Surat</h1>
             <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
                 <a href="{{ route('admin.surat.export') }}" download data-no-ajax class="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-green-600 to-green-700 px-7 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-500/30 transition-all hover:-translate-y-0.5 hover:shadow-green-600/50">
-                    <i class="fas fa-file-excel"></i> Export Excel
+                    <i class="fas fa-file-excel"></i> Ekspor Excel
                 </a>
                 <a href="{{ route('admin.surat.create') }}" class="btn-gradient inline-flex items-center gap-2">
                     <i class="fas fa-plus"></i> Buat Surat
@@ -18,14 +18,16 @@
         </div>
 
         <form method="GET" class="mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input name="search" value="{{ request('search') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Cari nomor/tujuan/perihal" onchange="this.form.submit()">
-                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md" onchange="this.form.submit()">
-                    <option value="">(Semua status)</option>
-                    @foreach(['diajukan','diproses','dikirim','ditolak'] as $st)
-                        <option value="{{ $st }}" {{ request('status')===$st ? 'selected' : '' }}>{{ $st }}</option>
-                    @endforeach
-                </select>
+            <div class="bg-white/70 backdrop-blur border border-gray-100 rounded-2xl shadow-inner p-4 md:p-5">
+                <label for="search" class="text-sm font-medium text-gray-600">Cari Surat</label>
+                <div class="relative mt-1">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <i class="fas fa-search text-xs"></i>
+                    </span>
+                    <input type="text" name="search" id="search" value="{{ request('search') }}" 
+                           class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition text-sm text-gray-700" 
+                           placeholder="Ketik untuk mencari permohonan surat (Nomor, Pemohon, Jenis, Status, atau Perihal)...">
+                </div>
                 <input type="hidden" name="sort" value="{{ request('sort', $sort ?? 'created_at') }}">
                 <input type="hidden" name="direction" value="{{ request('direction', $direction ?? 'desc') }}">
             </div>
@@ -87,10 +89,10 @@
                                     <a href="{{ route('admin.surat.show', $s) }}" class="text-blue-600 hover:text-blue-800 font-semibold" title="Lihat">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <form action="{{ route('admin.surat.destroy', $s) }}" method="POST" class="inline" onsubmit="return confirm('Hapus permohonan surat ini?')">
+                                    <form action="{{ route('admin.surat.destroy', $s) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-500 hover:text-red-700 font-semibold" title="Hapus">
+                                        <button type="submit" class="text-red-500 hover:text-red-700 font-semibold" title="Hapus" data-confirm="Hapus permohonan surat ini?">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>

@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Admin')
+@section('title', 'Ubah Admin')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Edit Admin</h1>
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Ubah Admin</h1>
 
         <form action="{{ route('admin.admins.update', $admin->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -93,34 +93,53 @@
                     </div>
                 </div>
 
-                <div>
-                    <label for="foto" class="block text-sm font-medium text-gray-700 mb-1">Foto Profil</label>
-                    <input
-                        type="file"
-                        name="foto"
-                        id="foto"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('foto') border-red-500 @enderror"
-                        accept="image/*"
-                    >
-                    @error('foto')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                    <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, maksimal 2MB</p>
-                    
-                    @if($admin->foto)
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-600">Foto saat ini:</p>
-                            <img src="{{ asset('uploads/' . $admin->foto) }}" alt="Current Photo" class="mt-1 h-16 w-16 object-cover rounded">
+                <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 group hover:border-blue-200 transition-all">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-bold text-gray-800 truncate">Foto Profil</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                OPSIONAL • JPG, JPEG, PNG, WEBP, GIF
+                            </p>
                         </div>
-                    @endif
+                        <span class="flex-shrink-0 bg-{{ $admin->foto ? 'emerald' : 'gray' }}-100 text-{{ $admin->foto ? 'emerald' : 'gray' }}-700 text-[10px] font-bold px-2 py-1 rounded-full">
+                            {{ $admin->foto ? 'SUDAH ADA' : 'BELUM ADA' }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            @if($admin->foto)
+                                <img src="{{ asset('uploads/' . $admin->foto) }}" alt="Current Photo" class="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm">
+                            @else
+                                <div class="w-16 h-16 rounded-xl flex items-center justify-center bg-white text-gray-300 border border-gray-200">
+                                    <i class="fas fa-user text-2xl"></i>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <div class="flex-1 relative group/input">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Ganti Foto</label>
+                            <input
+                                type="file"
+                                name="foto"
+                                id="foto"
+                                accept=".jpg,.jpeg,.png,.webp,.gif"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all"
+                            />
+                            <p class="text-[10px] text-gray-400 mt-2 italic px-1">Maksimal ukuran file: <span class="font-bold text-gray-600">800KB</span></p>
+                        </div>
+                    </div>
                 </div>
+                @error('foto')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
 
                 <div class="flex items-center justify-end space-x-4 pt-6">
                     <a href="{{ route('admin.admins.index') }}" class="btn-pill btn-pill-secondary">
                         Batal
                     </a>
                     <button type="submit" class="btn-pill btn-pill-primary">
-                        Update Admin
+                        Simpan Admin
                     </button>
                 </div>
             </div>

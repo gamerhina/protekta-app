@@ -154,13 +154,35 @@
         }
 
         if (field.type === 'file') {
-            const accept = Array.isArray(field.extensions) && field.extensions.length ? field.extensions.map(e => `.${e}`).join(',') : '';
+            const accept = Array.isArray(field.extensions) && field.extensions.length ? field.extensions.map(e => `.${e.trim().replace(/^\./, '')}`).join(',') : '';
+            const exts = Array.isArray(field.extensions) ? field.extensions : [];
+            const formatLabel = exts.length ? escapeHtml(exts.join(', ').toUpperCase()) : 'FILE';
+            const sizeLabel = field.max_kb ? `${Math.round(field.max_kb / 1024 * 10) / 10}MB` : '5MB';
+
             return `
-                <div class="bg-white border border-gray-200 rounded-xl p-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
-                    <input type="file" name="form_files[${key}]" class="w-full px-3 py-2 border border-gray-300 rounded-md" ${accept ? `accept="${accept}"` : ''} ${requiredAttr}>
-                    ${Array.isArray(field.extensions) && field.extensions.length ? `<div class="text-xs text-gray-500 mt-1">Ext: ${escapeHtml(field.extensions.join(', '))}</div>` : ''}
-                    ${field.max_kb ? `<div class="text-xs text-gray-500">Max: ${escapeHtml(field.max_kb)} KB</div>` : ''}
+                <div class="bg-white border border-gray-200 rounded-xl p-4 group hover:border-blue-200 transition-all">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-bold text-gray-800 truncate">${label}</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                ${field.required ? 'WAJIB' : 'OPSIONAL'} • ${formatLabel}
+                            </p>
+                        </div>
+                        <span class="flex-shrink-0 bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-1 rounded-full">BELUM ADA</span>
+                    </div>
+                    <div class="relative group/input">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Unggah Berkas</label>
+                        <input 
+                            type="file" 
+                            name="form_files[${key}]" 
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all" 
+                            ${accept ? `accept="${accept}"` : ''} 
+                            ${requiredAttr}
+                        >
+                        <div class="text-[10px] text-gray-400 mt-2 italic flex gap-3 px-1">
+                            <span>Maks ukuran: <span class="font-bold text-gray-600">${sizeLabel}</span></span>
+                        </div>
+                    </div>
                 </div>
             `;
         }

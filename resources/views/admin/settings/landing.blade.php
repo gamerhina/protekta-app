@@ -79,27 +79,59 @@
                 </h2>
                 
                 <!-- Logos Row -->
-                <div class="grid md:grid-cols-3 gap-6 mb-8">
-                    @foreach(['app_icon' => 'Icon Dashboard', 'logo' => 'Logo Utama', 'favicon' => 'Favicon'] as $field => $label)
-                        <div class="relative group">
-                            <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ $label }}</label>
-                                @if($settings->{$field . '_url'})
-                                    <button type="button" data-remove-asset="remove_{{ $field }}" class="text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-50 px-2 py-0.5 rounded-md transition-colors">HAPUS</button>
-                                @endif
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    @foreach([
+                        'app_icon' => ['label' => 'Icon Dashboard', 'format' => 'PNG/JPG', 'type' => 'logo'],
+                        'logo' => ['label' => 'Logo Utama', 'format' => 'PNG/JPG', 'type' => 'logo'],
+                        'favicon' => ['label' => 'Favicon', 'format' => 'ICO/PNG', 'type' => 'logo']
+                    ] as $field => $config)
+                        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group {{ $field === 'favicon' ? 'md:col-span-2' : '' }}">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-800 truncate">{{ $config['label'] }}</h3>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                        {{ $config['format'] }}
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    @php
+                                        $fieldUrl = $field === 'landing_background' ? $settings->landing_background_url : $settings->{$field . '_url'};
+                                    @endphp
+                                    @if($fieldUrl)
+                                        <button type="button" data-remove-asset="remove_{{ $field }}" class="text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-50 px-2 py-1 rounded-md transition-colors">HAPUS</button>
+                                    @endif
+                                    <span class="flex-shrink-0 bg-{{ $fieldUrl ? 'emerald' : 'gray' }}-100 text-{{ $fieldUrl ? 'emerald' : 'gray' }}-700 text-[10px] font-bold px-2 py-1 rounded-full">
+                                        {{ $fieldUrl ? 'ADA' : 'KOSONG' }}
+                                    </span>
+                                </div>
                             </div>
                             <input type="hidden" name="remove_{{ $field }}" value="0">
-                            <div class="relative overflow-hidden rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors p-4 text-center group-hover:border-blue-400">
-                                <input type="file" name="{{ $field }}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                @if($settings->{$field . '_url'})
-                                    <img src="{{ $settings->{$field . '_url'} }}" class="h-12 w-auto mx-auto object-contain mb-2" alt="{{ $label }}">
-                                    <p class="text-[10px] text-slate-400 truncate">Klik untuk ganti</p>
-                                @else
-                                    <div class="h-12 flex items-center justify-center text-slate-300 mb-2">
-                                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0">
+                                    <div id="preview-{{ $field }}" class="w-16 h-16 rounded-xl border border-gray-100 shadow-sm bg-gray-50 flex items-center justify-center p-2">
+                                        @if($fieldUrl)
+                                            <img 
+                                                src="{{ $fieldUrl }}" 
+                                                class="max-w-full max-h-full object-contain" 
+                                                alt="{{ $config['label'] }}"
+                                                onerror="document.getElementById('preview-{{ $field }}').innerHTML='<svg class=\'w-8 h-8 text-gray-300\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\'></path></svg>'"
+                                            >
+                                        @else
+                                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        @endif
                                     </div>
-                                    <p class="text-xs text-slate-500 font-medium">Upload {{ $label }}</p>
-                                @endif
+                                </div>
+                                
+                                <div class="flex-1 relative group/input">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Upload File</label>
+                                    <input
+                                        type="file"
+                                        name="{{ $field }}"
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all"
+                                    />
+                                    <p class="text-[10px] text-gray-400 mt-2 italic px-1">Klik browse untuk mengganti.</p>
+                                </div>
                             </div>
                         </div>
                     @endforeach
@@ -143,8 +175,22 @@
                                         <label class="text-[10px] font-bold text-slate-500 uppercase">Upload Slide</label>
                                         <button type="button" id="add_slide_upload" class="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-md transition-colors">+ Tambah Gambar</button>
                                     </div>
-                                    <div id="slide_upload_list" class="space-y-2">
-                                        <input type="file" name="landing_slides[]" accept="image/*" class="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-sm">
+                                    <div id="slide_upload_list" class="space-y-4">
+                                        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group relative">
+                                            <div class="flex items-start justify-between mb-4">
+                                                <div class="flex-1 min-w-0">
+                                                    <h3 class="text-sm font-bold text-gray-800 truncate">Slide Baru</h3>
+                                                    <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                                        JPG/PNG
+                                                    </p>
+                                                </div>
+                                                <span class="flex-shrink-0 bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded-full">BARU</span>
+                                            </div>
+                                            <div class="relative group/input">
+                                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Pilih Gambar</label>
+                                                <input type="file" name="landing_slides[]" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -160,25 +206,26 @@
                         @endphp
 
                         @if(!empty($slidePaths))
-                            <div class="space-y-3">
+                            <div id="slides-sortable" class="space-y-3">
                                 @foreach($slidePaths as $i => $path)
-                                    <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                                    <div class="slide-item flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-move hover:border-blue-300 transition-colors" data-index="{{ $i }}">
+                                        <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-2">
+                                            <i class="fas fa-grip-vertical"></i>
+                                        </div>
                                         <div class="h-14 w-24 overflow-hidden rounded-lg bg-slate-200 flex-shrink-0">
                                             <img src="{{ \Illuminate\Support\Facades\Storage::disk('uploads')->url($path) }}" class="w-full h-full object-cover" alt="Slide {{ $i + 1 }}">
                                         </div>
-                                        <div class="flex-1 grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="text-[10px] font-bold text-slate-500 uppercase">Order</label>
-                                                <input type="number" name="slides_existing[{{ $i }}][order]" min="1" max="999" value="{{ old("slides_existing.$i.order", $i + 1) }}" class="mt-1 w-full rounded-lg border-slate-200 px-2 py-1.5 text-xs">
+                                        <div class="flex-1 flex items-center justify-between">
+                                            <div class="text-xs text-slate-600">
+                                                <span class="font-semibold">Slide {{ $i + 1 }}</span>
                                             </div>
-                                            <div class="flex items-end">
-                                                <label class="flex items-center gap-2 text-xs text-slate-600">
-                                                    <input type="checkbox" name="slides_existing[{{ $i }}][remove]" value="1">
-                                                    Hapus
-                                                </label>
-                                            </div>
+                                            <button type="button" class="remove-slide text-red-600 hover:text-red-800 p-2" title="Hapus Slide" data-slide-index="{{ $i }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
-                                        <input type="hidden" name="slides_existing[{{ $i }}][path]" value="{{ $path }}">
+                                        <input type="hidden" name="slides_existing[{{ $i }}][path]" value="{{ $path }}" class="slide-path">
+                                        <input type="hidden" name="slides_existing[{{ $i }}][order]" value="{{ $i + 1 }}" class="slide-order">
+                                        <input type="hidden" name="slides_existing[{{ $i }}][remove]" value="0" class="slide-remove">
                                     </div>
                                 @endforeach
                             </div>
@@ -188,29 +235,6 @@
                             </div>
                         @endif
 
-                        <details class="rounded-xl border border-slate-200 bg-white">
-                            <summary class="cursor-pointer px-4 py-3 text-xs font-semibold text-slate-700">Fallback: Background Header (Single)</summary>
-                            <div class="px-4 pb-4 space-y-3">
-                                <div class="relative rounded-xl border border-slate-200 bg-slate-50 p-1 group">
-                                    <div class="h-24 w-full rounded-lg bg-slate-200 overflow-hidden relative">
-                                        @if($settings->landing_background_url)
-                                            <img src="{{ $settings->landing_background_url }}" class="w-full h-full object-cover">
-                                        @else
-                                            <div class="flex items-center justify-center h-full text-slate-400">
-                                                <span class="text-xs">No image</span>
-                                            </div>
-                                        @endif
-                                        <input type="file" name="landing_background" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                        <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                            <span class="text-white text-xs font-semibold">Ganti Gambar</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                @if($settings->landing_background_url)
-                                    <button type="button" data-remove-asset="remove_landing_background" class="text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-50 px-2 py-1 rounded-md transition-colors">HAPUS Background Single</button>
-                                @endif
-                            </div>
-                        </details>
                         
                         <div class="bg-slate-50 rounded-xl p-3 space-y-3">
                             <div class="flex justify-between items-center">
@@ -223,31 +247,43 @@
 
                     <!-- Content Background -->
                     <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                                Background Konten
+                        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-800 truncate">Background Konten</h3>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                        OPSIONAL • JPG/PNG
+                                    </p>
+                                </div>
                                 @if($settings->content_background_url)
-                                    <span class="inline-flex h-2 w-2 rounded-full bg-green-500"></span>
-                                @endif
-                            </label>
-                            @if($settings->content_background_url)
-                                <button type="button" data-remove-asset="remove_content_background" class="text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-50 px-2 py-0.5 rounded-md transition-colors">HAPUS</button>
-                            @endif
-                        </div>
-                        <input type="hidden" name="remove_content_background" value="0">
-
-                        <div class="relative rounded-xl border border-slate-200 bg-slate-50 p-1 group">
-                            <div class="h-24 w-full rounded-lg bg-slate-200 overflow-hidden relative">
-                                @if($settings->content_background_url)
-                                    <img src="{{ $settings->content_background_url }}" class="w-full h-full object-cover">
-                                @else
-                                    <div class="flex items-center justify-center h-full text-slate-400">
-                                        <span class="text-xs">No image</span>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" data-remove-asset="remove_content_background" class="text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-50 px-2 py-1 rounded-md transition-colors">HAPUS</button>
                                     </div>
                                 @endif
-                                <input type="file" name="content_background" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                    <span class="text-white text-xs font-semibold">Ganti Gambar</span>
+                                <input type="hidden" name="remove_content_background" value="0">
+                            </div>
+
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0">
+                                    @if($settings->content_background_url)
+                                        <div class="w-24 h-16 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                                            <img src="{{ $settings->content_background_url }}" class="w-full h-full object-cover">
+                                        </div>
+                                    @else
+                                        <div class="w-24 h-16 rounded-xl flex items-center justify-center bg-gray-50 text-gray-300 border border-gray-200">
+                                            <span class="text-[10px] font-bold">NO IMG</span>
+                                        </div>
+                                    @endif
+                                </div>
+                                
+                                <div class="flex-1 relative group/input">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Upload File</label>
+                                    <input
+                                        type="file"
+                                        name="content_background"
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all"
+                                    />
+                                    <p class="text-[10px] text-gray-400 mt-2 italic px-1">Ganti gambar pattern/background halaman.</p>
                                 </div>
                             </div>
                         </div>
@@ -261,34 +297,45 @@
                         </div>
                     </div>
 
-                    <!-- Login Background (Full Width) -->
-                    <div class="md:col-span-2 space-y-4 pt-4 border-t border-slate-100">
-                         <div class="flex justify-between items-center">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                                Background Login
+                    <!-- Login Background -->
+                    <div class="space-y-4">
+                        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-800 truncate">Background Login</h3>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                        OPSIONAL • JPG/PNG
+                                    </p>
+                                </div>
                                 @if($settings->login_background_url)
-                                    <span class="inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" data-remove-asset="remove_login_background" class="text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-50 px-2 py-1 rounded-md transition-colors">HAPUS</button>
+                                    </div>
                                 @endif
-                            </label>
-                            @if($settings->login_background_url)
-                                <button type="button" data-remove-asset="remove_login_background" class="text-[10px] font-bold text-red-500 hover:text-red-600 bg-red-50 px-2 py-0.5 rounded-md transition-colors">HAPUS</button>
-                            @endif
-                        </div>
-                        <input type="hidden" name="remove_login_background" value="0">
-                        
-                        <div class="relative group rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors">
-                            <input type="file" name="login_background" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                            <div class="p-4 flex items-center gap-4">
-                                <div class="h-16 w-24 rounded-lg bg-slate-200 overflow-hidden flex-shrink-0">
+                                <input type="hidden" name="remove_login_background" value="0">
+                            </div>
+
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0">
                                     @if($settings->login_background_url)
-                                        <img src="{{ $settings->login_background_url }}" class="w-full h-full object-cover">
+                                        <div class="w-32 h-20 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                                            <img src="{{ $settings->login_background_url }}" class="w-full h-full object-cover">
+                                        </div>
                                     @else
-                                        <div class="flex items-center justify-center h-full text-slate-400 text-xs">No img</div>
+                                        <div class="w-32 h-20 rounded-xl flex items-center justify-center bg-gray-50 text-gray-300 border border-gray-200">
+                                            <span class="text-[10px] font-bold">NO IMG</span>
+                                        </div>
                                     @endif
                                 </div>
-                                <div>
-                                    <p class="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">Upload Background Login</p>
-                                    <p class="text-xs text-slate-400">Format JPG/PNG, Max 4MB</p>
+                                
+                                <div class="flex-1 relative group/input">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Upload File</label>
+                                    <input
+                                        type="file"
+                                        name="login_background"
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all"
+                                    />
+                                    <p class="text-[10px] text-gray-400 mt-2 italic px-1">Gambar ini akan tampil di halaman login.</p>
                                 </div>
                             </div>
                         </div>
@@ -399,15 +446,69 @@
     function initLandingSettings() {
         const addBtn = document.getElementById('add_slide_upload');
         const uploadList = document.getElementById('slide_upload_list');
+        const sortableContainer = document.getElementById('slides-sortable');
         
         if (!addBtn || addBtn.dataset.initialized === 'true') return;
 
+        // 1. Sortable.js Initialization
+        if (sortableContainer && typeof Sortable !== 'undefined') {
+            new Sortable(sortableContainer, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'bg-blue-50',
+                onEnd: function() {
+                    updateSlideNumbers();
+                }
+            });
+        }
+
+        function updateSlideNumbers() {
+            if (!sortableContainer) return;
+            const items = sortableContainer.querySelectorAll('.slide-item:not(.hidden)');
+            items.forEach((item, index) => {
+                const orderInput = item.querySelector('.slide-order');
+                const label = item.querySelector('.font-semibold');
+                const realIndex = Array.from(sortableContainer.querySelectorAll('.slide-item')).indexOf(item);
+                
+                // Simpan order for persistent slides
+                if (orderInput) orderInput.value = index + 1;
+                if (label) label.textContent = `Slide ${index + 1}`;
+            });
+        }
+
+        // 2. Remove Slide Handler (Existing Slides)
+        if (sortableContainer) {
+            sortableContainer.addEventListener('click', (e) => {
+                const removeBtn = e.target.closest('.remove-slide');
+                if (removeBtn) {
+                    const item = removeBtn.closest('.slide-item');
+                    if (item && confirm('Yakin ingin menghapus slide ini?')) {
+                        const removeInput = item.querySelector('.slide-remove');
+                        if (removeInput) {
+                            removeInput.value = '1';
+                            item.classList.add('hidden');
+                            updateSlideNumbers();
+                        }
+                    }
+                }
+            });
+        }
+
         addBtn.addEventListener('click', () => {
             const row = document.createElement('div');
-            row.className = 'flex items-center gap-2';
+            row.className = 'bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group relative';
             row.innerHTML = `
-                <input type="file" name="landing_slides[]" accept="image/*" class="flex-1 w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-sm" />
-                <button type="button" class="remove-slide-upload text-[10px] font-bold text-red-600 hover:text-red-700 bg-red-50 px-2 py-1 rounded-md">Hapus</button>
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-bold text-gray-800 truncate">Slide Baru</h3>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">JPG/PNG</p>
+                    </div>
+                    <button type="button" class="remove-slide-upload text-[10px] font-bold text-red-600 hover:text-red-700 bg-red-50 px-2 py-1 rounded-md">Hapus</button>
+                </div>
+                <div class="relative group/input">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Pilih Gambar</label>
+                    <input type="file" name="landing_slides[]" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all">
+                </div>
             `;
             uploadList.appendChild(row);
             row.querySelector('.remove-slide-upload')?.addEventListener('click', () => row.remove());

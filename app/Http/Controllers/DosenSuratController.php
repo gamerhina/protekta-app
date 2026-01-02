@@ -18,10 +18,23 @@ class DosenSuratController extends Controller
     public function index(Request $request)
     {
         $dosen = auth('dosen')->user();
+        $search = $request->query('search');
+
         $items = Surat::with(['jenis', 'mahasiswa'])
             ->where('pemohon_dosen_id', $dosen->id)
+            ->when($search, function($query, $search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('no_surat', 'like', "%$search%")
+                      ->orWhere('perihal', 'like', "%$search%")
+                      ->orWhere('tujuan', 'like', "%$search%")
+                      ->orWhereHas('jenis', function($q) use ($search) {
+                          $q->where('nama', 'like', "%$search%");
+                      });
+                });
+            })
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return view('dosen.surat.index', compact('items'));
     }

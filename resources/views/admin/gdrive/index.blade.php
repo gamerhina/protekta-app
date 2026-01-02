@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'GDrive Folders')
+@section('title', 'Folder Google Drive')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h1 class="text-2xl font-semibold text-gray-800">Google Drive Folders</h1>
+            <h1 class="text-2xl font-semibold text-gray-800">Folder Google Drive</h1>
             <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
                 <a href="{{ route('admin.gdrive.create') }}" class="btn-gradient inline-flex items-center gap-2">
                     <i class="fas fa-plus"></i> Tambah Folder
@@ -52,9 +52,9 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead>
                     <tr>
-                        <x-sortable-th column="nama" label="Nama" :default-sort="$defaultSort" :default-direction="$defaultDirection" />
-                        <x-sortable-th column="keterangan" label="Keterangan" :default-sort="$defaultSort" :default-direction="$defaultDirection" />
-                        <th class="px-6 py-3 text-left text-xs font-semibold tracking-[0.2em] text-gray-500 uppercase bg-gray-50">Aksi</th>
+                        <x-sortable-th column="nama" label="Nama" :default-sort="$defaultSort" :default-direction="$defaultDirection" class="w-1/2" />
+                        <x-sortable-th column="keterangan" label="Keterangan" :default-sort="$defaultSort" :default-direction="$defaultDirection" class="w-auto" />
+                        <th class="px-6 py-3 text-left text-xs font-semibold tracking-[0.2em] text-gray-500 uppercase bg-gray-50 w-auto">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">

@@ -76,27 +76,46 @@
             </div>
 
             <div class="mt-6">
-                <label for="foto" class="block text-sm font-medium text-gray-700 mb-1">Foto Profil (maks 500KB)</label>
-                <div class="flex items-center gap-4 mt-1">
-                    @if($user->foto ?? false)
-                        <img src="{{ asset('uploads/' . $user->foto) }}" alt="Current Photo" class="w-14 h-14 rounded-xl object-cover border">
-                    @else
-                        <div class="w-14 h-14 rounded-xl flex items-center justify-center bg-gray-100 text-gray-400 border">
-                            <i class="fas fa-user text-lg"></i>
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-bold text-gray-800 truncate">Foto Profil</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                OPSIONAL • JPG, JPEG, PNG, WEBP, GIF
+                            </p>
                         </div>
-                    @endif
-                    <input
-                        type="file"
-                        name="foto"
-                        id="foto"
-                        accept="image/*"
-                        class="text-sm text-gray-700"
-                    />
+                        <span class="flex-shrink-0 bg-{{ $user->foto ? 'emerald' : 'gray' }}-100 text-{{ $user->foto ? 'emerald' : 'gray' }}-700 text-[10px] font-bold px-2 py-1 rounded-full">
+                            {{ $user->foto ? 'SUDAH ADA' : 'BELUM ADA' }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            @if($user->foto ?? false)
+                                <img src="{{ asset('uploads/' . $user->foto) }}" alt="Current Photo" class="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm">
+                            @else
+                                <div class="w-16 h-16 rounded-xl flex items-center justify-center bg-gray-50 text-gray-300 border border-gray-200">
+                                    <i class="fas fa-user text-2xl"></i>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <div class="flex-1 relative group/input">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Ganti Foto</label>
+                            <input
+                                type="file"
+                                name="foto"
+                                id="foto"
+                                accept=".jpg,.jpeg,.png,.webp,.gif"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all"
+                            />
+                            <p class="text-[10px] text-gray-400 mt-2 italic px-1">Maksimal ukuran file: <span class="font-bold text-gray-600">800KB</span></p>
+                            @error('foto')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Format: JPG, JPEG, PNG, GIF, WEBP. Maksimal 500KB.</p>
-                @error('foto')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
             </div>
             <hr class="my-8 border-gray-200">
 
@@ -106,54 +125,69 @@
             <div class="space-y-6">
                 <div>
                     <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Password Saat Ini</label>
-                    <input
-                        type="password"
-                        name="current_password"
-                        id="current_password"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('current_password') border-red-500 @enderror"
-                    />
-                    @error('current_password')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">Password Baru</label>
-                    <input
-                        type="password"
-                        name="new_password"
-                        id="new_password"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('new_password') border-red-500 @enderror"
-                    />
-                    @error('new_password')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="new_password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password Baru</label>
-                    <input
-                        type="password"
-                        name="new_password_confirmation"
-                        id="new_password_confirmation"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
-                </div>
-            </div>
-
-            <div class="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <a href="{{
-                    (Auth::guard('admin')->check()) ? route('admin.dashboard') :
-                    ((Auth::guard('dosen')->check()) ? route('dosen.dashboard') :
-                    ((Auth::guard('mahasiswa')->check()) ? route('mahasiswa.dashboard') : '/'))
-                }}" class="btn-pill btn-pill-secondary text-center w-full sm:w-auto">
-                    Cancel
-                </a>
-                <button type="submit" class="btn-pill btn-pill-primary w-full sm:w-auto">
-                    Update Profil
+                    <div class="relative">
+                        <input
+                            type="password"
+                            name="current_password"
+                            id="current_password"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md @error('current_password') border-red-500 @enderror pr-10"
+                        />
+                <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none" data-target="current_password">
+                    <i class="fas fa-eye"></i>
                 </button>
             </div>
-        </form>
+            @error('current_password')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <div>
+            <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">Password Baru</label>
+            <div class="relative">
+                <input
+                    type="password"
+                    name="new_password"
+                    id="new_password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md @error('new_password') border-red-500 @enderror pr-10"
+                />
+                <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none" data-target="new_password">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            @error('new_password')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <div>
+            <label for="new_password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password Baru</label>
+            <div class="relative">
+                <input
+                    type="password"
+                    name="new_password_confirmation"
+                    id="new_password_confirmation"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md pr-10"
+                />
+                <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none" data-target="new_password_confirmation">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
     </div>
+
+    <div class="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <a href="{{
+            (Auth::guard('admin')->check()) ? route('admin.dashboard') :
+            ((Auth::guard('dosen')->check()) ? route('dosen.dashboard') :
+            ((Auth::guard('mahasiswa')->check()) ? route('mahasiswa.dashboard') : '/'))
+        }}" class="btn-pill btn-pill-secondary text-center w-full sm:w-auto">
+            Cancel
+        </a>
+        <button type="submit" class="btn-pill btn-pill-primary w-full sm:w-auto">
+            Update Profil
+        </button>
+    </div>
+</form>
+</div>
 </div>
 @endsection

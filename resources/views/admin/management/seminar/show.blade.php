@@ -26,119 +26,183 @@
                 ->get();
         @endphp
 
-        @if($templates->count() > 0)
-            <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">📄 Generate Document</h3>
-                <p class="text-sm text-gray-600 mb-3">Pilih template untuk generate dokumen dari data seminar ini:</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    @foreach($templates as $template)
-                        <a href="{{ route('admin.document.preview', [$template->id, $seminar->id]) }}" 
-                           class="flex items-center justify-between bg-white border border-gray-300 rounded-md p-3 hover:bg-blue-50 hover:border-blue-400 transition">
-                            <div class="flex-1">
-                                <div class="font-medium text-gray-900 text-sm">{{ $template->nama }}</div>
-                                <div class="text-xs text-gray-500">{{ $template->kode }}</div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column: Core Details (Col-span 2) -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Main Header Card -->
+                <div class="bg-gradient-to-br from-white to-gray-50 rounded-3xl border border-gray-200 p-6 shadow-sm overflow-hidden relative">
+                    <div class="absolute top-0 right-0 p-8 opacity-5">
+                        <i class="fas fa-graduation-cap text-8xl"></i>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="flex flex-wrap items-center gap-2 mb-4">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                                {{ $seminar->seminarJenis->nama ?? 'N/A' }}
+                            </span>
+                            <span class="inline-flex font-bold rounded-full text-[10px] px-3 py-1 uppercase tracking-wider
+                                @if($seminar->status == 'diajukan') bg-yellow-100 text-yellow-800
+                                @elseif($seminar->status == 'disetujui') bg-blue-100 text-blue-800
+                                @elseif($seminar->status == 'ditolak') bg-red-100 text-red-800
+                                @elseif($seminar->status == 'belum_lengkap') bg-orange-100 text-orange-800
+                                @elseif($seminar->status == 'selesai') bg-green-100 text-green-800
+                                @endif">
+                                {{ $seminar->status == 'belum_lengkap' ? 'Belum Lengkap' : ucfirst($seminar->status) }}
+                            </span>
+                            @if($seminar->no_surat)
+                                <span class="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-mono font-bold rounded-full">
+                                    #{{ $seminar->no_surat }}
+                                </span>
+                            @endif
+                        </div>
+
+                        <h2 class="text-xl md:text-2xl font-semibold text-gray-800 leading-tight mb-4">
+                            {!! $seminar->judul !!}
+                        </h2>
+
+                        <div class="flex items-center gap-4 pt-4 border-t border-gray-100">
+                            <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                <i class="fas fa-user-graduate text-xl"></i>
                             </div>
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </a>
-                    @endforeach
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mahasiswa</p>
+                                <p class="text-sm font-bold text-gray-800">{{ $seminar->mahasiswa->nama ?? 'N/A' }}</p>
+                                <p class="text-xs text-gray-500 font-mono">{{ $seminar->mahasiswa->npm ?? 'N/A' }}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        @endif
 
-        <div class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">No. Surat</h3>
-                    <p class="mt-1 text-gray-900">{{ $seminar->no_surat }}</p>
-                </div>
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">Status</h3>
-                    <p class="mt-1 text-gray-900">
-                        <span class="inline-flex font-semibold rounded-full
-                            @if($seminar->status == 'belum_lengkap') text-[10px] px-2 py-0.5
-                            @else text-xs px-2 leading-5
-                            @endif
-                            @if($seminar->status == 'diajukan') bg-yellow-100 text-yellow-800
-                            @elseif($seminar->status == 'disetujui') bg-blue-100 text-blue-800
-                            @elseif($seminar->status == 'ditolak') bg-red-100 text-red-800
-                            @elseif($seminar->status == 'belum_lengkap') bg-orange-100 text-orange-800
-                            @elseif($seminar->status == 'selesai') bg-green-100 text-green-800
-                            @endif">
-                            @if($seminar->status == 'belum_lengkap')
-                                Belum Lengkap
-                            @else
-                                {{ ucfirst($seminar->status) }}
-                            @endif
-                        </span>
-                    </p>
-                </div>
-            </div>
+                <!-- Evaluators Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- P1 -->
+                    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">P1</span>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembimbing 1</span>
+                        </div>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p1Dosen->nama ?? 'N/A' }}</p>
+                    </div>
 
-            <div>
-                <h3 class="text-lg font-medium text-gray-500">Judul</h3>
-                <div class="mt-1 text-gray-900 whitespace-pre-wrap">{!! $seminar->judul !!}</div>
-            </div>
+                    <!-- P2 -->
+                    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-green-200 transition-all">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">P2</span>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembimbing 2</span>
+                        </div>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p2Dosen->nama ?? 'N/A' }}</p>
+                    </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">Tanggal</h3>
-                    <p class="mt-1 text-gray-900">{{ $seminar->tanggal ? $seminar->tanggal->translatedFormat('d F Y') : 'N/A' }}</p>
+                    <!-- PMB -->
+                    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-purple-200 transition-all">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">PMB</span>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembahas</span>
+                        </div>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->pembahasDosen->nama ?? 'N/A' }}</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">Waktu</h3>
-                    <p class="mt-1 text-gray-900">{{ $seminar->waktu_mulai }} - {{ $seminar->waktu_selesai }}</p>
-                </div>
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">Lokasi</h3>
-                    <p class="mt-1 text-gray-900">{{ $seminar->lokasi }}</p>
-                </div>
-            </div>
 
-            <div>
-                <h3 class="text-lg font-medium text-gray-500">Jenis Seminar</h3>
-                <p class="mt-1 text-gray-900">{{ $seminar->seminarJenis->nama ?? 'N/A' }}</p>
-            </div>
-
-            <div>
-                <h3 class="text-lg font-medium text-gray-500">Mahasiswa</h3>
-                <p class="mt-1 text-gray-900">{{ $seminar->mahasiswa->nama ?? 'N/A' }} ({{ $seminar->mahasiswa->npm ?? 'N/A' }})</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">Pembimbing 1</h3>
-                    <p class="mt-1 text-gray-900">{{ $seminar->p1Dosen->nama ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">Pembimbing 2</h3>
-                    <p class="mt-1 text-gray-900">{{ $seminar->p2Dosen->nama ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">Pembahas</h3>
-                    <p class="mt-1 text-gray-900">{{ $seminar->pembahasDosen->nama ?? 'N/A' }}</p>
-                </div>
-            </div>
-
-            @if($seminar->berkas_syarat && is_array($seminar->berkas_syarat) && count($seminar->berkas_syarat) > 0)
-                <div>
-                    <h3 class="text-lg font-medium text-gray-500">Berkas Syarat</h3>
-                    <div class="mt-2">
+                <!-- Requirements Files -->
+                @if($seminar->berkas_syarat && is_array($seminar->berkas_syarat) && count($seminar->berkas_syarat) > 0)
+                <div class="bg-white rounded-3xl border border-gray-200 p-6 overflow-hidden">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fas fa-paperclip text-blue-500"></i> Berkas Persyaratan
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         @foreach($seminar->berkas_syarat as $key => $path)
                             @if(is_string($path) && $path !== '')
-                                <div class="flex items-center py-1">
-                                    <i class="fas fa-file-pdf text-red-500 mr-2"></i>
-                                    <a href="#" onclick="openPdf('{{ $path }}')" class="text-blue-600 hover:underline hover:text-blue-800">
-                                        {{ is_string($key) ? ($key . ': ') : '' }}{{ $path }}
+                                <div class="group flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-transparent hover:border-blue-200 hover:bg-white transition-all">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </div>
+                                        <div class="truncate">
+                                            <p class="text-xs font-bold text-gray-700 truncate capitalize">{{ str_replace('_', ' ', is_string($key) ? $key : basename($path)) }}</p>
+                                            <p class="text-[10px] text-gray-400 font-mono">{{ strtoupper(pathinfo($path, PATHINFO_EXTENSION)) }} • PDF</p>
+                                        </div>
+                                    </div>
+                                    <a href="#" onclick="openPdf('{{ $path }}')" class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-blue-500 hover:text-white transition-all">
+                                        <i class="fas fa-external-link-alt text-[10px]"></i>
                                     </a>
                                 </div>
                             @endif
                         @endforeach
                     </div>
                 </div>
-            @endif
+                @endif
+            </div>
 
+            <!-- Right Column: Schedule & Metadata -->
+            <div class="space-y-6">
+                <!-- Schedule Card -->
+                <div class="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm overflow-hidden border-t-4 border-t-blue-500">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6">Jadwal Pelaksanaan</h3>
+                    
+                    <div class="space-y-6">
+                        <!-- Date -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tanggal</p>
+                                <p class="text-sm font-bold text-gray-800">
+                                    {{ $seminar->tanggal ? $seminar->tanggal->translatedFormat('l, d F Y') : 'N/A' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Time -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Waktu</p>
+                                <p class="text-sm font-bold text-gray-800">{{ $seminar->waktu_mulai }} - {{ $seminar->waktu_selesai ?: 'Selesai' }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Lokasi</p>
+                                <p class="text-sm font-bold text-gray-800 line-clamp-2">{{ $seminar->lokasi }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if($templates->count() > 0)
+                <!-- Quick Actions Card -->
+                <div class="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm overflow-hidden">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fas fa-bolt text-yellow-500"></i> Generate Dokumen
+                    </h3>
+                    <div class="space-y-2">
+                        @foreach($templates as $template)
+                            <a href="{{ route('admin.document.preview', [$template->id, $seminar->id]) }}" 
+                               class="flex items-center justify-between bg-gray-50 border border-transparent rounded-2xl p-3 hover:bg-blue-50 hover:border-blue-200 transition-all group">
+                                <div class="min-w-0">
+                                    <div class="font-bold text-gray-800 text-xs truncate">{{ $template->nama }}</div>
+                                    <div class="text-[10px] text-gray-400 uppercase font-mono tracking-tighter">{{ $template->kode }}</div>
+                                </div>
+                                <div class="w-7 h-7 rounded-full bg-white flex items-center justify-center text-gray-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                    <i class="fas fa-chevron-right text-[10px]"></i>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="space-y-6 mt-6">
             <!-- Score Recapitulation with Terbilang -->
             @include('admin.management.seminar.score_recapitulation')
 

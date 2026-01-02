@@ -112,7 +112,7 @@
                     Cancel
                 </a>
                 <button type="submit" class="btn-pill btn-pill-primary">
-                    Update Konfigurasi
+                    Simpan Konfigurasi
                 </button>
             </div>
         </form>

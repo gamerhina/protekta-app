@@ -28,19 +28,31 @@
         <form action="{{ route('admin.dosen.import') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="space-y-6">
-                <div>
-                    <label for="file" class="block text-sm font-medium text-gray-700 mb-1">Upload File Excel</label>
-                    <input
-                        type="file"
-                        name="file"
-                        id="file"
-                        accept=".xlsx,.xls,.csv"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('file') border-red-500 @enderror"
-                        required
-                    >
-                    @error('file')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-bold text-gray-800 truncate">File Import</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                WAJIB • XLSX, XLS, CSV
+                            </p>
+                        </div>
+                        <span class="flex-shrink-0 bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-1 rounded-full">BELUM ADA</span>
+                    </div>
+                    <div class="relative group/input">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Unggah Berkas</label>
+                        <input
+                            type="file"
+                            name="file"
+                            id="file"
+                            accept=".xlsx,.xls,.csv"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all"
+                            required
+                        >
+                        <p class="text-[10px] text-gray-400 mt-2 italic px-1">Pastikan format sesuai template.</p>
+                        @error('file')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-end space-x-4 pt-6">

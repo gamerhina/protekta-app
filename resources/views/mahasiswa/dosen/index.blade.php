@@ -3,6 +3,10 @@
 @section('title', 'Daftar Dosen')
 
 @section('content')
+@php
+    $defaultSort = 'nama';
+    $defaultDirection = 'asc';
+@endphp
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -11,19 +15,6 @@
                 </div>
             </div>
 
-            @php
-                $defaultSort = 'nama';
-                $defaultDirection = 'asc';
-                
-                if (!function_exists('formatWhatsAppNumber')) {
-                    function formatWhatsAppNumber($phone) {
-                        $phone = preg_replace('/[^0-9]/', '', $phone);
-                        if (substr($phone, 0, 1) === '0') { $phone = '62' . substr($phone, 1); }
-                        elseif (substr($phone, 0, 2) !== '62') { $phone = '62' . $phone; }
-                        return $phone;
-                    }
-                }
-            @endphp
 
             <form method="GET" class="mb-6">
                 <div class="bg-white/70 backdrop-blur border border-gray-100 rounded-2xl shadow-inner p-4 md:p-5">
@@ -49,8 +40,8 @@
                             </a>
                         </div>
                     </div>
-                    <input type="hidden" name="sort" value="{{ request('sort', $defaultSort) }}">
-                    <input type="hidden" name="direction" value="{{ request('direction', $defaultDirection) }}">
+                    <input type="hidden" name="sort" value="{{ request('sort', $defaultSort ?? 'nama') }}">
+                    <input type="hidden" name="direction" value="{{ request('direction', $defaultDirection ?? 'asc') }}">
                     <input type="hidden" name="per_page" value="{{ request('per_page', $perPage ?? 10) }}">
                 </div>
             </form>
@@ -76,7 +67,7 @@
                                         <div class="flex items-center gap-3">
                                             @if($dosen->hp)
                                                 <a href="tel:{{ $dosen->hp }}" class="hover:scale-110 transition-transform" title="Telepon" style="color: #2563eb !important;"><i class="fas fa-phone fa-fw"></i></a>
-                                                <a href="https://wa.me/{{ formatWhatsAppNumber($dosen->hp) }}" target="_blank" rel="noopener" class="hover:scale-110 transition-transform" title="WhatsApp" style="color: #10b981 !important;"><i class="fa-brands fa-whatsapp fa-fw"></i></a>
+                                                <a href="#" data-wa="{{ $dosen->hp }}" class="hover:scale-110 transition-transform" title="WhatsApp" style="color: #10b981 !important;"><i class="fa-brands fa-whatsapp fa-fw"></i></a>
                                             @else
                                                 <span class="text-xs text-gray-400">-</span>
                                             @endif

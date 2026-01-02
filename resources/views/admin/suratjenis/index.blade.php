@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Manage Jenis Surat')
+@section('title', 'Kelola Jenis Surat')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h1 class="text-2xl font-semibold text-gray-800">Manage Jenis Surat</h1>
+            <h1 class="text-2xl font-semibold text-gray-800">Kelola Jenis Surat</h1>
             <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
                 <a href="{{ route('admin.suratjenis.create') }}" class="btn-gradient inline-flex items-center gap-2">
                     <i class="fas fa-plus"></i> Buat Jenis Surat
@@ -29,11 +29,15 @@
                         <tr>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ $item->nama }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ $item->kode }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 @if($item->template_id)
-                                    <span class="text-green-700">Tersedia</span>
+                                    <span class="inline-flex text-xs px-3 py-1 font-semibold rounded-full bg-emerald-50 text-emerald-700">
+                                        Tersedia
+                                    </span>
                                 @else
-                                    <span class="text-gray-400">Belum</span>
+                                    <span class="inline-flex text-xs px-3 py-1 font-semibold rounded-full bg-gray-100 text-gray-600">
+                                        Belum
+                                    </span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-sm whitespace-nowrap">

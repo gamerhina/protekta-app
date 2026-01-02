@@ -80,7 +80,7 @@ class ManagementController extends Controller
             'email' => 'required|email|unique:dosen,email',
             'wa' => 'nullable|string|max:255',
             'hp' => 'nullable|string|max:255',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:800',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
@@ -163,7 +163,7 @@ class ManagementController extends Controller
             'email' => 'required|email|unique:mahasiswa,email',
             'wa' => 'nullable|string|max:255',
             'hp' => 'nullable|string|max:255',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:800',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
@@ -249,7 +249,7 @@ class ManagementController extends Controller
             'email' => 'required|email|unique:admins,email',
             'wa' => 'nullable|string|max:255',
             'hp' => 'nullable|string|max:255',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:800',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
@@ -294,7 +294,7 @@ class ManagementController extends Controller
             'email' => 'required|email|unique:dosen,email,' . $dosen->id,
             'wa' => 'nullable|string|max:255',
             'hp' => 'nullable|string|max:255',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:800',
             'password' => 'nullable|string|min:6',
         ]);
 
@@ -365,7 +365,7 @@ class ManagementController extends Controller
             'email' => 'required|email|unique:mahasiswa,email,' . $mahasiswa->id,
             'wa' => 'nullable|string|max:255',
             'hp' => 'nullable|string|max:255',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:800',
             'password' => 'nullable|string|min:6',
         ]);
 
@@ -436,7 +436,7 @@ class ManagementController extends Controller
             'email' => 'required|email|unique:admins,email,' . $admin->id,
             'wa' => 'nullable|string|max:255',
             'hp' => 'nullable|string|max:255',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:800',
         ]);
 
         $data = [
@@ -1346,6 +1346,10 @@ class ManagementController extends Controller
         // Load required relationships
         $seminar->load(['mahasiswa', 'p1Dosen', 'p2Dosen', 'pembahasDosen', 'nilai', 'seminarJenis']);
 
+        if ($seminar->status === 'diajukan') {
+            return redirect()->back()->with('error', 'Email tidak dapat dikirim sebelum pendaftaran seminar disetujui.');
+        }
+
         $sentEmails = [];
         $sentCount = 0;
 
@@ -1418,6 +1422,10 @@ class ManagementController extends Controller
     public function sendAllEmails(Request $request, Seminar $seminar)
     {
         $seminar->load(['mahasiswa', 'p1Dosen', 'p2Dosen', 'pembahasDosen', 'nilai', 'seminarJenis']);
+
+        if ($seminar->status === 'diajukan') {
+            return redirect()->back()->with('error', 'Email tidak dapat dikirim sebelum pendaftaran seminar disetujui.');
+        }
 
         $recipients = ['mahasiswa', 'p1', 'p2', 'pembahas'];
         $emailTypes = ['invitation', 'grade', 'borang'];

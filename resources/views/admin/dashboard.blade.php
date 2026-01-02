@@ -82,7 +82,7 @@
                     @if($stat['trend'])
                         <div class="text-sm {{ $trendPercent >= 0 ? 'text-green-600' : 'text-red-600' }} font-semibold">{{ $stat['trend'] }} dibanding pekan lalu</div>
                     @else
-                        <div class="text-sm text-gray-400 font-semibold italic text-xs">Update berkala</div>
+                        <div class="text-sm text-gray-400 font-semibold italic text-xs">Simpan berkala</div>
                     @endif
                 </div>
             </div>
@@ -101,9 +101,9 @@
             <div class="grid gap-4 md:grid-cols-3">
                 @php
                     $shortcuts = [
-                        ['label' => 'Manage Dosen', 'icon' => 'fa-chalkboard-teacher', 'color' => 'from-blue-500 to-indigo-500', 'route' => route('admin.dosen.index')],
-                        ['label' => 'Manage Mahasiswa', 'icon' => 'fa-user-graduate', 'color' => 'from-emerald-500 to-teal-500', 'route' => route('admin.mahasiswa.index')],
-                        ['label' => 'Manage Seminar', 'icon' => 'fa-calendar-alt', 'color' => 'from-purple-500 to-pink-500', 'route' => route('admin.seminar.index')],
+                        ['label' => 'Kelola Dosen', 'icon' => 'fa-chalkboard-teacher', 'color' => 'from-blue-500 to-indigo-500', 'route' => route('admin.dosen.index')],
+                        ['label' => 'Kelola Mahasiswa', 'icon' => 'fa-user-graduate', 'color' => 'from-emerald-500 to-teal-500', 'route' => route('admin.mahasiswa.index')],
+                        ['label' => 'Kelola Seminar', 'icon' => 'fa-calendar-alt', 'color' => 'from-purple-500 to-pink-500', 'route' => route('admin.seminar.index')],
                         ['label' => 'Jenis Seminar', 'icon' => 'fa-layer-group', 'color' => 'from-orange-500 to-amber-500', 'route' => route('admin.seminarjenis.index')],
                         ['label' => 'Template Dokumen', 'icon' => 'fa-file-alt', 'color' => 'from-sky-500 to-blue-500', 'route' => route('admin.document.templates')],
                         ['label' => 'Folder GDrive', 'icon' => 'fa-folder-open', 'color' => 'from-rose-500 to-red-500', 'route' => route('admin.gdrive.index')],
@@ -185,21 +185,18 @@
     </div>
 </div>
 
-<script>
-    (function() {
-        function initActivityChart() {
+
+    {{-- Scripts moved inside content section to ensure AJAX compatibility --}}
+    <script>
+        window.Protekta.registerInit(() => {
             const canvas = document.getElementById('activitySparkline');
             if (!canvas) return;
-
-            // Prevent double-init
             if (canvas.getAttribute('data-chart-initialized') === 'true') return;
 
             const labels = {!! json_encode($labels) !!};
             const data = {!! json_encode($weeklyActivity) !!};
 
-            if (window.activityChart instanceof Chart) {
-                window.activityChart.destroy();
-            }
+            if (window.activityChart instanceof Chart) window.activityChart.destroy();
 
             window.activityChart = new Chart(canvas, {
                 type: 'line',
@@ -221,26 +218,12 @@
                     maintainAspectRatio: false,
                     plugins: { 
                         legend: { display: false },
-                        tooltip: { 
-                            enabled: true,
-                            bodyFont: { family: 'Instrument Sans, sans-serif' }
-                        }
+                        tooltip: { enabled: true }
                     },
-                    scales: { x: { display: false }, y: { display: false } },
-                    elements: { line: { borderCapStyle: 'round' } }
+                    scales: { x: { display: false }, y: { display: false } }
                 }
             });
-            
             canvas.setAttribute('data-chart-initialized', 'true');
-        }
-
-        // Standardized Init Pattern
-        if (document.readyState !== 'loading') {
-            initActivityChart();
-        } else {
-            document.addEventListener('DOMContentLoaded', initActivityChart);
-        }
-        window.addEventListener('page-loaded', initActivityChart);
-    })();
-</script>
+        });
+    </script>
 @endsection

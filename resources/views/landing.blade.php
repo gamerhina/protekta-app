@@ -168,7 +168,7 @@
             background-size: cover;
             background-position: center;
             position: relative;
-            overflow: hidden;
+            /* Keep overflow visible so button shadows/tooltips can pop out */
             border-radius: 40px;
             box-shadow: 0 35px 90px rgba(15, 23, 42, 0.35);
             min-height: var(--header-height);
@@ -176,6 +176,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 10;
+        }
+
+        .hero-slides, .hero-overlay {
+            border-radius: inherit; /* Follow parent's rounded corners */
+            overflow: hidden;       /* Clip the image/gradient to the border radius */
         }
 
         .hero-slides {
@@ -770,7 +776,7 @@
                 </section>
 
                 <section id="schedule" class="fade-section">
-                    <div class="schedule-card space-y-8 p-8">
+                    <div class="schedule-card space-y-6 p-6">
                         <div class="flex flex-col items-center gap-4 text-center">
                             <h3 class="text-3xl font-semibold text-slate-900">
                                 {{ optional($settings)->schedule_heading ?? 'Jadwal Seminar Hari Ini & Mendatang' }}
@@ -809,43 +815,43 @@
                                 <table class="schedule-table divide-y divide-gray-200 text-left text-sm">
                                     <thead>
                                         <tr>
-                                            <th class="px-5 py-3">
+                                            <th class="px-4 py-2">
                                                 <button type="button" class="flex w-full items-center justify-between gap-2 text-left text-slate-600" data-sort-key="tanggal_raw" data-sort-type="date">
                                                     Tanggal
                                                     <span data-sort-icon class="text-xs text-slate-400">↕</span>
                                                 </button>
                                             </th>
-                                            <th class="px-5 py-5">
+                                            <th class="px-4 py-2">
                                                 <button type="button" class="flex w-full items-center justify-between gap-2 text-left text-slate-600" data-sort-key="waktu_raw" data-sort-type="time">
                                                     Waktu
                                                     <span data-sort-icon class="text-xs text-slate-400">↕</span>
                                                 </button>
                                             </th>
-                                            <th class="px-5 py-3 w-[320px]">
+                                            <th class="px-4 py-2 w-[320px]">
                                                 <button type="button" class="flex w-full items-center justify-between gap-2 text-left text-slate-600" data-sort-key="judul" data-sort-type="string">
                                                     Judul
                                                     <span data-sort-icon class="text-xs text-slate-400">↕</span>
                                                 </button>
                                             </th>
-                                            <th class="px-5 py-3">
+                                            <th class="px-4 py-2">
                                                 <button type="button" class="flex w-full items-center justify-between gap-2 text-left text-slate-600" data-sort-key="jenis" data-sort-type="string">
                                                     Jenis
                                                     <span data-sort-icon class="text-xs text-slate-400">↕</span>
                                                 </button>
                                             </th>
-                                            <th class="px-5 py-3">
+                                            <th class="px-4 py-2">
                                                 <button type="button" class="flex w-full items-center justify-between gap-2 text-left text-slate-600" data-sort-key="mahasiswa" data-sort-type="string">
                                                     Mahasiswa
                                                     <span data-sort-icon class="text-xs text-slate-400">↕</span>
                                                 </button>
                                             </th>
-                                            <th class="px-5 py-3">
+                                            <th class="px-4 py-2">
                                                 <button type="button" class="flex w-full items-center justify-between gap-2 text-left text-slate-600" data-sort-key="pembimbing" data-sort-type="string">
                                                     Pembimbing
                                                     <span data-sort-icon class="text-xs text-slate-400">↕</span>
                                                 </button>
                                             </th>
-                                            <th class="px-5 py-3">
+                                            <th class="px-4 py-2">
                                                 <button type="button" class="flex w-full items-center justify-between gap-2 text-left text-slate-600" data-sort-key="lokasi" data-sort-type="string">
                                                     Lokasi
                                                     <span data-sort-icon class="text-xs text-slate-400">↕</span>
@@ -856,15 +862,15 @@
                                     <tbody id="scheduleBody" class="bg-white">
                                         @forelse($schedule as $row)
                                             <tr>
-                                                <td class="px-5 py-3 text-sm font-semibold">{{ $row['tanggal'] }}</td>
-                                                <td class="px-5 py-3 text-sm">{{ $row['waktu'] }}</td>
-                                                <td class="px-5 py-3 text-sm">
+                                                <td class="px-4 py-2 text-sm font-semibold">{{ $row['tanggal'] }}</td>
+                                                <td class="px-4 py-2 text-sm">{{ $row['waktu'] }}</td>
+                                                <td class="px-4 py-2 text-sm">
                                                     <div class="text-slate-900">{!! $row['judul'] !!}</div>
                                                 </td>
-                                                <td class="px-5 py-3 text-sm">{{ $row['jenis'] }}</td>
-                                                <td class="px-5 py-3 text-sm">{{ $row['mahasiswa'] }}</td>
-                                                <td class="px-5 py-3 text-sm">{{ $row['pembimbing'] ?: '—' }}</td>
-                                                <td class="px-5 py-3 text-sm">{{ $row['lokasi'] }}</td>
+                                                <td class="px-4 py-2 text-sm">{{ $row['jenis'] }}</td>
+                                                <td class="px-4 py-2 text-sm">{{ $row['mahasiswa'] }}</td>
+                                                <td class="px-4 py-2 text-sm">{{ $row['pembimbing'] ?: '—' }}</td>
+                                                <td class="px-4 py-2 text-sm">{{ $row['lokasi'] }}</td>
                                             </tr>
                                         @empty
                                             <tr>

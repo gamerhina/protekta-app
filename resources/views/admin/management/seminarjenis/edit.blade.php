@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Jenis Seminar')
+@section('title', 'Ubah Jenis Seminar')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-semibold text-gray-800">Edit Jenis Seminar</h1>
+            <h1 class="text-2xl font-semibold text-gray-800">Ubah Jenis Seminar</h1>
             <div id="autoSaveIndicator" class="text-sm text-gray-500 hidden">
                 <span class="flex items-center">
                     <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -461,7 +461,7 @@
 <div id="editModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Aspek Penilaian</h3>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Ubah Aspek Penilaian</h3>
             <form id="editForm" method="POST">
                 @csrf
                 @method('PUT')

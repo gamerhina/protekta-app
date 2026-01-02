@@ -123,17 +123,33 @@
             } else if (field.type === 'file') {
                 const exts = Array.isArray(field.extensions) ? field.extensions : [];
                 const accept = exts.length ? exts.map(e => `.${e.trim().replace(/^\./, '')}`).join(',') : '';
-                const formatLabel = exts.length ? `Format: ${escapeHtml(exts.join(', ').toUpperCase())}` : '';
-                const sizeLabel = field.max_kb ? `Maks: ${Math.round(field.max_kb / 1024 * 10) / 10}MB` : '';
+                const formatLabel = exts.length ? `Format: ${escapeHtml(exts.join(', ').toUpperCase())}` : 'FILE';
+                const sizeLabel = field.max_kb ? `${Math.round(field.max_kb / 1024 * 10) / 10}MB` : '5MB';
                 
-                html += `<input type="file" name="form_files[${key}]" class="w-full text-sm" ${accept ? `accept="${accept}"` : ''} ${requiredAttr}>`;
-                
-                if (formatLabel || sizeLabel) {
-                    html += `<div class="text-[10px] text-gray-400 mt-1 italic flex gap-3">
-                                ${formatLabel ? `<span>${formatLabel}</span>` : ''}
-                                ${sizeLabel ? `<span>${sizeLabel}</span>` : ''}
-                            </div>`;
-                }
+                // Card style wrapper override
+                html = `<div class="${wrapperClass} group hover:border-blue-200 transition-all">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-bold text-gray-800 truncate">${label}</h3>
+                                <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                    ${field.required ? 'WAJIB' : 'OPSIONAL'} • ${escapeHtml(exts.join(', ').toUpperCase())}
+                                </p>
+                            </div>
+                            <span class="flex-shrink-0 bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-1 rounded-full">BELUM ADA</span>
+                        </div>
+                        <div class="relative group/input">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Unggah Berkas</label>
+                            <input 
+                                type="file" 
+                                name="form_files[${key}]" 
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all" 
+                                ${accept ? `accept="${accept}"` : ''} 
+                                ${requiredAttr}
+                            >
+                            <div class="text-[10px] text-gray-400 mt-2 italic flex gap-3 px-1">
+                                <span>Maks ukuran: <span class="font-bold text-gray-600">${sizeLabel}</span></span>
+                            </div>
+                        </div>`;
             } else if (field.type === 'select' || field.type === 'radio') {
                 const options = Array.isArray(field.options) ? field.options : [];
                 const optionsHtml = options.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('');

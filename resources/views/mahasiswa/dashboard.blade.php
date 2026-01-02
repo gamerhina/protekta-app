@@ -84,7 +84,7 @@
 
                 <form method="GET" class="mb-4">
                     <div class="bg-white/70 backdrop-blur border border-gray-100 rounded-2xl shadow-inner p-4 md:p-5">
-                        <div class="grid gap-4 md:grid-cols-[1fr_auto]">
+                        <div class="grid gap-4">
                             <div>
                                 <label for="search" class="text-sm font-medium text-gray-600">Cari Seminar</label>
                                 <div class="relative mt-1">
@@ -93,17 +93,9 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
                                         </svg>
                                     </span>
-                                    <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Judul, jenis, atau status"
-                                           class="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
+                                    <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Ketik untuk mencari (Judul, jenis, atau status)..."
+                                            class="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
                                 </div>
-                            </div>
-                            <div class="flex items-end gap-3">
-                                <button type="submit" class="w-full md:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition">
-                                    Cari
-                                </button>
-                                <a href="{{ route('mahasiswa.dashboard') }}" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
-                                    Reset
-                                </a>
                             </div>
                         </div>
                         <input type="hidden" name="sort" value="{{ request('sort', $defaultSort) }}">

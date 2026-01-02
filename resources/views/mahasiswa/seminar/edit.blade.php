@@ -162,21 +162,38 @@
                                 }
                                 $itemMaxMb = round(($itemMaxKb / 1024), 1);
                             @endphp
-                            <div class="mb-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $label }}{{ $required ? '' : ' (Opsional)' }}</label>
-                                <input
-                                    type="file"
-                                    name="berkas_syarat_items[{{ $key }}]"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md file-input-mobile"
-                                    accept="{{ $itemAccept }}"
-                                >
-                                <p class="text-sm text-gray-500 mt-1">Format: {{ strtoupper(implode(', ', $itemExts)) }}. Maks: {{ $itemMaxMb }}MB. (Kosongkan jika tidak ingin mengganti)</p>
+                            
+                            <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group mb-4">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-sm font-bold text-gray-800 truncate">{{ $label }}</h3>
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                            {{ $required ? 'WAJIB' : 'OPSIONAL' }} • {{ strtoupper(implode(', ', $itemExts)) }}
+                                        </p>
+                                    </div>
+                                    <span class="flex-shrink-0 bg-{{ $existingPath ? 'emerald' : 'gray' }}-100 text-{{ $existingPath ? 'emerald' : 'gray' }}-700 text-[10px] font-bold px-2 py-1 rounded-full">
+                                        {{ $existingPath ? 'FILE ADA' : 'BELUM ADA' }}
+                                    </span>
+                                </div>
+                                
+                                <div class="relative group/input">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">
+                                        {{ $existingPath ? 'Ganti Berkas' : 'Unggah Berkas' }}
+                                    </label>
+                                    <input
+                                        type="file"
+                                        name="berkas_syarat_items[{{ $key }}]"
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all"
+                                        accept="{{ $itemAccept }}"
+                                    >
+                                    <p class="text-[10px] text-gray-400 mt-2 italic px-1">Maks: {{ $itemMaxMb }}MB. (Kosongkan jika tidak ubah)</p>
+                                </div>
 
                                 @if($existingPath)
-                                    <div class="existing-file-info">
-                                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Pilihan saat ini:</p>
-                                        <div class="flex items-center text-sm font-mono text-blue-600 break-all leading-snug">
-                                            <i class="fas fa-file-pdf me-2 text-blue-400"></i>
+                                    <div class="mt-4 pt-3 border-t border-gray-50">
+                                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">File Saat Ini:</p>
+                                        <div class="flex items-center text-xs font-mono text-blue-600 break-all bg-blue-50 p-2 rounded-lg border border-blue-100">
+                                            <i class="fas fa-file-pdf me-2 text-blue-500"></i>
                                             <span>{{ basename($existingPath) }}</span>
                                         </div>
                                     </div>

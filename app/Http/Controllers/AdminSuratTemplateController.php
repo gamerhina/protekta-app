@@ -210,7 +210,9 @@ class AdminSuratTemplateController extends Controller
     {
         $out = $tpl;
         foreach ($fields as $key => $val) {
-            $out = str_replace(['{{' . $key . '}}', '${' . $key . '}'], (string) $val, $out);
+            // Match {{ key }}, {{key}}, ${ key }, ${key}
+            $pattern = '/(\{\{\s*' . preg_quote($key, '/') . '\s*\}\})|(\$\{\s*' . preg_quote($key, '/') . '\s*\})/';
+            $out = preg_replace($pattern, (string) $val, $out);
         }
         return $out;
     }

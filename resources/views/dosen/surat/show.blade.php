@@ -252,10 +252,33 @@
 
             if (field.type === 'file') {
                 return `
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
-                        ${value ? `<div class="mb-2 text-xs text-blue-600 font-medium whitespace-nowrap overflow-hidden text-ellipsis"><i class="fas fa-paperclip mr-1"></i> <a href="/storage/${value}" target="_blank" class="underline">Lihat File Saat Ini</a></div>` : ''}
-                        <input type="file" name="form_files[${key}]" class="text-xs">
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 group hover:border-blue-200 transition-all">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-bold text-gray-800 truncate">${label}</h3>
+                                <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">OPSIONAL • UPDATE FILE</p>
+                            </div>
+                            <span class="flex-shrink-0 bg-${value ? 'emerald' : 'gray'}-100 text-${value ? 'emerald' : 'gray'}-700 text-[10px] font-bold px-2 py-1 rounded-full">
+                                ${value ? 'FILE ADA' : 'BELUM ADA'}
+                            </span>
+                        </div>
+                        
+                        <div class="relative group/input">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">
+                                ${value ? 'Ganti File' : 'Upload File'}
+                            </label>
+                            <input type="file" name="form_files[${key}]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all">
+                        </div>
+
+                        ${value ? `
+                            <div class="mt-4 pt-3 border-t border-gray-100">
+                                <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">File Saat Ini:</p>
+                                <a href="/storage/${value}" target="_blank" class="flex items-center text-xs font-mono text-blue-600 break-all bg-white p-2 rounded-lg border border-gray-200 hover:bg-blue-50 transition-colors">
+                                    <i class="fas fa-file-download mr-2 text-blue-500"></i>
+                                    <span>Lihat File</span>
+                                </a>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }

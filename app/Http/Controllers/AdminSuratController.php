@@ -55,13 +55,11 @@ class AdminSuratController extends Controller
                 $q->where('surats.no_surat', 'like', $s)
                     ->orWhere('surats.tujuan', 'like', $s)
                     ->orWhere('surats.perihal', 'like', $s)
+                    ->orWhere('surats.status', 'like', $s)
                     ->orWhere('m.nama', 'like', $s)
-                    ->orWhere('d.nama', 'like', $s);
+                    ->orWhere('d.nama', 'like', $s)
+                    ->orWhere('surat_jenis.nama', 'like', $s);
             });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('surats.status', $request->input('status'));
         }
 
         $query->orderBy($sortFields[$sort], $direction);

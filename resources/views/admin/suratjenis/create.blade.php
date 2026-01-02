@@ -83,7 +83,6 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     const fieldTypes = [
         { value: 'pemohon', label: 'Pemohon (Pilih Mahasiswa/Dosen)' },
@@ -267,11 +266,7 @@
         ensureEmptyRow();
     }
 
-    // Initialize on both DOMContentLoaded (initial load) and page-loaded (AJAX)
-    document.addEventListener('DOMContentLoaded', initFormFieldsBuilder);
-    window.addEventListener('page-loaded', initFormFieldsBuilder);
-    
-    // Also try immediately in case the script is injected via AJAX and dependencies are already ready
-    initFormFieldsBuilder();
+    // Initialize via Protekta to ensure dependencies (Sortable) are ready
+    window.Protekta.registerInit(initFormFieldsBuilder);
 </script>
 @endsection

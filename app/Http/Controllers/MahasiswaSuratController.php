@@ -16,16 +16,29 @@ use Illuminate\Support\Str;
 
 class MahasiswaSuratController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $mahasiswa = Auth::guard('mahasiswa')->user();
+        $search = $request->query('search');
+
         $items = Surat::with(['jenis'])
             ->where(function ($q) use ($mahasiswa) {
                 $q->where('pemohon_mahasiswa_id', $mahasiswa->id)
                   ->orWhere('mahasiswa_id', $mahasiswa->id);
             })
+            ->when($search, function($query, $search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('no_surat', 'like', "%$search%")
+                      ->orWhere('perihal', 'like', "%$search%")
+                      ->orWhere('tujuan', 'like', "%$search%")
+                      ->orWhereHas('jenis', function($q) use ($search) {
+                          $q->where('nama', 'like', "%$search%");
+                      });
+                });
+            })
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return view('mahasiswa.surat.index', compact('items'));
     }

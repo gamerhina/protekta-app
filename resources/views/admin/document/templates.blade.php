@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Document Templates')
+@section('title', 'Template Dokumen')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-            <h1 class="text-2xl font-semibold text-gray-800">Document Templates</h1>
+            <h1 class="text-2xl font-semibold text-gray-800">Template Dokumen</h1>
             <a href="{{ route('admin.document.create') }}" class="btn-gradient inline-flex items-center gap-2 justify-center sm:justify-start">
                 <i class="fas fa-plus"></i> Tambah Template
             </a>
@@ -39,7 +39,7 @@
                             Cari
                         </button>
                         <a href="{{ route('admin.document.templates') }}" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
-                            Reset
+                            Atur Ulang
                         </a>
                     </div>
                 </div>
@@ -102,10 +102,10 @@
 
                             @if($availableTagCount > 0)
                                 <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                    {{ $availableTagCount }} tags
+                                    {{ $availableTagCount }} tag
                                 </span>
                                 <span class="{{ $mappingBadgeClass }} px-2 py-1 rounded ml-1">
-                                    {{ $mappedTagCount }} mapped
+                                    {{ $mappedTagCount }} terpetakan
                                 </span>
                             @else
                                 <span class="text-gray-400">-</span>
@@ -121,19 +121,19 @@
                             <div class="flex flex-wrap gap-3">
                                 <a href="{{ route('admin.document.edit', $template->id) }}"
                                    class="text-blue-600 hover:text-blue-900 font-semibold"
-                                   title="Edit & Mapping">
+                                   title="Ubah & Pemetaan">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <a href="{{ asset('storage/' . str_replace('public/', '', $template->file_path)) }}"
                                    class="text-green-600 hover:text-green-900 font-semibold"
                                    download
-                                   title="Download Template">
+                                   title="Unduh Template">
                                    <i class="fas fa-download"></i>
                                 </a>
                                 @if($template->tag_mappings && count($template->tag_mappings) > 0)
                                     <button onclick="showPreviewModal({{ $template->id }})"
                                             class="text-purple-600 hover:text-purple-900 font-semibold"
-                                            title="Test Preview">
+                                            title="Pratinjau">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 @endif
@@ -176,11 +176,11 @@
     </div>
 </div>
 
-<!-- Preview Modal -->
+<!-- Pratinjau Modal -->
 <div id="previewModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Test Preview - Pilih Seminar</h3>
+            <h3 class="text-lg font-semibold text-gray-900">Pratinjau - Pilih Seminar</h3>
             <button onclick="closePreviewModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -189,7 +189,7 @@
         </div>
         
         <div id="seminarList" class="max-h-96 overflow-y-auto">
-            <p class="text-center text-gray-500">Loading...</p>
+            <p class="text-center text-gray-500">Memuat...</p>
         </div>
     </div>
 </div>

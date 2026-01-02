@@ -114,7 +114,7 @@
                 <div>
                     <label for="file" class="block text-sm font-medium text-gray-700 mb-1">File Template (.docx)</label>
                     
-                    <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-3 text-sm">
+                    <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-3 text-sm hidden">
                         <p class="text-blue-900 mb-2">
                             💡 <strong>Tip:</strong> Untuk template baru, buat file HTML/Blade di <code class="bg-blue-100 px-1 rounded text-xs">resources/views/documents/</code>
                         </p>
@@ -124,17 +124,31 @@
                         </p>
                     </div>
                     
-                    <input 
-                        type="file" 
-                        name="file" 
-                        id="file" 
-                        accept=".docx" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('file') border-red-500 @enderror" 
-                        required
-                    >
-                    <p class="text-sm text-gray-500 mt-1">Upload file template dalam format .docx (maks. 10MB)</p>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 group hover:border-blue-200 transition-all">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-bold text-gray-800 truncate">Template Dokumen</h3>
+                                <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                    WAJIB • FORMAT .DOCX
+                                </p>
+                            </div>
+                            <span class="flex-shrink-0 bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full">BARU</span>
+                        </div>
+                        <div class="relative group/input">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Unggah File .DOCX</label>
+                            <input 
+                                type="file" 
+                                name="file" 
+                                id="file" 
+                                accept=".docx" 
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all" 
+                                required
+                            >
+                            <p class="text-[10px] text-gray-400 mt-2 italic px-1">Unggah file template dalam format .docx (maks. 10MB)</p>
+                        </div>
+                    </div>
                     @error('file')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        <p class="text-red-500 text-xs mt-2 font-semibold">{{ $message }}</p>
                     @enderror
                 </div>
                 

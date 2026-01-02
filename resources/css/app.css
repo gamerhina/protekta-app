@@ -1,3 +1,4 @@
+@import '@fortawesome/fontawesome-free/css/all.min.css';
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 
@@ -25,23 +26,27 @@
 
     /* 
        Optimized Reset: 
-       Avoid forcing 'solid' on everything to prevent unwanted borders on badges/inputs.
+       Avoid forcing 'solid' on everything to prevent unwanted borders.
     */
     *, ::after, ::before {
         border-color: #e5e7eb;
         border-width: 0;
     }
-
-    a, button, .btn {
-        text-decoration: none !important;
-    }
     
-    button, .btn {
-        border-radius: inherit;
-    }
-
     body {
         @apply bg-gray-50 text-gray-900;
+    }
+
+    html {
+        font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        line-height: 1.5;
+    }
+    
+    /* Ensure standard button behavior */
+    button, .btn {
+        border-radius: inherit;
+        line-height: 1.5;
+        overflow: visible;
     }
 }
 
@@ -71,8 +76,28 @@
 }
 
 /* 
-  SPECIFIC FIXES
+  SPECIFIC FIXES (Tailwind/Plugin related only)
 */
+
+/* Restore native calendar/clock icons that are hidden by Tailwind Forms reset */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+    display: block !important;
+    cursor: pointer;
+    background-color: transparent;
+    filter: invert(0.6) brightness(0.8);
+    opacity: 1;
+    padding: 2px;
+    width: 20px;
+    height: 20px;
+}
+
+/* Ensure FontAwesome icons have a base display */
+i[class*="fa-"] {
+    display: inline-block;
+    line-height: 1;
+    vertical-align: middle;
+}
 
 /* Remove unwanted border on notification badges */
 .badge {
@@ -93,4 +118,73 @@ th.bg-gray-50 {
 }
 .mary-table-pagination button {
     @apply cursor-pointer
+}
+
+/* ===================================
+   ACTION ICONS HOVER STANDARDIZATION
+   =================================== */
+
+/* Base styling for all action icon links */
+a[title*="Lihat"] i.fa-eye,
+a[title*="Edit"] i.fa-edit,
+a[title*="Hapus"] i.fa-trash,
+a[title*="Download"] i.fa-download,
+button i.fa-trash,
+button i.fa-eye,
+button i.fa-edit,
+button i.fa-download,
+button i.fa-paper-plane {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Hover effects for action icons */
+a[title*="Lihat"]:hover i.fa-eye,
+a:hover i.fa-eye {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+
+a[title*="Edit"]:hover i.fa-edit,
+a:hover i.fa-edit {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+
+a[title*="Hapus"]:hover i.fa-trash,
+button:hover i.fa-trash,
+button:hover i.fa-trash-alt {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+
+a[title*="Download"]:hover i.fa-download,
+a:hover i.fa-download {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+
+button:hover i.fa-paper-plane {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+
+/* Specific hover for icon-only action buttons in tables */
+td a:hover i[class*="fa-"],
+.action-icons a:hover i[class*="fa-"] {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+
+/* Ensure smooth transition for all FontAwesome icons in links/buttons */
+a i[class*="fa-"],
+button i[class*="fa-"] {
+    transition: transform 0.2s ease-in-out, filter 0.2s ease-in-out;
+    display: inline-block;
+}
+
+/* Additional hover for links with hover:text-* classes (document templates, etc) */
+a[class*="hover:text-"]:hover i[class*="fa-"],
+button[class*="hover:text-"]:hover i[class*="fa-"] {
+    transform: scale(1.15);
+    filter: brightness(1.2);
 }

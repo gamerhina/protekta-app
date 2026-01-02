@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Preview & Send Document')
+@section('title', 'Pratinjau & Kirim Dokumen')
 
 @section('content')
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -58,7 +58,7 @@
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm flex flex-col justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-800 mb-2">Download DOCX</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-2">Unduh DOCX</h2>
                     <p class="text-sm text-gray-600 mb-4">Unduh hasil template untuk diperiksa atau dibagikan manual.</p>
                 </div>
                 <div>
@@ -71,7 +71,7 @@
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v8m0-8l-3 3m3-3l3 3M5 8h14l-1.405-4.215A1 1 0 0016.638 3H7.362a1 1 0 00-.957.785L5 8z"></path>
                         </svg>
-                        Download DOCX
+                        Unduh DOCX
                     </a>
                 </div>
             </div>
@@ -80,16 +80,16 @@
         <div class="mt-6 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-800">DOCX Perubahan</h2>
-                    <p class="text-sm text-gray-600">Edit tag di bawah, lalu generate. Hasilnya dapat diunduh sebagai DOCX.</p>
+                    <h2 class="text-lg font-semibold text-gray-800">Pratinjau DOCX</h2>
+                    <p class="text-sm text-gray-600">Ubah tag di bawah, lalu generate. Hasilnya dapat diunduh sebagai DOCX.</p>
                 </div>
                 <button type="button" onclick="generateDocxPreview()" id="preview_button" class="btn-pill btn-pill-info">
-                    Generate DOCX Perubahan
+                    Buat Pratinjau DOCX
                 </button>
             </div>
 
             <details class="mt-4">
-                <summary class="cursor-pointer text-sm font-semibold text-gray-700">Edit isi (tag) lalu regenerate</summary>
+                <summary class="cursor-pointer text-sm font-semibold text-gray-700">Ubah isi (tag) lalu buat ulang</summary>
                 <div class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                     <div class="md:col-span-2 xl:col-span-3 text-xs text-gray-500">
                         Tip: gunakan kolom HTML untuk tag bertipe <span class="font-mono">html</span>. Tag gambar tidak diedit di sini.
@@ -197,21 +197,43 @@
                                 <input type="radio" name="attachment_mode" value="auto" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" {{ $selectedAttachmentMode === 'auto' ? 'checked' : '' }}>
                                 <span>Gunakan file DOCX hasil template</span>
                             </label>
-                            
+
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="radio" name="attachment_mode" value="custom" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" {{ $selectedAttachmentMode === 'custom' ? 'checked' : '' }}>
                                 <span>Unggah file sendiri</span>
                             </label>
-                        </div>@error('attachment_mode')
+                        </div>
+                        
+                        @error('attachment_mode')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+
+                        <div id="custom_attachment_group" class="mt-4 {{ $selectedAttachmentMode === 'custom' ? '' : 'hidden' }}">
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 group hover:border-blue-200 transition-all">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-sm font-bold text-gray-800 truncate">File Kustom</h3>
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                            WAJIB • DOCX/PDF
+                                        </p>
+                                    </div>
+                                    <span class="flex-shrink-0 bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full">BARU</span>
+                                </div>
+                                <div class="relative group/input">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Unggah Dokumen</label>
+                                    <input 
+                                        type="file" 
+                                        name="custom_attachment" 
+                                        id="custom_attachment" 
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all" 
+                                        {{ $selectedAttachmentMode === 'custom' ? 'required' : '' }}
+                                    >
+                                    <p class="text-[10px] text-gray-400 mt-2 italic px-1">Maksimum 15MB. Format umum seperti .docx, .pdf, .zip diperbolehkan.</p>
+                                </div>
+                            </div>
+                            @error('custom_attachment')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
-                            <div id="custom_attachment_group" class="mt-2 {{ $selectedAttachmentMode === 'custom' ? '' : 'hidden' }}">
-                                <input type="file" name="custom_attachment" id="custom_attachment" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all shadow-sm" {{ $selectedAttachmentMode === 'custom' ? 'required' : '' }}>
-                                <p class="text-xs text-gray-500 mt-1">Maksimum 15MB. Format umum seperti .docx, .pdf, .zip diperbolehkan.</p>
-                                @error('custom_attachment')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
                         </div>
                     </div>
 

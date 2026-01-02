@@ -7,58 +7,122 @@
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <h1 class="text-2xl font-semibold text-gray-800 mb-6">Input Nilai Seminar</h1>
 
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Detail Seminar</h2>
-            <div class="space-y-3 mb-6 bg-gray-50 p-4 rounded-md border border-gray-200">
-                <p><strong>Mahasiswa:</strong> {{ $seminar->mahasiswa->nama ?? 'N/A' }} ({{ $seminar->mahasiswa->npm ?? 'N/A' }})</p>
-                <div>
-                    <p><strong>Judul:</strong></p>
-                    <div class="mt-1 text-gray-800">
-                        {!! $seminar->judul !!}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Left Column: Core Details (Col-span 2) -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Main Header Card -->
+                <div class="bg-gradient-to-br from-white to-gray-50 rounded-3xl border border-gray-200 p-6 shadow-sm overflow-hidden relative">
+                    <div class="absolute top-0 right-0 p-8 opacity-5">
+                        <i class="fas fa-file-signature text-8xl"></i>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="flex flex-wrap items-center gap-2 mb-4">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                                {{ $seminar->seminarJenis->nama ?? 'N/A' }}
+                            </span>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                                Peran: 
+                                @if($evaluatorType == 'p1') Pembimbing 1
+                                @elseif($evaluatorType == 'p2') Pembimbing 2
+                                @else Pembahas
+                                @endif
+                            </span>
+                        </div>
+
+                        <h2 class="text-xl md:text-2xl font-semibold text-gray-800 leading-tight mb-4">
+                            {!! $seminar->judul !!}
+                        </h2>
+
+                        <div class="flex items-center gap-4 pt-4 border-t border-gray-100">
+                            <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                <i class="fas fa-user-graduate text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mahasiswa</p>
+                                <p class="text-sm font-bold text-gray-800">{{ $seminar->mahasiswa->nama ?? 'N/A' }}</p>
+                                <p class="text-xs text-gray-500 font-mono">{{ $seminar->mahasiswa->npm ?? 'N/A' }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <p><strong>Jenis:</strong> {{ $seminar->seminarJenis->nama ?? 'N/A' }}</p>
 
-                <p><strong>Tanggal:</strong> {{ $seminar->tanggal->translatedFormat('d F Y') }}</p>
-                <p><strong>Lokasi:</strong> {{ $seminar->lokasi }}</p>
-                <p><strong>Peran Tim Penguji:</strong>
-                    @if($evaluatorType == 'p1') Pembimbing 1
-                    @elseif($evaluatorType == 'p2') Pembimbing 2
-                    @else Pembahas
+                <!-- Requirements Files Card -->
+                <div class="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm overflow-hidden">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fas fa-paperclip text-blue-500"></i> Berkas Persyaratan
+                    </h3>
+                    @php
+                        $berkas = is_array($seminar->berkas_syarat) ? $seminar->berkas_syarat : [];
+                        $syaratItems = is_array($seminar->seminarJenis?->berkas_syarat_items) ? $seminar->seminarJenis->berkas_syarat_items : [];
+                    @endphp
+
+                    @if(!empty($berkas))
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            @foreach($syaratItems as $item)
+                                @php
+                                    $key = $item['key'] ?? null;
+                                    $label = $item['label'] ?? $key;
+                                    $filePath = $berkas[$key] ?? null;
+                                @endphp
+                                @if($filePath)
+                                    <div class="group flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-transparent hover:border-blue-200 hover:bg-white transition-all">
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </div>
+                                            <div class="truncate">
+                                                <p class="text-xs font-bold text-gray-700 truncate capitalize">{{ $label }}</p>
+                                                <p class="text-[10px] text-gray-400 font-mono">{{ strtoupper(pathinfo($filePath, PATHINFO_EXTENSION)) }} • DRAF</p>
+                                            </div>
+                                        </div>
+                                        <a href="{{ asset('uploads/' . $filePath) }}" target="_blank" class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-blue-500 hover:text-white transition-all">
+                                            <i class="fas fa-external-link-alt text-[10px]"></i>
+                                        </a>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="flex flex-col items-center justify-center py-8 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                            <i class="fas fa-box-open text-3xl mb-2 opacity-20"></i>
+                            <p class="text-xs italic">Tidak ada berkas yang diunggah.</p>
+                        </div>
                     @endif
-                </p>
+                </div>
             </div>
-        </div>
 
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Berkas Persyaratan</h2>
-            <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                @php
-                    $berkas = is_array($seminar->berkas_syarat) ? $seminar->berkas_syarat : [];
-                    $syaratItems = is_array($seminar->seminarJenis?->berkas_syarat_items) ? $seminar->seminarJenis->berkas_syarat_items : [];
-                @endphp
+            <!-- Right Column: Schedule Card -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm overflow-hidden border-t-4 border-t-blue-500">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6">Jadwal Seminar</h3>
+                    
+                    <div class="space-y-6">
+                        <!-- Date -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tanggal</p>
+                                <p class="text-sm font-bold text-gray-800">
+                                    {{ $seminar->tanggal ? $seminar->tanggal->translatedFormat('l, d F Y') : 'N/A' }}
+                                </p>
+                            </div>
+                        </div>
 
-                @if(!empty($berkas))
-                    <div class="space-y-2">
-                        @foreach($syaratItems as $item)
-                            @php
-                                $key = $item['key'] ?? null;
-                                $label = $item['label'] ?? $key;
-                                $filePath = $berkas[$key] ?? null;
-                            @endphp
-                            @if($filePath)
-                                <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
-                                    <span class="text-sm font-medium text-gray-700">{{ $label }}</span>
-                                    <a href="{{ asset('uploads/' . $filePath) }}" target="_blank" class="text-blue-600 hover:underline text-sm flex items-center gap-1">
-                                        <i class="fas fa-file-download"></i> Lihat Berkas
-                                    </a>
-                                </div>
-                            @endif
-                        @endforeach
+                        <!-- Location -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Lokasi</p>
+                                <p class="text-sm font-bold text-gray-800 line-clamp-2">{{ $seminar->lokasi }}</p>
+                            </div>
+                        </div>
                     </div>
-                @else
-                    <p class="text-sm text-gray-500 italic">Tidak ada berkas yang diunggah.</p>
-                @endif
+                </div>
             </div>
         </div>
 

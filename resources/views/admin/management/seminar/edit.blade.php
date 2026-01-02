@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Seminar')
+@section('title', 'Ubah Seminar')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <div class="bg-white overflow-hidden shadow-lg sm:rounded-2xl p-8 space-y-8 border border-gray-100">
         <div class="flex items-center justify-between">
-            <h1 class="text-3xl font-semibold text-gray-800">Edit Seminar</h1>
+            <h1 class="text-3xl font-semibold text-gray-800">Ubah Seminar</h1>
             <span class="text-sm text-gray-500">Perbarui informasi seminar secara lengkap</span>
         </div>
 
@@ -39,7 +39,7 @@
                 <div>
                     <label for="seminar_jenis_id" class="block text-sm font-medium text-gray-700 mb-1">Jenis Seminar</label>
                     <select name="seminar_jenis_id" id="seminar_jenis_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('seminar_jenis_id') border-red-500 @enderror" required>
-                        <option value="">Select Seminar Type</option>
+                        <option value="">Pilih Jenis Seminar</option>
                         @foreach($seminarJenis as $jenis)
                             <option value="{{ $jenis->id }}" {{ old('seminar_jenis_id', $seminar->seminar_jenis_id) == $jenis->id ? 'selected' : '' }}>
                                 {{ $jenis->nama }}
@@ -95,14 +95,16 @@
 
                 <div>
                     <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                    <input 
-                        type="date" 
-                        name="tanggal" 
-                        id="tanggal" 
-                        value="{{ old('tanggal', $seminar->tanggal->format('Y-m-d')) }}" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('tanggal') border-red-500 @enderror"
-                        required
-                    />
+                    <div class="relative">
+                        <input 
+                            type="date" 
+                            name="tanggal" 
+                            id="tanggal" 
+                            value="{{ old('tanggal', $seminar->tanggal->format('Y-m-d')) }}" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md @error('tanggal') border-red-500 @enderror"
+                            required
+                        />
+                    </div>
                     @error('tanggal')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -110,14 +112,16 @@
 
                 <div>
                     <label for="waktu_mulai" class="block text-sm font-medium text-gray-700 mb-1">Waktu Mulai</label>
-                    <input
-                        type="time"
-                        name="waktu_mulai"
-                        id="waktu_mulai"
-                        value="{{ old('waktu_mulai', $seminar->waktu_mulai ? \Carbon\Carbon::parse($seminar->waktu_mulai)->format('H:i') : '') }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md @error('waktu_mulai') border-red-500 @enderror"
-                        required
-                    />
+                    <div class="relative">
+                        <input
+                            type="time"
+                            name="waktu_mulai"
+                            id="waktu_mulai"
+                            value="{{ old('waktu_mulai', $seminar->waktu_mulai ? \Carbon\Carbon::parse($seminar->waktu_mulai)->format('H:i') : '') }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md @error('waktu_mulai') border-red-500 @enderror"
+                            required
+                        />
+                    </div>
                     @error('waktu_mulai')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -141,7 +145,7 @@
                 <div>
                     <label for="p1_dosen_id" class="block text-sm font-medium text-gray-700 mb-1">Pembimbing 1</label>
                     <select name="p1_dosen_id" id="p1_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('p1_dosen_id') border-red-500 @enderror" required>
-                        <option value="">Select Pembimbing 1</option>
+                        <option value="">Pilih Pembimbing 1</option>
                         @foreach($dosens as $dosen)
                             <option value="{{ $dosen->id }}" {{ old('p1_dosen_id', $seminar->p1_dosen_id) == $dosen->id ? 'selected' : '' }}>
                                 {{ $dosen->nama }}
@@ -654,10 +658,10 @@
 
             <div class="mt-10 flex items-center justify-between">
                 <a href="{{ route('admin.seminar.index') }}" class="btn-pill btn-pill-secondary">
-                    Cancel
+                    Batal
                 </a>
                 <button type="submit" class="btn-pill btn-pill-primary">
-                    Update Seminar
+                    Simpan Seminar
                 </button>
             </div>
         </form>

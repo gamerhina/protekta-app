@@ -37,7 +37,7 @@ class ProfileController extends Controller
             'email' => 'required|email|max:255|unique:' . $user->getTable() . ',email,' . $user->id,
             'wa' => 'nullable|string|max:20',
             'hp' => 'nullable|string|max:20',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:500',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:800',
             'current_password' => 'nullable|required_with:new_password,new_password_confirmation',
             'new_password' => 'nullable|string|min:8|confirmed',
         ]);

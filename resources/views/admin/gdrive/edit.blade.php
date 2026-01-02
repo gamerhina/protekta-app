@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Edit GDrive Folder')
+@section('title', 'Ubah GDrive Folder')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-800">Edit Google Drive Folder</h1>
+                <h1 class="text-2xl font-semibold text-gray-800">Ubah Google Drive Folder</h1>
                 <p class="text-sm text-gray-600">Ubah informasi folder Google Drive</p>
             </div>
         </div>

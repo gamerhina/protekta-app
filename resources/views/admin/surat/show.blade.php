@@ -3,7 +3,7 @@
 @section('title', 'Detail Surat')
 
 @section('content')
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div id="surat-show-container" data-id="{{ $surat->id }}" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex items-start justify-between gap-4 mb-6">
             <div>
@@ -48,7 +48,7 @@
                             <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input name="to" id="input-recipient" value="{{ $surat->penerima_email ?? $applicantEmail }}" class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white" placeholder="{{ $applicantEmail ?: 'email@penerima.com' }}" required title="Email Penerima">
                         </div>
-                        <button id="btn-show-email-preview" class="btn-pill btn-pill-primary w-full md:w-auto px-6 text-sm flex items-center justify-center gap-2" type="button">
+                        <button class="btn-pill btn-pill-primary w-full md:w-auto px-6 text-sm flex items-center justify-center gap-2" type="button" id="btn-show-email-preview">
                             <i class="fa-solid fa-paper-plane"></i> 
                             Kirim WA / Email
                         </button>
@@ -117,57 +117,81 @@
             </div>
         </form>
     </div>
-</div>
-@endsection
 
-@section('scripts')
-<script>
-    (function() {
-        const suratData = @json($surat->data ?? []);
-        const formFields = @json($surat->jenis?->form_fields ?? []);
-        const dosens = @json($dosens ?? []);
-        const mahasiswas = @json($mahasiswas ?? []);
-        const currentPemohonType = @json($surat->pemohon_type);
-        const currentPemohonId = @json($surat->pemohon_type === 'mahasiswa' ? $surat->pemohon_mahasiswa_id : $surat->pemohon_dosen_id);
+    {{-- Scripts and Modals inside content section to ensure AJAX compatibility --}}
+    <!-- Email Preview Modal -->
+    <div id="email-preview-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" aria-hidden="true" data-modal-toggle="email-preview-modal"></div>
+            <div class="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full z-10">
+                <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4 border-b pb-4">
+                        <h3 class="text-lg font-bold text-gray-900" id="modal-title">Kirim WA / Email</h3>
+                        <button type="button" class="text-gray-400 hover:text-gray-500" data-modal-toggle="email-preview-modal"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="modal-loading-state" class="py-10 text-center"><i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-3"></i><p class="text-xs text-gray-400">Menyiapkan pratinjau...</p></div>
+                    <div id="modal-editor-state" class="space-y-4 hidden text-sm">
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Penerima</label><div id="preview-recipient" class="font-semibold p-2 bg-gray-50 rounded"></div></div>
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Subjek</label><input type="text" id="preview-subject" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Isi Pesan</label><textarea id="preview-body" rows="6" class="w-full px-3 py-2 border rounded-lg"></textarea></div>
+                        <div class="pt-3 border-t"><label class="block text-[10px] font-bold text-blue-500 uppercase">Kirim WhatsApp Ke:</label>
+                            <select id="wa-recipient-select-surat" class="w-full px-3 py-2 border rounded-lg bg-blue-50 text-blue-700 font-semibold">
+                                @if($surat->pemohon_type === 'mahasiswa' && $surat->pemohonMahasiswa && $surat->pemohonMahasiswa->wa) <option value="{{ $surat->pemohonMahasiswa->wa }}">Pemohon: {{ $surat->pemohonMahasiswa->nama }}</option> @endif
+                                @if($surat->pemohon_type === 'dosen' && $surat->pemohonDosen && $surat->pemohonDosen->wa) <option value="{{ $surat->pemohonDosen->wa }}">Pemohon: {{ $surat->pemohonDosen->nama }}</option> @endif
+                                <option value="">Pilih Manual</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 flex flex-col md:flex-row-reverse gap-3 rounded-b-2xl">
+                    <button type="button" id="btn-confirm-send" class="btn-pill btn-pill-info px-8"><i class="fa-solid fa-paper-plane mr-2"></i> Kirim Email</button>
+                    <button type="button" id="btn-send-wa" class="btn-pill btn-pill-success px-8"><i class="fa-brands fa-whatsapp mr-2"></i> Kirim WA</button>
+                    <button type="button" class="btn-pill btn-pill-secondary px-8" data-modal-toggle="email-preview-modal">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        function escapeHtml(str) {
-            return String(str ?? '')
-                .replaceAll('&', '&amp;')
-                .replaceAll('<', '&lt;')
-                .replaceAll('>', '&gt;')
-                .replaceAll('"', '&quot;')
-                .replaceAll("'", '&#039;');
-        }
+    <script>
+        (function() {
+            const suratData = @json($surat->data ?? []);
+            const formFields = @json($surat->jenis?->form_fields ?? []);
+            const dosens = @json($dosens ?? []);
+            const mahasiswas = @json($mahasiswas ?? []);
+            const currentPemohonType = @json($surat->pemohon_type ?? '');
+            const currentPemohonId = @json($surat->pemohon_type === 'mahasiswa' ? $surat->pemohon_mahasiswa_id : $surat->pemohon_dosen_id);
+            const containerId = 'surat-show-container';
 
-        function renderField(field) {
-            const key = field.key;
-            const label = escapeHtml(field.label);
-            const required = field.required ? 'required' : '';
-            
-            // Get value from suratData (JSON) or from model attributes passed via json
-            let value = suratData[key] || '';
-            
-            // Mapping for standard columns if value not in JSON
-            if (value === '') {
-                if (key === 'tujuan') value = @json($surat->tujuan);
-                if (key === 'perihal') value = @json($surat->perihal);
-                if (key === 'isi') value = @json($surat->isi);
-                if (key === 'penerima_email') value = @json($surat->penerima_email);
+            function escapeHtml(str) {
+                return String(str ?? '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
             }
 
-            // Skip fields that are already in the "administrative" section 
-            // EXCEPT if they are defined as content fields in form_fields (e.g. tujuan, perihal, isi)
-            if (['no_surat', 'tanggal_surat', 'status'].includes(key)) {
-                return '';
-            }
-
-            if (field.type === 'pemohon') {
-                const sources = Array.isArray(field.pemohon_sources) && field.pemohon_sources.length ? field.pemohon_sources : ['mahasiswa','dosen'];
-                const dosenOptions = dosens.map(d => `<option value="dosen:${d.id}" ${currentPemohonType === 'dosen' && currentPemohonId == d.id ? 'selected' : ''}>${escapeHtml(d.nama)} (${escapeHtml(d.nip)})</option>`).join('');
-                const mhsOptions = mahasiswas.map(m => `<option value="mahasiswa:${m.id}" ${currentPemohonType === 'mahasiswa' && currentPemohonId == m.id ? 'selected' : ''}>${escapeHtml(m.nama)} (${escapeHtml(m.npm)})</option>`).join('');
+            function renderField(field) {
+                const key = field.key;
+                const label = escapeHtml(field.label);
+                const required = field.required ? 'required' : '';
+                let value = suratData[key] || '';
                 
-                return `
-                    <div class="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                if (value === '') {
+                    if (key === 'tujuan') value = @json($surat->tujuan);
+                    if (key === 'perihal') value = @json($surat->perihal);
+                    if (key === 'isi') value = @json($surat->isi);
+                    if (key === 'penerima_email') value = @json($surat->penerima_email);
+                }
+
+                if (['no_surat', 'tanggal_surat', 'status'].includes(key)) return '';
+
+                if (field.type === 'pemohon') {
+                    const sources = Array.isArray(field.pemohon_sources) && field.pemohon_sources.length ? field.pemohon_sources : ['mahasiswa','dosen'];
+                    const dosenOptions = (dosens || []).map(d => `<option value="dosen:${d.id}" ${currentPemohonType === 'dosen' && currentPemohonId == d.id ? 'selected' : ''}>${escapeHtml(d.nama)} (${escapeHtml(d.nip)})</option>`).join('');
+                    const mhsOptions = (mahasiswas || []).map(m => `<option value="mahasiswa:${m.id}" ${currentPemohonType === 'mahasiswa' && currentPemohonId == m.id ? 'selected' : ''}>${escapeHtml(m.nama)} (${escapeHtml(m.npm)})</option>`).join('');
+                    
+                    return `<div class="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">${label}</label>
                         <input type="hidden" class="pemohon-type" name="form_data[${escapeHtml(key)}][type]" value="${escapeHtml(currentPemohonType)}">
                         <input type="hidden" class="pemohon-id" name="form_data[${escapeHtml(key)}][id]" value="${escapeHtml(currentPemohonId)}">
@@ -176,315 +200,202 @@
                             ${sources.includes('mahasiswa') ? `<optgroup label="Mahasiswa">${mhsOptions}</optgroup>` : ''}
                             ${sources.includes('dosen') ? `<optgroup label="Dosen">${dosenOptions}</optgroup>` : ''}
                         </select>
-                    </div>
-                `;
-            }
+                    </div>`;
+                }
 
-            if (field.type === 'textarea') {
-                return `
-                    <div class="md:col-span-2">
+                if (field.type === 'textarea') {
+                    return `<div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
                         <textarea name="form_data[${escapeHtml(key)}]" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">${escapeHtml(value)}</textarea>
-                    </div>
-                `;
-            }
+                    </div>`;
+                }
 
-            if (field.type === 'date') {
-                return `
-                    <div>
+                if (field.type === 'date') {
+                    return `<div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
                         <input type="date" name="form_data[${escapeHtml(key)}]" value="${escapeHtml(value)}" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
-                    </div>
-                `;
-            }
+                    </div>`;
+                }
 
-            if (field.type === 'file') {
-                return `
-                    <div class="md:col-span-2 p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
-                        ${value ? `<div class="mb-2 text-xs text-blue-600"><i class="fas fa-paperclip mr-1"></i> File: <a href="/storage/${value}" target="_blank" class="underline">Lihat File Saat Ini</a></div>` : '<div class="mb-2 text-xs text-gray-400 italic">Belum ada file.</div>'}
-                        <input type="file" name="form_files[${escapeHtml(key)}]" class="text-sm">
-                    </div>
-                `;
-            }
+                if (field.type === 'file') {
+                    const statusClass = value ? 'emerald' : 'gray';
+                    const statusText = value ? 'FILE ADA' : 'BELUM ADA';
+                    const buttonText = value ? 'Ganti File' : 'Upload File';
 
-            if (field.type === 'select' || field.type === 'radio') {
-                const options = Array.isArray(field.options) ? field.options : [];
-                const optionsHtml = options.map(o => `<option value="${escapeHtml(o.value)}" ${value == o.value ? 'selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
-                return `
-                    <div>
+                    return `
+                        <div class="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200 group hover:border-blue-200 transition-all">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-gray-800 truncate">${label}</h3>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">OPSIONAL • Simpan FILE</p>
+                                </div>
+                                <span class="flex-shrink-0 bg-${statusClass}-100 text-${statusClass}-700 text-[10px] font-bold px-2 py-1 rounded-full">
+                                    ${statusText}
+                                </span>
+                            </div>
+                            
+                            <div class="relative group/input">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">
+                                    ${buttonText}
+                                </label>
+                                <input type="file" name="form_files[${escapeHtml(key)}]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all">
+                            </div>
+
+                            ${value ? `
+                                <div class="mt-4 pt-3 border-t border-slate-200">
+                                    <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">File Saat Ini:</p>
+                                    <a href="/storage/${value}" target="_blank" class="flex items-center text-xs font-mono text-blue-600 break-all bg-white p-2 rounded-lg border border-slate-200 hover:bg-blue-50 transition-colors">
+                                        <i class="fas fa-file-download mr-2 text-blue-500"></i>
+                                        <span>Lihat File</span>
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                if (field.type === 'select' || field.type === 'radio') {
+                    const options = Array.isArray(field.options) ? field.options : [];
+                    const optionsHtml = options.map(o => `<option value="${escapeHtml(o.value)}" ${value == o.value ? 'selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
+                    return `<div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
                         <select name="form_data[${escapeHtml(key)}]" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
                             <option value="">Pilih</option>
                             ${optionsHtml}
                         </select>
-                    </div>
-                `;
-            }
+                    </div>`;
+                }
 
-            return `
-                <div>
+                return `<div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
                     <input type="${field.type === 'number' ? 'number' : 'text'}" name="form_data[${escapeHtml(key)}]" value="${escapeHtml(value)}" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
-                </div>
-            `;
-        }
+                </div>`;
+            }
 
-        function initAdminSuratShow() {
-            const container = document.getElementById('dynamic-fields-admin');
-            if (!container) return;
-            if (container.dataset.initialized === '1') return;
-            container.dataset.initialized = '1';
+            window.Protekta.registerInit(() => {
+                const container = document.getElementById('dynamic-fields-admin');
+                if (!container || container.dataset.initialized === '1') return;
+                container.dataset.initialized = '1';
+                container.innerHTML = (formFields || []).map(renderField).join('');
 
-            container.innerHTML = formFields.map(renderField).join('');
+                // Also initialize the click listener for the main container here if not already done via delegation
+                // In this architecture, we rely on the document level delegation but bounded by the scope check in handleSuratClicks
 
-            // Wire up pemohon selects
-            container.querySelectorAll('.pemohon-select').forEach(select => {
-                select.addEventListener('change', () => {
-                    const [type, id] = select.value.split(':');
-                    const parent = select.closest('div');
-                    parent.querySelector('.pemohon-type').value = type || '';
-                    parent.querySelector('.pemohon-id').value = id || '';
+                // Wire up pemohon selects
+                container.querySelectorAll('.pemohon-select').forEach(select => {
+                    select.addEventListener('change', () => {
+                        const [type, id] = select.value.split(':');
+                        const parent = select.closest('div');
+                        if (parent.querySelector('.pemohon-type')) parent.querySelector('.pemohon-type').value = type || '';
+                        if (parent.querySelector('.pemohon-id')) parent.querySelector('.pemohon-id').value = id || '';
+                    });
                 });
-            });
 
-            // Original no_surat logic
-            const input = document.getElementById('no_surat');
-            if (input) {
-                input.addEventListener('input', () => {
-                    input.dataset.userEdited = '1';
-                });
-                if ((input.value || '').trim() === '' && input.dataset.userEdited !== '1') {
+                // No Surat Logic
+                const input = document.getElementById('no_surat');
+                if (input && (input.value || '').trim() === '' && input.dataset.userEdited !== '1') {
+                    input.addEventListener('input', () => { input.dataset.userEdited = '1'; });
                     const jenisId = @json($surat->surat_jenis_id);
                     if (jenisId) {
                         fetch(`{{ route('admin.surat.next-no-surat') }}?surat_jenis_id=${encodeURIComponent(jenisId)}`, {
                             headers: { 'Accept': 'application/json' },
                         })
-                        .then((res) => (res.ok ? res.json() : null))
-                        .then((data) => {
+                        .then(res => res.json())
+                        .then(data => {
                             if (data && (input.value || '').trim() === '' && input.dataset.userEdited !== '1') {
                                 input.value = String(data.next_no_surat);
                             }
                         });
                     }
                 }
-            }
-        }
+            });
 
-        document.addEventListener('DOMContentLoaded', initAdminSuratShow);
-        window.addEventListener('page-loaded', initAdminSuratShow);
-
-        // Global toggle function
-        window.toggleEmailPreviewModal = function(show) {
-            const modal = document.getElementById('email-preview-modal');
-            if (!modal) {
-                console.error('Modal email-preview-modal not found in DOM');
-                return;
-            }
-            if (show) {
-                modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            } else {
-                modal.classList.add('hidden');
-                document.body.style.overflow = 'auto';
-            }
-        };
-
-        // Event Delegation for all preview-related clicks
-        document.addEventListener('click', async function(e) {
-            // 1. Show Preview Click
-            const triggerBtn = e.target.closest('#btn-show-email-preview');
-            if (triggerBtn) {
-                e.preventDefault();
-                
-                const toInput = document.getElementById('input-recipient');
-                if (!toInput) return;
-                
-                const to = toInput.value.trim();
-                if (!to || !to.includes('@')) {
-                    alert('Harap masukkan alamat email yang valid.');
+            // Email Preview Delegated Listener (Specific for this view)
+            const handleSuratClicks = async function(e) {
+                // Check if we are still on the right page for this listener instance
+                const scopeCheck = document.getElementById('surat-show-container');
+                if (!scopeCheck || scopeCheck.dataset.id !== '{{ $surat->id }}') {
+                    document.removeEventListener('click', handleSuratClicks);
                     return;
                 }
 
-                window.toggleEmailPreviewModal(true);
-                const loadingState = document.getElementById('modal-loading-state');
-                const editorState = document.getElementById('modal-editor-state');
-                const confirmBtn = document.getElementById('btn-confirm-send');
+                const btn = e.target.closest('#btn-show-email-preview');
+                if (btn) {
+                    e.preventDefault();
+                    const toInput = document.getElementById('input-recipient');
+                    const applicantEmail = '{{ $surat->pemohon_type == "mahasiswa" ? ($surat->pemohonMahasiswa->email ?? "") : ($surat->pemohonDosen->email ?? "") }}';
+                    const to = (toInput ? toInput.value.trim() : '') || applicantEmail;
+                    if (!to || !to.includes('@')) { alert('Harap masukkan alamat email yang valid.'); return; }
 
-                if (loadingState) loadingState.classList.remove('hidden');
-                if (editorState) editorState.classList.add('hidden');
-                if (confirmBtn) confirmBtn.disabled = true;
-
-                try {
-                    // Use model instances for safer route generation
-                    const url = `{{ route('admin.surattemplate.preview-email', [$surat->jenis, $surat->jenis->template, $surat]) }}`;
-                    console.log('Fetching preview from:', url);
-                    
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ recipient: to })
-                    });
-
-                    if (!response.ok) {
-                        const errData = await response.json().catch(() => ({}));
-                        throw new Error(errData.message || 'Gagal mengambil pratinjau email dari server.');
-                    }
-
-                    const data = await response.json();
-                    
-                    const recipientEl = document.getElementById('preview-recipient');
-                    if (recipientEl) {
-                        recipientEl.textContent = to;
+                    if (window.Protekta && window.Protekta.modal) {
+                        window.Protekta.modal.show('email-preview-modal');
+                    } else {
+                        const m = document.getElementById('email-preview-modal');
+                        if (m) m.classList.remove('hidden');
                     }
                     
-                    const subjectInput = document.getElementById('preview-subject');
-                    const bodyTextarea = document.getElementById('preview-body');
-                    
-                    if (subjectInput) subjectInput.value = data.subject || '';
-                    if (bodyTextarea) bodyTextarea.value = data.body || '';
+                    const loader = document.getElementById('modal-loading-state');
+                    const editor = document.getElementById('modal-editor-state');
+                    if (loader) loader.classList.remove('hidden');
+                    if (editor) editor.classList.add('hidden');
 
-                    if (loadingState) loadingState.classList.add('hidden');
-                    if (editorState) {
-                        editorState.classList.remove('hidden');
-                        editorState.classList.add('flex', 'flex-col');
-                    }
-                    if (confirmBtn) confirmBtn.disabled = false;
-                } catch (error) {
-                    console.error('Error fetching email preview:', error);
-                    alert('Gagal membuka pratinjau: ' + error.message);
-                    window.toggleEmailPreviewModal(false);
+                    try {
+                        const url = `{{ route('admin.surattemplate.preview-email', [$surat->jenis, $surat->jenis?->template ?? 0, $surat]) }}`;
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                            body: JSON.stringify({ recipient: to })
+                        });
+                        const data = await res.json();
+                        
+                        const pRec = document.getElementById('preview-recipient');
+                        const pSub = document.getElementById('preview-subject');
+                        const pBod = document.getElementById('preview-body');
+                        
+                        if (pRec) pRec.textContent = to;
+                        if (pSub) pSub.value = data.subject || '';
+                        if (pBod) pBod.value = data.body || '';
+                        
+                        if (loader) loader.classList.add('hidden');
+                        if (editor) editor.classList.remove('hidden');
+                    } catch (err) { alert('Gagal mengambil pratinjau.'); }
+                    return;
                 }
-                return;
-            }
 
-            // 2. Confirm Send Click (Email)
-            const confirmBtn = e.target.closest('#btn-confirm-send');
-            if (confirmBtn) {
-                const subject = document.getElementById('preview-subject').value;
-                const body = document.getElementById('preview-body').value;
-
-                document.getElementById('hidden-email-subject').value = subject;
-                document.getElementById('hidden-email-body').value = body;
-
-                confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Mengirim...';
-                
-                document.getElementById('email-send-form').submit();
-                return;
-            }
-
-            // 3. Send WA Click
-            const waBtn = e.target.closest('#btn-send-wa');
-            if (waBtn) {
-                const body = document.getElementById('preview-body').value;
-                const recipientSelect = document.getElementById('wa-recipient-select-surat');
-                let phoneNumber = '';
-
-                if (recipientSelect && recipientSelect.value) {
-                    phoneNumber = recipientSelect.value.replace(/\D/g, '');
-                    if (phoneNumber.startsWith('0')) {
-                        phoneNumber = '62' + phoneNumber.substring(1);
-                    }
+                if (e.target.closest('#btn-confirm-send')) {
+                    const sub = document.getElementById('preview-subject');
+                    const bod = document.getElementById('preview-body');
+                    const hSub = document.getElementById('hidden-email-subject');
+                    const hBod = document.getElementById('hidden-email-body');
+                    
+                    if (hSub && sub) hSub.value = sub.value;
+                    if (hBod && bod) hBod.value = bod.value;
+                    
+                    const b = e.target.closest('#btn-confirm-send');
+                    b.disabled = true;
+                    b.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Mengirim...';
+                    const form = document.getElementById('email-send-form');
+                    if (form) form.submit();
+                    return;
                 }
-                
-                const encodedText = encodeURIComponent(body);
-                const waUrl = phoneNumber 
-                    ? `https://wa.me/${phoneNumber}?text=${encodedText}` 
-                    : `https://wa.me/?text=${encodedText}`;
 
-                window.open(waUrl, '_blank');
+                if (e.target.closest('#btn-send-wa')) {
+                    const bod = document.getElementById('preview-body');
+                    const recSet = document.getElementById('wa-recipient-select-surat');
+                    if (!bod || !recSet) return;
+                    
+                    const num = window.Protekta.helpers.formatWA(recSet.value || '');
+                    window.open(`https://wa.me/${num}?text=${encodeURIComponent(bod.value)}`, '_blank');
+                    setTimeout(() => { 
+                        document.getElementById('btn-download-docx-surat')?.click();
+                        alert('WhatsApp dibuka. File sedang didownload.');
+                    }, 1000);
+                }
+            };
 
-                setTimeout(() => {
-                    const downloadBtn = document.getElementById('btn-download-docx-surat');
-                    if (downloadBtn) {
-                        downloadBtn.click();
-                        alert('WhatsApp telah dibuka. File dokumen sedang didownload.\n\nMohon lampirkan file yang terdownload secara manual di chat WhatsApp.');
-                    }
-                }, 1000);
-                
-                return;
-            }
-
-            // 4. Close/Batal buttons click
-            if (e.target.closest('.btn-close-preview')) {
-                window.toggleEmailPreviewModal(false);
-                return;
-            }
-        });
-    })();
-</script>
-
-<!-- Email Preview Modal -->
-<div id="email-preview-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
-        <!-- Premium Glassmorphism Backdrop -->
-        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" aria-hidden="true" onclick="toggleEmailPreviewModal(false)"></div>
-
-        <!-- Modal Content -->
-        <div class="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full z-10">
-            <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="flex items-center justify-between mb-4 border-b pb-4">
-                    <h3 class="text-lg font-bold text-gray-900" id="modal-title">Kirim WA / Email</h3>
-                    <button type="button" class="btn-close-preview text-gray-400 hover:text-gray-500">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="space-y-4" id="modal-loading-state">
-                    <div class="flex flex-col items-center justify-center py-10">
-                        <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-3"></i>
-                        <p class="text-sm text-gray-500 italic">Menyiapkan pratinjau email...</p>
-                    </div>
-                </div>
-                <div class="space-y-4 hidden" id="modal-editor-state">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Penerima</label>
-                        <div id="preview-recipient" class="text-sm font-semibold text-gray-800 bg-gray-50 p-2 rounded-lg border border-gray-100"></div>
-                    </div>
-                    <div>
-                        <label for="preview-subject" class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Subjek</label>
-                        <input type="text" id="preview-subject" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-                    <div>
-                        <label for="preview-body" class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Isi Pesan</label>
-                        <textarea id="preview-body" rows="8" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
-                    </div>
-                    <div id="wa-recipient-container" class="pt-3 border-t border-gray-100">
-                        <label class="block text-xs font-bold text-blue-500 uppercase tracking-widest mb-2">
-                            <i class="fa-brands fa-whatsapp mr-1"></i> Kirim WhatsApp Ke:
-                        </label>
-                        <select id="wa-recipient-select-surat" class="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm bg-blue-50 text-blue-700 font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                            @if($surat->pemohon_type === 'mahasiswa' && $surat->pemohonMahasiswa && $surat->pemohonMahasiswa->wa)
-                                <option value="{{ $surat->pemohonMahasiswa->wa }}">Pemohon: {{ $surat->pemohonMahasiswa->nama }} ({{ $surat->pemohonMahasiswa->wa }})</option>
-                            @elseif($surat->pemohon_type === 'dosen' && $surat->pemohonDosen && $surat->pemohonDosen->wa)
-                                <option value="{{ $surat->pemohonDosen->wa }}">Pemohon: {{ $surat->pemohonDosen->nama }} ({{ $surat->pemohonDosen->wa }})</option>
-                            @endif
-                            
-                            @if($surat->mahasiswa && $surat->mahasiswa->wa && ($surat->pemohon_mahasiswa_id !== $surat->mahasiswa_id))
-                                <option value="{{ $surat->mahasiswa->wa }}">Mahasiswa Terkait: {{ $surat->mahasiswa->nama }} ({{ $surat->mahasiswa->wa }})</option>
-                            @endif
-                            
-                            <option value="">Pilih Manual di WhatsApp</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-6 py-4 flex flex-col md:flex-row-reverse gap-3 rounded-b-2xl">
-                <button type="button" id="btn-confirm-send" class="btn-pill btn-pill-info px-8 min-w-[160px]">
-                    <i class="fa-solid fa-paper-plane mr-2"></i> Kirim via Email
-                </button>
-                <button type="button" id="btn-send-wa" class="btn-pill btn-pill-success px-8 min-w-[160px]">
-                    <i class="fa-brands fa-whatsapp mr-2"></i> Kirim via WA
-                </button>
-                <button type="button" class="btn-close-preview btn-pill btn-pill-secondary px-8">
-                    <i class="fas fa-times mr-2"></i> Batal
-                </button>
-            </div>
-        </div>
-    </div>
+            // Register global listener but it checks scope inside
+            document.addEventListener('click', handleSuratClicks);
+        })();
+    </script>
 </div>
 @endsection

@@ -45,15 +45,20 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                        <input
-                            type="date"
-                            name="tanggal"
-                            id="tanggal"
-                            value="{{ old('tanggal') }}"
-                            min="{{ date('Y-m-d') }}"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md @error('tanggal') border-red-500 @enderror"
-                            required
-                        >
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <i class="fas fa-calendar-alt fa-fw"></i>
+                            </div>
+                            <input
+                                type="date"
+                                name="tanggal"
+                                id="tanggal"
+                                value="{{ old('tanggal') }}"
+                                min="{{ date('Y-m-d') }}"
+                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('tanggal') border-red-500 @enderror"
+                                required
+                            >
+                        </div>
                         <p class="text-sm text-gray-500 mt-1">Tanggal harus hari ini atau setelahnya</p>
                         @error('tanggal')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -62,14 +67,19 @@
 
                     <div>
                         <label for="waktu" class="block text-sm font-medium text-gray-700 mb-1">Waktu</label>
-                        <input
-                            type="time"
-                            name="waktu"
-                            id="waktu"
-                            value="{{ old('waktu', '09:00') }}"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md @error('waktu') border-red-500 @enderror"
-                            required
-                        >
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <i class="fas fa-clock fa-fw"></i>
+                            </div>
+                            <input
+                                type="time"
+                                name="waktu"
+                                id="waktu"
+                                value="{{ old('waktu', '09:00') }}"
+                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('waktu') border-red-500 @enderror"
+                                required
+                            >
+                        </div>
                         @error('waktu')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -263,11 +273,28 @@
                     const accept = exts.map(e => '.' + String(e).replace(/^\./, '')).join(',');
                     const mb = Math.round(maxKb / 102.4) / 10;
                     const div = document.createElement('div');
-                    div.className = 'mb-3';
+                    div.className = 'bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all group mb-4';
                     div.innerHTML = `
-                        <label class="block text-sm font-medium text-gray-700 mb-1">${it.label}${it.required === false ? ' (Opsional)' : ''}</label>
-                        <input type="file" name="berkas_syarat_items[${it.key}]" class="w-full px-3 py-2 border border-gray-300 rounded-md file-input-mobile" accept="${accept}" ${it.required === false ? '' : 'required'}>
-                        <p class="text-sm text-gray-500 mt-1">Format: ${exts.join(', ').toUpperCase()}. Maks: ${mb}MB.</p>
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-bold text-gray-800 truncate">${it.label}</h3>
+                                <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                    ${it.required === false ? 'Opsional' : 'Wajib'} • ${exts.join(', ').toUpperCase()}
+                                </p>
+                            </div>
+                            <span class="flex-shrink-0 bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-1 rounded-full">BELUM ADA</span>
+                        </div>
+                        <div class="relative group/input">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">Unggah Berkas</label>
+                            <input
+                                type="file"
+                                name="berkas_syarat_items[${it.key}]"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-blue-300 transition-all"
+                                accept="${accept}"
+                                ${it.required === false ? '' : 'required'}
+                            />
+                            <p class="text-[10px] text-gray-400 mt-2 italic px-1">Maksimum ukuran file: <span class="font-bold text-gray-600">${mb}MB</span></p>
+                        </div>
                     `;
                     berkasContainer.appendChild(div);
                 });

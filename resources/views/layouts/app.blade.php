@@ -54,11 +54,15 @@
     @if($brandingSettings && $brandingSettings->favicon_url)
         <link rel="icon" href="{{ $brandingSettings->favicon_url }}?v={{ $brandingSettings->updated_at?->timestamp ?? time() }}" type="image/png">
     @endif
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        // Global Shim for Protekta (prevents race conditions)
+        window.Protekta = window.Protekta || {
+            initRegistry: [],
+            registerInit: function(fn) { this.initRegistry.push(fn); }
+        };
+    </script>
     <style>
         :root {
             --brand-gradient: linear-gradient(135deg, #2563eb, #7c3aed);
@@ -158,6 +162,17 @@
             box-shadow: 0 15px 30px rgba(22, 163, 74, 0.35);
         }
 
+        /* Live Search Animations */
+        @keyframes pulse-search {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .searching-active {
+            animation: pulse-search 1s infinite ease-in-out !important;
+            color: #3b82f6 !important;
+        }
+
         .btn-pill-info {
             background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: #fff !important;
@@ -191,7 +206,7 @@
             box-shadow: 0 15px 30px rgba(249, 115, 22, 0.35);
         }
 
-        .nav-icon-btn {
+        .modern-navbar .nav-icon-btn {
             border-radius: 9999px;
             width: 42px;
             height: 42px;
@@ -204,7 +219,7 @@
             transition: all .2s ease;
         }
 
-        .nav-icon-btn:hover {
+        .modern-navbar .nav-icon-btn:hover {
             background: rgba(37, 99, 235, .15);
             transform: translateY(-1px);
         }
@@ -246,7 +261,7 @@
             box-shadow: 0 6px 14px rgba(var(--brand-primary-rgb), 0.18);
         }
 
-        .profile-chip {
+        .modern-navbar .profile-chip {
             border-radius: 9999px;
             border: 1px solid rgba(148, 163, 184, .35);
             padding: 0.35rem 1rem;
@@ -256,11 +271,16 @@
             font-weight: 600;
             color: #475569;
             transition: all .2s ease;
+            text-decoration: none; /* Ensure no underline from .nav-link */
         }
 
-        .profile-chip:hover {
+        .modern-navbar .profile-chip:hover,
+        .modern-navbar .profile-chip:focus,
+        .modern-navbar .profile-chip:active,
+        .modern-navbar .profile-chip.show {
             border-color: rgba(59, 130, 246, .45);
             color: #1d4ed8;
+            background-color: transparent; /* Override Bootstrap nav-link hover bg */
         }
 
 
@@ -565,21 +585,25 @@
             }
         }
 
-        .navbar-notif-link {
+        /* High specificity to override Bootstrap .navbar-expand-lg .navbar-nav .nav-link (0-3-0) */
+        .modern-navbar .navbar-nav .nav-item .navbar-notif-link {
             border-radius: 9999px;
             width: 40px;
             height: 40px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0 !important;
+            padding: 0;
             box-sizing: border-box;
             background: rgba(148, 163, 184, 0.12);
             color: #0f172a;
             transition: all .2s ease;
+            position: relative;
         }
 
-        .navbar-notif-link:hover {
+        .modern-navbar .navbar-nav .nav-item .navbar-notif-link:hover,
+        .modern-navbar .navbar-nav .nav-item .navbar-notif-link:focus, 
+        .modern-navbar .navbar-nav .nav-item .navbar-notif-link.show {
             background: rgba(37, 99, 235, 0.12);
             color: #2563eb;
         }
@@ -588,7 +612,6 @@
             max-height: 360px;
             overflow-y: auto;
             overflow-x: hidden;
-            /* prevent horizontal scroll inside notification dropdown */
             scrollbar-width: thin;
             border-radius: 1rem;
             border: 1px solid rgba(148, 163, 184, .35);
@@ -603,10 +626,11 @@
             font-size: 0.75rem;
         }
 
-        .navbar-dropdown-menu {
-            border-radius: 1rem;
+        /* High specificity to ensure custom border-radius applies over Bootstrap defaults */
+        .modern-navbar .dropdown-menu.navbar-dropdown-menu {
+            border-radius: 1.5rem; /* Significantly more rounded */
             border: 1px solid rgba(148, 163, 184, .35);
-            padding: 0.25rem 0.5rem;
+            padding: 0.5rem;
         }
 
         /* Fix slight dropdown offset on the right side of navbar (profile dropdown) */
@@ -635,18 +659,32 @@
             align-items: center;
         }
 
-        .navbar-dropdown-item {
+        /* High specificity to ensure border-radius works without !important */
+        .modern-navbar .dropdown-menu .navbar-dropdown-item {
             display: flex;
             align-items: center;
-            border-radius: 0.75rem;
+            border-radius: 0.75rem; /* This rounds the corners */
             margin: 2px 0;
             padding: 0.5rem 0.75rem;
             font-size: 0.8rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
 
-        .navbar-dropdown-item:hover {
-            background: rgba(37, 99, 235, .08);
+        /* Hover states */
+        .modern-navbar .dropdown-menu .navbar-dropdown-item:active,
+        .modern-navbar .dropdown-menu .navbar-dropdown-item:focus,
+        .modern-navbar .dropdown-menu .navbar-dropdown-item:hover {
+            background-color: rgba(37, 99, 235, .08);
             color: #0f172a;
+            border-radius: 0.75rem; /* Reinforce rounded corners on hover */
+        }
+        
+        /* Preserve text-danger color on hover */
+        .modern-navbar .dropdown-menu .navbar-dropdown-item.text-danger:active,
+        .modern-navbar .dropdown-menu .navbar-dropdown-item.text-danger:focus,
+        .modern-navbar .dropdown-menu .navbar-dropdown-item.text-danger:hover {
+            color: #dc3545 !important;
+            background-color: rgba(220, 53, 69, .08);
         }
 
         .sidebar-user-name {
@@ -729,115 +767,153 @@
     </div>
     @endif
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light modern-navbar fixed-top w-100">
-        <div class="container-fluid">
-            <button id="sidebarToggle" class="nav-icon-btn me-3" type="button" aria-controls="sidebar"
-                aria-expanded="false">
-                <i class="fas fa-bars"></i>
-            </button>
-            <a class="navbar-brand d-flex align-items-center modern-brand" href="
-                @if($currentGuard === 'admin')
-                    {{ route('admin.dashboard') }}
-                @elseif($currentGuard === 'dosen')
-                    {{ route('dosen.dashboard') }}
-                @elseif($currentGuard === 'mahasiswa')
-                    {{ route('mahasiswa.dashboard') }}
-                @else
-                    {{ route('login') }}
-                @endif
-            ">
-                <span class="modern-brand-icon overflow-hidden">
-                    @if($appIcon)
-                        <img src="{{ $appIcon }}?v={{ optional($brandingSettings)->updated_at?->timestamp ?? time() }}" alt="App Icon" class="h-8 w-8 object-cover rounded-lg" loading="eager"
-                            decoding="async">
+    <!-- Navigation (Pure Tailwind) -->
+    <nav class="modern-navbar fixed top-0 left-0 right-0 z-50 flex h-16 w-full items-center border-b border-slate-200/60 bg-white/90 px-4 backdrop-blur-md transition-all sm:px-6">
+        <div class="flex w-full items-center justify-between">
+            <!-- Left: Sidebar Toggle & Brand -->
+            <div class="flex items-center gap-4">
+                <button id="sidebarToggle" class="nav-icon-btn flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-primary-600 focus:outline-none" type="button" aria-label="Toggle Sidebar">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+                <a class="flex items-center gap-3" href="
+                    @if($currentGuard === 'admin')
+                        {{ route('admin.dashboard') }}
+                    @elseif($currentGuard === 'dosen')
+                        {{ route('dosen.dashboard') }}
+                    @elseif($currentGuard === 'mahasiswa')
+                        {{ route('mahasiswa.dashboard') }}
                     @else
-                        <i class="fas fa-university"></i>
+                        {{ route('login') }}
                     @endif
-                </span>
-                <span class="app-name-text">{{ $appName }}</span>
-            </a>
-            <div class="d-flex align-items-center ms-auto">
+                ">
+                    <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl shadow-sm">
+                        @if($appIcon)
+                            <img src="{{ $appIcon }}?v={{ optional($brandingSettings)->updated_at?->timestamp ?? time() }}" alt="App Icon" class="h-full w-full object-cover">
+                        @else
+                            <div class="flex h-full w-full items-center justify-center bg-primary-50 text-primary-600">
+                                <i class="fas fa-university text-lg"></i>
+                            </div>
+                        @endif
+                    </span>
+                    <span class="hidden text-lg font-bold tracking-tight text-slate-800 sm:block">{{ $appName }}</span>
+                </a>
+            </div>
+
+            <!-- Right: Notifications & Profile -->
+            <div class="flex items-center gap-2 sm:gap-4">
                 @if($currentUser)
                     @php
                         $notif = $navbarNotifications ?? ['items' => [], 'count' => 0];
                     @endphp
-                    <ul class="navbar-nav align-items-center flex-row">
-                        <li class="nav-item dropdown me-2">
-                            <a class="nav-link position-relative navbar-notif-link" href="#"
-                                id="navbarNotificationsDropdown" role="button" data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                                <i class="fas fa-bell"></i>
-                                @if(($notif['count'] ?? 0) > 0)
-                                    <span
-                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        {{ $notif['count'] > 9 ? '9+' : $notif['count'] }}
-                                    </span>
-                                @endif
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm navbar-notif-menu navbar-dropdown-menu"
-                                aria-labelledby="navbarNotificationsDropdown" style="min-width: 280px; max-width: 360px;">
-                                <li class="px-3 py-2 border-bottom small text-muted fw-semibold">Notifikasi</li>
+                    
+                    <!-- Notification Dropdown -->
+                    <div class="relative" id="notifDropdownContainer">
+                        <button class="nav-icon-btn relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-primary-600 focus:outline-none" 
+                                id="notifBtn" 
+                                onclick="toggleNavbarDropdown('notifMenu')">
+                            <i class="fas fa-bell text-lg"></i>
+                            @if(($notif['count'] ?? 0) > 0)
+                                <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                                    {{ $notif['count'] > 9 ? '9+' : $notif['count'] }}
+                                </span>
+                            @endif
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="notifMenu" class="absolute right-0 mt-3 hidden w-80 origin-top-right overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl ring-1 ring-slate-900/5 transition-all md:w-96">
+                            <div class="border-b border-slate-100 bg-slate-50/50 px-4 py-3">
+                                <h3 class="text-sm font-semibold text-slate-900">Notifikasi</h3>
+                            </div>
+                            <ul class="max-h-[24rem] overflow-y-auto py-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                                 @forelse($notif['items'] as $item)
-                                    @php
-                                        $notifKey = md5(($item['title'] ?? '') . '|' . ($item['message'] ?? ''));
-                                    @endphp
                                     <li>
-                                        <a class="dropdown-item navbar-dropdown-item d-block py-2"
-                                            href="{{ $item['url'] ?? '#' }}" data-notif-key="{{ $notifKey }}">
-                                            <div class="navbar-notif-item-title fw-semibold mb-1">
-                                                {{ $item['title'] ?? 'Notifikasi' }}
-                                            </div>
-                                            <div class="navbar-notif-item-text text-muted" style="white-space: normal;">
-                                                {{ $item['message'] ?? '' }}
-                                            </div>
+                                        <a class="block border-b border-slate-50 px-4 py-3 hover:bg-slate-50" href="{{ $item['url'] ?? '#' }}">
+                                            <div class="mb-0.5 text-sm font-semibold text-slate-800">{{ $item['title'] ?? 'Notifikasi' }}</div>
+                                            <div class="text-xs leading-relaxed text-slate-500">{{ $item['message'] ?? '' }}</div>
                                         </a>
                                     </li>
                                 @empty
-                                    <li class="px-3 py-3 small text-muted">Belum ada notifikasi.</li>
+                                    <li class="px-4 py-8 text-center">
+                                        <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400">
+                                            <i class="far fa-bell-slash"></i>
+                                        </div>
+                                        <p class="text-sm text-slate-500">Belum ada notifikasi baru</p>
+                                    </li>
                                 @endforelse
                             </ul>
-                        </li>
-                        <li class="nav-item dropdown d-none d-lg-block">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center profile-chip" href="#"
-                                id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <span
-                                    class="me-2">{{ $currentUser ? ($currentUser->name ?? $currentUser->nama) : 'Guest' }}</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end navbar-dropdown-menu"
-                                aria-labelledby="navbarDropdown">
-                                <li>
-                                    <a class="dropdown-item navbar-dropdown-item" href="
-                                                                @if($currentGuard === 'admin')
-                                                                    {{ route('admin.profile.edit') }}
-                                                                @elseif($currentGuard === 'dosen')
-                                                                    {{ route('dosen.profile.edit') }}
-                                                                @elseif($currentGuard === 'mahasiswa')
-                                                                    {{ route('mahasiswa.profile.edit') }}
-                                                                @endif
-                                                            ">
-                                        <i class="fas fa-user me-2"></i> Profil Saya
-                                    </a>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li>
-                                    <form id="logout-form-navbar" action="{{ route('logout') }}" method="POST"
-                                        class="d-none">
-                                        @csrf
-                                    </form>
-                                    <a class="dropdown-item navbar-dropdown-item text-danger" href="#"
-                                        onclick="event.preventDefault(); document.getElementById('logout-form-navbar').submit();">
-                                        <i class="fas fa-sign-out-alt me-2"></i> Logout
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
+                        </div>
+                    </div>
+
+                    <!-- Profile Dropdown -->
+                    <div class="relative" id="profileDropdownContainer">
+                        <button class="hidden md:flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm transition-all hover:border-slate-300 hover:shadow-md focus:outline-none" 
+                                id="profileBtn" 
+                                onclick="toggleNavbarDropdown('profileMenu')">
+                            
+                            <span class="text-sm font-semibold text-slate-700">{{ $currentUser->nama ?? $currentUser->name }}</span>
+                            <i class="fas fa-chevron-down ml-1 text-xs text-slate-400"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="profileMenu" class="absolute right-0 mt-3 hidden w-56 origin-top-right overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl ring-1 ring-slate-900/5 transition-all">
+                            <div class="border-b border-slate-100 bg-slate-50/50 px-4 py-3 sm:hidden">
+                                <div class="font-semibold text-slate-900">{{ $currentUser->nama ?? $currentUser->name }}</div>
+                                <div class="text-xs text-slate-500">{{ $currentRoleLabel }}</div>
+                            </div>
+                            <div class="p-1">
+                                <a class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600" href="
+                                    @if($currentGuard === 'admin') {{ route('admin.profile.edit') }}
+                                    @elseif($currentGuard === 'dosen') {{ route('dosen.profile.edit') }}
+                                    @elseif($currentGuard === 'mahasiswa') {{ route('mahasiswa.profile.edit') }}
+                                    @endif
+                                ">
+                                    <i class="fas fa-user-circle w-5 text-center text-slate-400 transition-colors group-hover:text-blue-600"></i>
+                                    Profil Saya
+                                </a>
+                                <div class="my-1 h-px bg-slate-100"></div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50">
+                                        <i class="fas fa-sign-out-alt w-5 text-center text-red-400 group-hover:text-red-500"></i>
+                                        Keluar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 @endif
             </div>
         </div>
     </nav>
+
+    <!-- Navbar Dropdown Logic -->
+    <script>
+        function toggleNavbarDropdown(targetId) {
+            const el = document.getElementById(targetId);
+            if (!el) return;
+            
+            // Toggle visibility
+            const isHidden = el.classList.contains('hidden');
+            
+            // Close all others first
+            document.querySelectorAll('#notifMenu, #profileMenu').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+
+            if (isHidden) {
+                el.classList.remove('hidden');
+            }
+        }
+
+        // Close on click outside
+        window.addEventListener('click', function(e) {
+            if (!e.target.closest('#notifDropdownContainer') && !e.target.closest('#profileDropdownContainer')) {
+                 document.querySelectorAll('#notifMenu, #profileMenu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            }
+        });
+    </script>
 
     <!-- Sidebar and Content -->
     <div class="app-shell w-full"> <!-- Padding handled by CSS for fixed navbar spacing -->
@@ -896,56 +972,56 @@
                         <li>
                             <a href="{{ route('admin.dosen.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.dosen.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-chalkboard-teacher"></i> Manage Dosen
+                                <i class="fas fa-chalkboard-teacher"></i> Kelola Dosen
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('admin.mahasiswa.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.mahasiswa.*') ? 'is-active' : '' }}">
                                 <i class="fas fa-user-graduate"></i>
-                                <span>Manage Mahasiswa</span>
+                                <span>Kelola Mahasiswa</span>
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('admin.seminar.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.seminar.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-calendar-check"></i> Manage Seminar
+                                <i class="fas fa-calendar-check"></i> Kelola Seminar
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('admin.seminarjenis.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.seminarjenis.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-layer-group"></i> Manage Jenis Seminar
+                                <i class="fas fa-layer-group"></i> Kelola Jenis Seminar
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('admin.surat.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.surat.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-mail-bulk"></i> Manage Surat
+                                <i class="fas fa-mail-bulk"></i> Kelola Surat
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('admin.suratjenis.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.suratjenis.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-envelope-open-text"></i> Manage Jenis Surat
+                                <i class="fas fa-envelope-open-text"></i> Kelola Jenis Surat
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('admin.gdrive.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.gdrive.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-folder-open"></i> GDrive Folders
+                                <i class="fas fa-folder-open"></i> Folder GDrive
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('admin.admins.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.admins.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-user-shield"></i> Manage Admins
+                                <i class="fas fa-user-shield"></i> Kelola Admin
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('admin.settings.landing') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('admin.settings.landing*') ? 'is-active' : '' }}">
-                                <i class="fas fa-palette"></i> Manage Home
+                                <i class="fas fa-palette"></i> Kelola Beranda
                             </a>
                         </li>
                     @elseif($currentGuard === 'dosen')
@@ -964,7 +1040,7 @@
                         <li>
                             <a href="{{ route('dosen.manage-seminar.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('dosen.manage-seminar.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-calendar-check"></i> Manage Seminar
+                                <i class="fas fa-calendar-check"></i> Kelola Seminar
                             </a>
                         </li>
                         <li>
@@ -982,7 +1058,7 @@
                         <li>
                             <a href="{{ route('dosen.gdrive.index') }}"
                                 class="sidebar-nav-link {{ request()->routeIs('dosen.gdrive.*') ? 'is-active' : '' }}">
-                                <i class="fas fa-folder-open"></i> GDrive Folders
+                                <i class="fas fa-folder-open"></i> Folder GDrive
                             </a>
                         </li>
                     @elseif($currentGuard === 'mahasiswa')
@@ -1171,252 +1247,230 @@
             }
         }
 
-        // AJAX navigation system to prevent sidebar reloads
-        document.addEventListener('DOMContentLoaded', function () {
-            // Function to load content via AJAX
-            function loadPageContent(url, pushState = true) {
-                const parsedUrl = new URL(url, window.location.origin);
-                const requestUrl = parsedUrl.pathname + parsedUrl.search;
-                const targetHash = parsedUrl.hash;
+        // AJAX navigation system - Exposed globally for Live Search integration
+        window.loadPageContent = function (url, pushState = true, subtle = false) {
+            const parsedUrl = new URL(url, window.location.origin);
+            const requestUrl = parsedUrl.pathname + parsedUrl.search;
+            const targetHash = parsedUrl.hash;
 
-                const mainContent = document.getElementById('main-content');
-                if (mainContent) {
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+                if (subtle) {
+                    mainContent.style.transition = 'opacity 0.2s ease-in-out';
+                    mainContent.style.opacity = '0.5';
+                } else {
                     mainContent.innerHTML = '<div class="flex justify-center items-center h-64"><div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>';
                 }
+            }
 
-                fetch(requestUrl, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'text/html'
+            fetch(requestUrl, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
+                    return response.text();
                 })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
+                .then(html => {
+                    // Reset opacity if subtle loading was used
+                    if (mainContent && subtle) {
+                        mainContent.style.opacity = '1';
+                    }
+
+                    // Parse the response
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Extract the main content from the fetched page
+                    const newMainContent = doc.getElementById('main-content');
+                    const newTitle = doc.querySelector('title');
+
+                    if (newMainContent) {
+                        // Persistence: Store current active element and its selection state
+                        const activeId = document.activeElement ? document.activeElement.id : null;
+                        const selectionStart = document.activeElement ? document.activeElement.selectionStart : null;
+                        const selectionEnd = document.activeElement ? document.activeElement.selectionEnd : null;
+
+                        // Update the main content
+                        if (mainContent) {
+                            mainContent.innerHTML = newMainContent.innerHTML;
                         }
-                        return response.text();
-                    })
-                    .then(html => {
-                        // Parse the response
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
 
-                        // Extract the main content from the fetched page
-                        const newMainContent = doc.getElementById('main-content');
-                        const newTitle = doc.querySelector('title');
-
-                        if (newMainContent) {
-                            // Update the main content
-                            if (mainContent) {
-                                mainContent.innerHTML = newMainContent.innerHTML;
-                            }
-                        }
-
-                        // Execute page-specific scripts when content is loaded via AJAX navigation.
-                        // Without this, pages loaded via sidebar won't run view-level JS (e.g. @section('scripts')).
-                        // Remove previously injected AJAX scripts first.
-                        document.querySelectorAll('script[data-ajax-script="1"]').forEach((el) => el.remove());
-
-                        const injectScriptsFrom = async (rootEl) => {
-                            if (!rootEl) return;
-                            const scripts = Array.from(rootEl.querySelectorAll('script'));
-                            for (const s of scripts) {
-                                const type = (s.getAttribute('type') || '').toLowerCase();
-                                // Ignore JSON blobs used for data transfer
-                                if (type === 'application/json') continue;
-
-                                const script = document.createElement('script');
-                                script.setAttribute('data-ajax-script', '1');
-
-                                // Preserve important script attributes (e.g. type="module" for Vite/ESM bundles)
-                                Array.from(s.attributes).forEach((attr) => {
-                                    const name = (attr.name || '').toLowerCase();
-                                    if (!name) return;
-                                    if (name === 'src') return;
-                                    if (name === 'id') return;
-                                    if (name === 'data-ajax-script') return;
-                                    script.setAttribute(attr.name, attr.value);
-                                });
-
-                                if (s.src) {
-                                    script.src = s.src;
-                                    // Wait for external scripts to load to avoid race conditions with inline scripts that depend on them
-                                    await new Promise((resolve) => {
-                                        script.onload = resolve;
-                                        script.onerror = () => {
-                                            console.warn('Failed to load AJAX script:', s.src);
-                                            resolve();
-                                        };
-                                        document.body.appendChild(script);
-                                    });
-                                } else {
-                                    script.textContent = s.textContent || '';
-                                    document.body.appendChild(script);
+                        // Persistence: Restore focus and selection
+                        if (activeId) {
+                            const newActiveElement = document.getElementById(activeId);
+                            if (newActiveElement) {
+                                newActiveElement.focus();
+                                if (selectionStart !== null && (newActiveElement.type === 'text' || newActiveElement.type === 'search')) {
+                                    newActiveElement.setSelectionRange(selectionStart, selectionEnd);
                                 }
                             }
-                        };
-
-                        // Use a self-executing async function or just handle it sequentially
-                        (async function() {
-                            // 1) Scripts embedded inside main content
-                            await injectScriptsFrom(newMainContent);
-
-                            // 2) Scripts from the scripts section
-                            const pageScripts = doc.getElementById('page-scripts');
-                            await injectScriptsFrom(pageScripts);
-
-                            // Update the page title if available
-                            if (newTitle) {
-                                document.title = newTitle.textContent;
-                            }
-
-                            // Update browser history if requested
-                            if (pushState) {
-                                const historyUrl = parsedUrl.pathname + parsedUrl.search + targetHash;
-                                history.pushState({ url: historyUrl }, '', historyUrl);
-                            }
-
-                            // Reinitialize any page-specific scripts (pass parsed doc for flash messages)
-                            reinitializePageScripts(doc);
-
-                            // Trigger custom events for page initialization
-                            window.dispatchEvent(new CustomEvent('app:init', { detail: { url: url } }));
-                            window.dispatchEvent(new CustomEvent('page-loaded', { detail: { url: url } }));
-                            
-                            if (targetHash) {
-                                requestAnimationFrame(() => {
-                                    const target = document.querySelector(targetHash);
-                                    if (target) {
-                                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    }
-                                });
-                            }
-                        })();
-                    })
-                    .catch(error => {
-                        console.error('Error loading page:', error);
-                        // Immediately fallback to regular navigation on error
-                        // Don't show error message to prevent flash of unwanted content
-                        window.location.href = url;
-                    });
-            }
-
-            // Function to reinitialize page-specific scripts
-            // @param {Document} parsedDoc - Optional parsed document from AJAX response
-            function reinitializePageScripts(parsedDoc) {
-                // Clear existing toasts before showing new ones
-                clearToasts();
-
-                // Display new flash messages from server response (only if parsedDoc provided)
-                if (parsedDoc) {
-                    displayFlashMessages(parsedDoc);
-                }
-
-                // Update active state of sidebar links IMMEDIATELY for visual feedback
-                (function updateSidebarActiveLinks() {
-                    const sidebar = document.getElementById('sidebar');
-                    if (!sidebar) return;
-
-                    const links = Array.from(sidebar.querySelectorAll('a.sidebar-nav-link'))
-                        .filter((a) => a instanceof HTMLAnchorElement);
-
-                    // Clear current active
-                    links.forEach((a) => a.classList.remove('is-active'));
-
-                    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
-                    const currentSearch = window.location.search;
-                    const current = currentPath + currentSearch;
-
-                    // Choose best match by longest pathname prefix
-                    let best = null;
-                    let bestLen = -1;
-
-                    links.forEach((a) => {
-                        try {
-                            const u = new URL(a.href, window.location.origin);
-                            if (u.origin !== window.location.origin) return;
-
-                            const linkPath = u.pathname.replace(/\/+$/, '') || '/';
-                            const link = linkPath + (u.search || '');
-
-                            // Exact match on path+search preferred
-                            if (link === current && linkPath.length > bestLen) {
-                                best = a;
-                                bestLen = linkPath.length;
-                                return;
-                            }
-
-                            // Prefix match for section pages
-                            if (currentPath !== '/' && linkPath !== '/' && currentPath.startsWith(linkPath) && linkPath.length > bestLen) {
-                                best = a;
-                                bestLen = linkPath.length;
-                            }
-                        } catch (e) {
-                            // ignore invalid URL
                         }
-                    });
-
-                    if (best) {
-                        best.classList.add('is-active');
                     }
-                })();
 
-                // Defer non-critical initializations to next animation frame for smoother content display
-                requestAnimationFrame(function () {
-                    // Reinitialize notification system for AJAX navigation
-                    reinitializeNotifications();
-                }); // End requestAnimationFrame
+                    // Execute page-specific scripts when content is loaded via AJAX navigation.
+                    document.querySelectorAll('script[data-ajax-script="1"]').forEach((el) => el.remove());
+
+                    const injectScriptsFrom = async (rootEl) => {
+                        if (!rootEl) return;
+                        const scripts = Array.from(rootEl.querySelectorAll('script'));
+                        for (const s of scripts) {
+                            const type = (s.getAttribute('type') || '').toLowerCase();
+                            if (type === 'application/json') continue;
+
+                            const script = document.createElement('script');
+                            script.setAttribute('data-ajax-script', '1');
+
+                            Array.from(s.attributes).forEach((attr) => {
+                                const name = (attr.name || '').toLowerCase();
+                                if (!name || name === 'src' || name === 'id' || name === 'data-ajax-script') return;
+                                script.setAttribute(attr.name, attr.value);
+                            });
+
+                            if (s.src) {
+                                script.src = s.src;
+                                await new Promise((resolve) => {
+                                    script.onload = resolve;
+                                    script.onerror = () => {
+                                        console.warn('Failed to load AJAX script:', s.src);
+                                        resolve();
+                                    };
+                                    document.body.appendChild(script);
+                                });
+                            } else {
+                                script.textContent = s.textContent || '';
+                                document.body.appendChild(script);
+                            }
+                        }
+                    };
+
+                    (async function() {
+                        await injectScriptsFrom(newMainContent);
+                        const pageScripts = doc.getElementById('page-scripts');
+                        await injectScriptsFrom(pageScripts);
+
+                        if (newTitle) {
+                            document.title = newTitle.textContent;
+                        }
+
+                        if (pushState) {
+                            const historyUrl = parsedUrl.pathname + parsedUrl.search + targetHash;
+                            history.pushState({ url: historyUrl }, '', historyUrl);
+                        }
+
+                        reinitializePageScripts(doc, url);
+                        window.dispatchEvent(new CustomEvent('page-loaded', { detail: { url: url } }));
+                        
+                        if (targetHash) {
+                            requestAnimationFrame(() => {
+                                const target = document.querySelector(targetHash);
+                                if (target) {
+                                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                            });
+                        }
+                    })();
+                })
+                .catch(error => {
+                    console.error('Error loading page:', error);
+                    window.location.href = url;
+                });
+        };
+
+        // Function to reinitialize page-specific scripts - Exposed globally
+        window.reinitializePageScripts = function (parsedDoc, url = window.location.href) {
+            clearToasts();
+            if (parsedDoc) {
+                displayFlashMessages(parsedDoc);
             }
+            updateSidebarActiveLinks();
+            
+            // Dispatch app:init to signal components like Live Search to re-initialize
+            window.dispatchEvent(new CustomEvent('app:init', { detail: { url: url } }));
+
+            requestAnimationFrame(function () {
+                reinitializeNotifications();
+            });
+        };
+
+        // Sidebar active link update helper - Exposed globally
+        window.updateSidebarActiveLinks = function() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+
+            const links = Array.from(sidebar.querySelectorAll('a.sidebar-nav-link'))
+                .filter((a) => a instanceof HTMLAnchorElement);
+
+            links.forEach((a) => a.classList.remove('is-active'));
+
+            const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+            const currentSearch = window.location.search;
+            const current = currentPath + currentSearch;
+
+            let best = null;
+            let bestLen = -1;
+
+            links.forEach((a) => {
+                try {
+                    const u = new URL(a.href, window.location.origin);
+                    if (u.origin !== window.location.origin) return;
+
+                    const linkPath = u.pathname.replace(/\/+$/, '') || '/';
+                    const link = linkPath + (u.search || '');
+
+                    if (link === current && linkPath.length > bestLen) {
+                        best = a;
+                        bestLen = linkPath.length;
+                        return;
+                    }
+
+                    if (currentPath !== '/' && linkPath !== '/' && currentPath.startsWith(linkPath) && linkPath.length > bestLen) {
+                        best = a;
+                        bestLen = linkPath.length;
+                    }
+                } catch (e) {}
+            });
+
+            if (best) {
+                best.classList.add('is-active');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
             // Handle navigation links with AJAX
             document.addEventListener('click', function (event) {
-                // Find the closest anchor element
                 const link = event.target.closest('a');
-
-                if (!link || link.hasAttribute('target') || link.hasAttribute('download')) {
-                    return;
-                }
-
-                // Allow links that rely on inline handlers (e.g., logout form submit) to behave normally.
-                if (link.hasAttribute('onclick') || link.hasAttribute('data-no-ajax')) {
-                    return;
-                }
+                if (!link || link.hasAttribute('target') || link.hasAttribute('download')) return;
+                if (link.hasAttribute('onclick') || link.hasAttribute('data-no-ajax')) return;
 
                 const href = link.getAttribute('href') || '';
-                if (!href || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) {
-                    return;
-                }
+                if (!href || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:') || href.startsWith('#')) return;
 
-                // Ignore hash-only links.
-                if (href.startsWith('#')) {
-                    return;
-                }
-
-                // Treat same-origin absolute URLs as internal too.
                 let url;
                 try {
                     url = new URL(href, window.location.origin);
-                } catch (e) {
-                    return;
-                }
+                } catch (e) { return; }
 
-                if (url.origin !== window.location.origin) {
-                    return;
-                }
+                if (url.origin !== window.location.origin) return;
 
                 event.preventDefault();
-                loadPageContent(url.href);
+                window.loadPageContent(url.href);
             });
 
             // Handle browser back/forward buttons
             window.addEventListener('popstate', function (event) {
                 if (event.state && event.state.url) {
-                    loadPageContent(event.state.url, false); // Don't push state when using browser history
+                    window.loadPageContent(event.state.url, false);
                 }
             });
 
             // Initial setup for the current page
-            reinitializePageScripts();
+            window.reinitializePageScripts();
         });
 
         // Toast notification system
@@ -1740,7 +1794,66 @@
             });
         })();
 
-        document.addEventListener('app:init', function () {
+        // Optimized AJAX Live Search
+        window.addEventListener('app:init', function() {
+            const searchInputs = document.querySelectorAll('input[name="search"]');
+            searchInputs.forEach(input => {
+                let debounceTimer;
+                let lastValue = input.value;
+                const form = input.closest('form');
+                if (!form) return;
+
+                const submitViaAjax = () => {
+                    const currentVal = input.value.trim();
+                    const icon = input.parentElement.querySelector('svg, i');
+                    
+                    if (currentVal !== lastValue) {
+                        lastValue = currentVal;
+                        
+                        if (icon) icon.classList.add('searching-active');
+                        
+                        const formData = new FormData(form);
+                        const params = new URLSearchParams(formData);
+                        const url = new URL(form.action || window.location.href, window.location.origin);
+                        
+                        // Reset pagination on new search
+                        url.searchParams.delete('page');
+                        
+                        for (const [key, value] of params.entries()) {
+                            url.searchParams.set(key, value);
+                        }
+                        
+                        if (window.loadPageContent) {
+                            window.loadPageContent(url.href, true, true);
+                        } else {
+                            form.submit();
+                        }
+                    } else if (icon) {
+                        icon.classList.remove('searching-active');
+                    }
+                };
+
+                input.addEventListener('input', function() {
+                    const icon = input.parentElement.querySelector('svg, i');
+                    if (icon && input.value.trim() !== lastValue) {
+                        icon.classList.add('searching-active');
+                    }
+                    
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(submitViaAjax, 300);
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        clearTimeout(debounceTimer);
+                        submitViaAjax();
+                    }
+                });
+            });
+        });
+
+        window.addEventListener('app:init', function () {
             const tables = document.querySelectorAll('#main-content table');
 
             tables.forEach(function (table) {
@@ -1826,7 +1939,7 @@
         //     });
         // });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @stack('scripts')
 </body>
 
 </html>

@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Jenis Surat')
+@section('title', 'Ubah Jenis Surat')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <div class="flex items-start justify-between gap-4 mb-6">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-800">Edit Jenis Surat</h1>
+                <h1 class="text-2xl font-semibold text-gray-800">Ubah Jenis Surat</h1>
                 <p class="text-sm text-gray-500">Kelola jenis surat dan template DOCX.</p>
             </div>
             <a href="{{ route('admin.suratjenis.index') }}" class="btn-pill btn-pill-secondary">Kembali</a>
@@ -153,15 +153,17 @@
                                                         </div>
                                                     </div>
                                                     <div class="text-xs text-gray-400" data-hint>
-                                                        {{ $type === 'pemohon' ? 'Akan menghasilkan field Pemohon (pilih mahasiswa/dosen) pada form permohonan.' : ($type === 'auto_no_surat' ? 'Nomor surat otomatis mengikuti jenis surat.' : '') }}
+                                                        {{ $type === 'pemohon' ? 'field Pemohon (pilih mahasiswa/dosen) pada form permohonan.' : ($type === 'auto_no_surat' ? 'Nomor surat otomatis mengikuti jenis surat.' : '') }}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td class="px-4 py-3 align-top">
                                                 <input type="checkbox" name="form_fields[{{ $i }}][required]" value="1" {{ !empty($f['required']) ? 'checked' : '' }}>
                                             </td>
-                                            <td class="px-4 py-3 align-top text-right">
-                                                <button type="button" class="remove-field text-red-600 hover:underline text-sm">Hapus</button>
+                                            <td class="px-4 py-3 align-top text-center">
+                                                <button type="button" class="remove-field text-red-600 hover:text-red-900" title="Hapus Field">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -210,7 +212,6 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     function buildTypeOptions(selected) {
         const types = [
@@ -278,8 +279,10 @@
                 <td class="px-4 py-3 align-top">
                     <input type="checkbox" name="form_fields[${index}][required]" value="1">
                 </td>
-                <td class="px-4 py-3 align-top text-right">
-                    <button type="button" class="remove-field text-red-600 hover:underline text-sm">Hapus</button>
+                <td class="px-4 py-3 align-top text-center">
+                    <button type="button" class="remove-field text-red-600 hover:text-red-900" title="Hapus Field">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
             </tr>
         `;
@@ -375,11 +378,7 @@
         ensureEmptyRow();
     }
 
-    // Initialize on both DOMContentLoaded (initial load) and page-loaded (AJAX)
-    document.addEventListener('DOMContentLoaded', initFormFieldsBuilder);
-    window.addEventListener('page-loaded', initFormFieldsBuilder);
-
-    // Also try immediately in case the script is injected via AJAX and dependencies are already ready
-    initFormFieldsBuilder();
+    // Initialize via Protekta to ensure dependencies (Sortable) are ready
+    window.Protekta.registerInit(initFormFieldsBuilder);
 </script>
 @endsection
