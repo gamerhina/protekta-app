@@ -813,7 +813,7 @@
                                 onclick="toggleNavbarDropdown('notifMenu')">
                             <i class="fas fa-bell text-lg"></i>
                             @if(($notif['count'] ?? 0) > 0)
-                                <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                                <span class="hidden absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
                                     {{ $notif['count'] > 9 ? '9+' : $notif['count'] }}
                                 </span>
                             @endif
@@ -827,7 +827,9 @@
                             <ul class="max-h-[24rem] overflow-y-auto py-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                                 @forelse($notif['items'] as $item)
                                     <li>
-                                        <a class="block border-b border-slate-50 px-4 py-3 hover:bg-slate-50" href="{{ $item['url'] ?? '#' }}">
+                                        <a class="block border-b border-slate-50 px-4 py-3 hover:bg-slate-50" 
+                                           href="{{ $item['url'] ?? '#' }}"
+                                           data-notif-key="{{ $item['key'] ?? '' }}">
                                             <div class="mb-0.5 text-sm font-semibold text-slate-800">{{ $item['title'] ?? 'Notifikasi' }}</div>
                                             <div class="text-xs leading-relaxed text-slate-500">{{ $item['message'] ?? '' }}</div>
                                         </a>
@@ -1176,7 +1178,7 @@
         // Notification system reinitialize function
         function reinitializeNotifications() {
             // Only run if notification elements exist
-            if (!document.querySelector('#navbarNotificationsDropdown')) {
+            if (!document.querySelector('#notifDropdownContainer')) {
                 return;
             }
 
@@ -1198,14 +1200,14 @@
             }
 
             function updateBadge() {
-                const badge = document.querySelector('#navbarNotificationsDropdown .badge');
+                const badge = document.querySelector('#notifBtn span');
                 if (!badge) return;
 
                 const visible = notifLinks.filter(isVisibleNotif).length;
                 if (visible <= 0) {
-                    badge.style.display = 'none';
+                    badge.classList.add('hidden');
                 } else {
-                    badge.style.display = '';
+                    badge.classList.remove('hidden');
                     badge.textContent = visible > 9 ? '9+' : String(visible);
                 }
             }
@@ -1219,8 +1221,8 @@
                 }
             });
 
-            // Initial badge update with delay
-            setTimeout(updateBadge, 100);
+            // Initial badge update run immediately to prevent flicker
+            updateBadge();
 
             // When user clicks a notification, mark as read locally
             notifLinks.forEach(link => {

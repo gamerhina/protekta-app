@@ -69,6 +69,7 @@ class LayoutComposer
 
                 if ($surat->status === 'diajukan') {
                     $items[] = [
+                        'key' => 'surat_' . $surat->id . '_diajukan',
                         'title' => 'Permohonan surat dikirim',
                         'message' => $jenisNama . ' menunggu diproses admin.',
                         'url' => route('mahasiswa.dashboard'),
@@ -76,6 +77,7 @@ class LayoutComposer
                     ];
                 } elseif ($surat->status === 'diproses') {
                     $items[] = [
+                        'key' => 'surat_' . $surat->id . '_diproses',
                         'title' => 'Permohonan diproses',
                         'message' => $jenisNama . ' sedang diproses admin.' . $noSurat,
                         'url' => route('mahasiswa.dashboard'),
@@ -83,6 +85,7 @@ class LayoutComposer
                     ];
                 } elseif ($surat->status === 'dikirim') {
                     $items[] = [
+                        'key' => 'surat_' . $surat->id . '_dikirim',
                         'title' => 'Surat dikirim',
                         'message' => $jenisNama . ' sudah dikirim.' . $noSurat,
                         'url' => route('mahasiswa.dashboard'),
@@ -90,6 +93,7 @@ class LayoutComposer
                     ];
                 } elseif ($surat->status === 'ditolak') {
                     $items[] = [
+                        'key' => 'surat_' . $surat->id . '_ditolak',
                         'title' => 'Permohonan ditolak',
                         'message' => $jenisNama . ' ditolak oleh admin.',
                         'url' => route('mahasiswa.dashboard'),
@@ -111,6 +115,7 @@ class LayoutComposer
             // 1. Pendaftaran diajukan - hanya jika status masih pending
             if ($seminar->status === 'diajukan') {
                 $items[] = [
+                    'key' => 'seminar_diajukan_' . $seminar->id,
                     'title' => 'Pendaftaran dikirim',
                     'message' => 'Pendaftaran seminar Anda telah dikirim dan menunggu persetujuan admin.',
                     'url' => route('mahasiswa.dashboard') . '#seminar-saya',
@@ -121,6 +126,7 @@ class LayoutComposer
             // 2. Pendaftaran disetujui - hanya jika nomor surat sudah ada
             if ($seminar->status === 'disetujui' && !empty($seminar->no_surat)) {
                 $items[] = [
+                    'key' => 'seminar_disetujui_' . $seminar->id,
                     'title' => 'Pendaftaran disetujui',
                     'message' => 'Pendaftaran disetujui. Nomor: ' . $seminar->no_surat,
                     'url' => route('mahasiswa.dashboard') . '#seminar-saya',
@@ -131,6 +137,7 @@ class LayoutComposer
             // 3. Jadwal ditetapkan - hanya jika ada tanggal dan lokasi
             if (in_array($seminar->status, ['disetujui', 'selesai'], true) && $seminar->tanggal && $seminar->lokasi) {
                 $items[] = [
+                    'key' => 'seminar_jadwal_' . $seminar->id,
                     'title' => 'Jadwal seminar',
                     'message' => $seminar->tanggal->format('d M Y') . ', ' . $seminar->lokasi,
                     'url' => route('mahasiswa.dashboard') . '#seminar-saya',
@@ -149,6 +156,7 @@ class LayoutComposer
 
             if ($expectedEvaluators > 0 && $filledScores > 0 && $filledScores < $expectedEvaluators) {
                 $items[] = [
+                    'key' => 'seminar_penilaian_' . $seminar->id . '_' . $filledScores,
                     'title' => 'Penilaian berlangsung',
                     'message' => 'Menunggu ' . ($expectedEvaluators - $filledScores) . ' penguji lagi.',
                     'url' => route('mahasiswa.dashboard') . '#seminar-saya',
@@ -159,6 +167,7 @@ class LayoutComposer
             // 5. Nilai selesai - jika semua nilai sudah masuk
             if ($seminar->status === 'selesai' || $seminar->nilai_sent_at) {
                 $items[] = [
+                    'key' => 'seminar_selesai_' . $seminar->id,
                     'title' => 'Nilai selesai',
                     'message' => 'Nilai akhir telah diterbitkan. Cek di aplikasi.',
                     'url' => route('mahasiswa.dashboard') . '#seminar-saya',
@@ -196,6 +205,7 @@ class LayoutComposer
 
                 if ($surat->status === 'diajukan') {
                     $items[] = [
+                        'key' => 'surat_' . $surat->id . '_diajukan',
                         'title' => 'Permohonan surat dikirim',
                         'message' => $jenisNama . ' menunggu diproses admin.',
                         'url' => route('dosen.surat.index'),
@@ -203,6 +213,7 @@ class LayoutComposer
                     ];
                 } elseif ($surat->status === 'diproses') {
                     $items[] = [
+                        'key' => 'surat_' . $surat->id . '_diproses',
                         'title' => 'Permohonan diproses',
                         'message' => $jenisNama . ' sedang diproses admin.' . $noSurat,
                         'url' => route('dosen.surat.index'),
@@ -210,6 +221,7 @@ class LayoutComposer
                     ];
                 } elseif ($surat->status === 'dikirim') {
                     $items[] = [
+                        'key' => 'surat_' . $surat->id . '_dikirim',
                         'title' => 'Surat dikirim',
                         'message' => $jenisNama . ' sudah dikirim.' . $noSurat,
                         'url' => route('dosen.surat.index'),
@@ -217,6 +229,7 @@ class LayoutComposer
                     ];
                 } elseif ($surat->status === 'ditolak') {
                     $items[] = [
+                        'key' => 'surat_' . $surat->id . '_ditolak',
                         'title' => 'Permohonan ditolak',
                         'message' => $jenisNama . ' ditolak oleh admin.',
                         'url' => route('dosen.surat.index'),
@@ -269,6 +282,7 @@ class LayoutComposer
             // 1. Mendapatkan tugas baru sebagai penguji
             if ($isUpcoming) {
                 $items[] = [
+                    'key' => 'dosen_tugas_' . $seminar->id . '_' . $evaluatorType,
                     'title' => 'Tugas penguji baru',
                     'message' => 'Anda sebagai ' . $roleLabel . ' untuk ' . ($seminar->mahasiswa->nama ?? '-') . ' (' . $tanggalLabel . ')',
                     'url' => route('dosen.evaluasi.index'),
@@ -285,6 +299,7 @@ class LayoutComposer
             // 2. Belum mengisi nilai (jika seminar sedang berlangsung atau akan datang)
             if (($isUpcoming || $isPast) && $canEvaluate && !$nilai) {
                 $items[] = [
+                    'key' => 'dosen_perlu_nilai_' . $seminar->id . '_' . $evaluatorType,
                     'title' => 'Perlu nilai',
                     'message' => 'Mohon isi nilai ' . $roleLabel . ' untuk ' . ($seminar->mahasiswa->nama ?? '-'),
                     'url' => route('dosen.nilai.input', $seminar),
@@ -296,6 +311,7 @@ class LayoutComposer
             // 3. Nilai sudah ada tapi belum tanda tangan digital
             if (($isUpcoming || $isPast) && $canEvaluate && $nilai && !$signature) {
                 $items[] = [
+                    'key' => 'dosen_perlu_ttd_' . $seminar->id . '_' . $evaluatorType,
                     'title' => 'Perlu TTD Digital',
                     'message' => 'Nilai tersimpan, lakukan tanda tangan digital.',
                     'url' => route('dosen.signature.form', ['seminarId' => $seminar->id, 'evaluatorType' => $evaluatorType]),
@@ -316,6 +332,7 @@ class LayoutComposer
             if ($canEvaluate && $signature && $expectedEvaluators > 0 && $signedCount < $expectedEvaluators) {
                 $waitingCount = $expectedEvaluators - $signedCount;
                 $items[] = [
+                    'key' => 'dosen_menunggu_penguji_' . $seminar->id . '_' . $waitingCount,
                     'title' => 'Menunggu penguji',
                     'message' => 'Tanda tangan digital OK. Menunggu ' . $waitingCount . ' penguji lagi.',
                     'url' => route('dosen.evaluasi.index'),
@@ -339,35 +356,40 @@ class LayoutComposer
         $items = [];
 
         // 1. Pendaftaran baru yang perlu approval (prioritas tertinggi)
-        $pendingRegistrations = Seminar::with('mahasiswa')
-            ->where('status', 'diajukan')
-            ->orderByDesc('created_at')
-            ->limit(5)
-            ->get();
+        $pendingCount = Seminar::where('status', 'diajukan')->count();
             
-        if ($pendingRegistrations->count() > 0) {
-            $mahasiswaNames = $pendingRegistrations->pluck('mahasiswa.nama')->filter()->take(3)->implode(', ');
-            if ($pendingRegistrations->count() > 3) {
-                $mahasiswaNames .= ' dan ' . ($pendingRegistrations->count() - 3) . ' lainnya';
+        if ($pendingCount > 0) {
+            $latestRegistrations = Seminar::with('mahasiswa')
+                ->where('status', 'diajukan')
+                ->orderByDesc('created_at')
+                ->limit(5)
+                ->get();
+
+            $mahasiswaNames = $latestRegistrations->pluck('mahasiswa.nama')->filter()->take(3)->implode(', ');
+            if ($pendingCount > 3) {
+                $mahasiswaNames .= ' dan ' . ($pendingCount - 3) . ' lainnya';
             }
             
             $items[] = [
+                'key' => 'admin_pending_reg_' . $pendingCount,
                 'title' => 'Pendaftaran Baru',
-                'message' => $pendingRegistrations->count() . ' pendaftaran menunggu approval dari ' . $mahasiswaNames,
+                'message' => $pendingCount . ' pendaftaran menunggu approval dari ' . $mahasiswaNames,
                 'url' => '/admin/seminars?filter=diajukan',
                 'level' => 'warning',
             ];
         }
 
         // Surat: permohonan baru yang perlu diproses
-        $pendingSurats = Surat::with(['jenis', 'pemohonDosen', 'pemohonMahasiswa'])
-            ->where('status', 'diajukan')
-            ->orderByDesc('created_at')
-            ->limit(5)
-            ->get();
+        $pendingSuratCount = Surat::where('status', 'diajukan')->count();
 
-        if ($pendingSurats->count() > 0) {
-            $pemohonNames = $pendingSurats
+        if ($pendingSuratCount > 0) {
+            $latestSurats = Surat::with(['jenis', 'pemohonDosen', 'pemohonMahasiswa'])
+                ->where('status', 'diajukan')
+                ->orderByDesc('created_at')
+                ->limit(5)
+                ->get();
+
+            $pemohonNames = $latestSurats
                 ->map(function ($s) {
                     return $s->pemohon_type === 'mahasiswa'
                         ? ($s->pemohonMahasiswa->nama ?? null)
@@ -377,13 +399,14 @@ class LayoutComposer
                 ->take(3)
                 ->implode(', ');
 
-            if ($pendingSurats->count() > 3) {
-                $pemohonNames .= ' dan ' . ($pendingSurats->count() - 3) . ' lainnya';
+            if ($pendingSuratCount > 3) {
+                $pemohonNames .= ' dan ' . ($pendingSuratCount - 3) . ' lainnya';
             }
 
             $items[] = [
+                'key' => 'admin_pending_surat_' . $pendingSuratCount,
                 'title' => 'Permohonan Surat',
-                'message' => $pendingSurats->count() . ' permohonan menunggu diproses dari ' . ($pemohonNames ?: 'pemohon'),
+                'message' => $pendingSuratCount . ' permohonan menunggu diproses dari ' . ($pemohonNames ?: 'pemohon'),
                 'url' => route('admin.surat.index', ['status' => 'diajukan']),
                 'level' => 'warning',
             ];
@@ -399,6 +422,7 @@ class LayoutComposer
 
         if ($approvedWithoutSchedule > 0) {
             $items[] = [
+                'key' => 'admin_perlu_jadwal_' . $approvedWithoutSchedule,
                 'title' => 'Perlu Jadwal',
                 'message' => $approvedWithoutSchedule . ' seminar disetujui tapi belum ada jadwal.',
                 'url' => '/admin/seminars?filter=disetujui',
@@ -416,6 +440,7 @@ class LayoutComposer
 
         if ($readyForFinalGrade > 0) {
             $items[] = [
+                'key' => 'admin_siap_nilai_' . $readyForFinalGrade,
                 'title' => 'Siap Kirim Nilai',
                 'message' => $readyForFinalGrade . ' seminar siap dikirim nilai akhir.',
                 'url' => '/admin/seminars?filter=ready',
@@ -427,6 +452,7 @@ class LayoutComposer
         $completedSeminars = Seminar::where('status', 'selesai')->count();
         if ($completedSeminars > 0) {
             $items[] = [
+                'key' => 'admin_seminar_selesai_' . $completedSeminars,
                 'title' => 'Seminar Selesai',
                 'message' => $completedSeminars . ' seminar sudah selesai dinilai.',
                 'url' => '/admin/seminars?filter=selesai',
@@ -439,6 +465,7 @@ class LayoutComposer
         if ($totalSeminars > 0) {
             $approvedPercentage = round(($completedSeminars / $totalSeminars) * 100);
             $items[] = [
+                'key' => 'admin_statistik_' . $totalSeminars . '_' . $completedSeminars,
                 'title' => 'Statistik Seminar',
                 'message' => $completedSeminars . '/' . $totalSeminars . ' selesai (' . $approvedPercentage . '%)',
                 'url' => '/admin/dashboard',
