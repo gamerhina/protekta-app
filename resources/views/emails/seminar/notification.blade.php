@@ -11,9 +11,9 @@ Anda telah diundang untuk menghadiri seminar berikut:
 **Waktu:** {{ $seminar->waktu_mulai }}<br>
 **Lokasi:** {{ $seminar->lokasi }}<br>
 **Mahasiswa:** {{ $seminar->mahasiswa->nama ?? 'N/A' }} ({{ $seminar->mahasiswa->npm ?? 'N/A' }})<br>
-**Pembimbing 1:** {{ $seminar->p1Dosen->nama ?? 'N/A' }}<br>
-**Pembimbing 2:** {{ $seminar->p2Dosen->nama ?? 'N/A' }}<br>
-**Pembahas:** {{ $seminar->pembahasDosen->nama ?? 'N/A' }}
+**Pembimbing 1:** {{ $seminar->p1Dosen->nama ?? ($seminar->p1_nama ?? 'N/A') }}<br>
+**Pembimbing 2:** {{ $seminar->p2Dosen->nama ?? ($seminar->p2_nama ?? 'N/A') }}<br>
+**Pembahas:** {{ $seminar->pembahasDosen->nama ?? ($seminar->pembahas_nama ?? 'N/A') }}
 </x-mail::panel>
 
 Silakan konfirmasi kehadiran Anda dan bersiap-siap untuk mengevaluasi seminar ini.
@@ -37,7 +37,7 @@ Berikut adalah nilai dari seminar yang telah diselesaikan:
 @endphp
 
 **NILAI PEMBIMBING 1**<br>
-Dosen: {{ $seminar->p1Dosen->nama ?? 'N/A' }}<br>
+Dosen: {{ $seminar->p1Dosen->nama ?? ($seminar->p1_nama ?? 'N/A') }}<br>
 @if($nilaiP1)
 Nilai Akhir: **{{ $nilaiP1->nilai_angka }}**<br>
 Terbilang: *{{ ucwords(Terbilang::convert($nilaiP1->nilai_angka)) }}*
@@ -48,7 +48,7 @@ Status: Belum dinilai
 ---
 
 **NILAI PEMBIMBING 2**<br>
-Dosen: {{ $seminar->p2Dosen->nama ?? 'N/A' }}<br>
+Dosen: {{ $seminar->p2Dosen->nama ?? ($seminar->p2_nama ?? 'N/A') }}<br>
 @if($nilaiP2)
 Nilai Akhir: **{{ $nilaiP2->nilai_angka }}**<br>
 Terbilang: *{{ ucwords(Terbilang::convert($nilaiP2->nilai_angka)) }}*
@@ -59,7 +59,7 @@ Status: Belum dinilai
 ---
 
 **NILAI PEMBAHAS**<br>
-Dosen: {{ $seminar->pembahasDosen->nama ?? 'N/A' }}<br>
+Dosen: {{ $seminar->pembahasDosen->nama ?? ($seminar->pembahas_nama ?? 'N/A') }}<br>
 @if($nilaiPembahas)
 Nilai Akhir: **{{ $nilaiPembahas->nilai_angka }}**<br>
 Terbilang: *{{ ucwords(Terbilang::convert($nilaiPembahas->nilai_angka)) }}*

@@ -362,7 +362,7 @@
                         <div class="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-blue-50 to-white shadow-sm">
                             <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
                                 <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm mr-2">P1</span>
-                                {{ $seminar->p1Dosen->nama ?? 'N/A' }}
+                                {{ $seminar->p1Dosen->nama ?? ($seminar->p1_nama ?? 'N/A') }}
                             </h3>
 
                             @php
@@ -444,7 +444,7 @@
                         <div class="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-green-50 to-white shadow-sm">
                             <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
                                 <span class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm mr-2">P2</span>
-                                {{ $seminar->p2Dosen->nama ?? 'N/A' }}
+                                {{ $seminar->p2Dosen->nama ?? ($seminar->p2_nama ?? 'N/A') }}
                             </h3>
 
                             @php
@@ -526,7 +526,7 @@
                         <div class="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-purple-50 to-white shadow-sm">
                             <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
                                 <span class="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm mr-2">PMB</span>
-                                {{ $seminar->pembahasDosen->nama ?? 'N/A' }}
+                                {{ $seminar->pembahasDosen->nama ?? ($seminar->pembahas_nama ?? 'N/A') }}
                             </h3>
 
                             @php

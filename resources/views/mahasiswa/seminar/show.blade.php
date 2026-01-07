@@ -64,7 +64,7 @@
                             <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">P1</span>
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembimbing 1</span>
                         </div>
-                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p1Dosen->nama ?? 'N/A' }}</p>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p1Dosen->nama ?? ($seminar->p1_nama ?? 'N/A') }}</p>
                     </div>
 
                     <!-- P2 -->
@@ -73,7 +73,7 @@
                             <span class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">P2</span>
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembimbing 2</span>
                         </div>
-                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p2Dosen->nama ?? 'N/A' }}</p>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p2Dosen->nama ?? ($seminar->p2_nama ?? 'N/A') }}</p>
                     </div>
 
                     <!-- PMB -->
@@ -82,7 +82,7 @@
                             <span class="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">PMB</span>
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembahas</span>
                         </div>
-                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->pembahasDosen->nama ?? 'N/A' }}</p>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->pembahasDosen->nama ?? ($seminar->pembahas_nama ?? 'N/A') }}</p>
                     </div>
                 </div>
 
@@ -187,7 +187,7 @@
                         <div class="border-2 border-blue-200 rounded-lg p-5 {{ $nilaiP1 ? 'bg-blue-50' : 'bg-gray-50' }}">
                             <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
                                 <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0">P1</span>
-                                {{ $seminar->p1Dosen->nama ?? 'N/A' }}
+                                {{ $seminar->p1Dosen->nama ?? ($seminar->p1_nama ?? 'N/A') }}
                             </h3>
                             @if($nilaiP1)
                                 @if($nilaiP1->assessmentScores->count() > 0)
@@ -223,7 +223,7 @@
                         <div class="border-2 border-green-200 rounded-lg p-5 {{ $nilaiP2 ? 'bg-green-50' : 'bg-gray-50' }}">
                             <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
                                 <span class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0">P2</span>
-                                {{ $seminar->p2Dosen->nama ?? 'N/A' }}
+                                {{ $seminar->p2Dosen->nama ?? ($seminar->p2_nama ?? 'N/A') }}
                             </h3>
                             @if($nilaiP2)
                                 @if($nilaiP2->assessmentScores->count() > 0)
@@ -259,7 +259,7 @@
                         <div class="border-2 border-purple-200 rounded-lg p-5 {{ $nilaiPembahas ? 'bg-purple-50' : 'bg-gray-50' }}">
                             <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
                                 <span class="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm mr-2 flex-shrink-0">PMB</span>
-                                {{ $seminar->pembahasDosen->nama ?? 'N/A' }}
+                                {{ $seminar->pembahasDosen->nama ?? ($seminar->pembahas_nama ?? 'N/A') }}
                             </h3>
                             @if($nilaiPembahas)
                                 @if($nilaiPembahas->assessmentScores->count() > 0)
