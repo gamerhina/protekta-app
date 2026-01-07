@@ -55,7 +55,7 @@
         <link rel="icon" href="{{ $brandingSettings->favicon_url }}?v={{ $brandingSettings->updated_at?->timestamp ?? time() }}" type="image/png">
     @endif
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'], 'build')
     <script>
         // Global Shim for Protekta (prevents race conditions)
         window.Protekta = window.Protekta || {

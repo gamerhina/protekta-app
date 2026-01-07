@@ -11,7 +11,7 @@
     @if(optional($settings)->favicon_url)
         <link rel="icon" href="{{ $settings->favicon_url }}?v={{ optional($settings)->updated_at?->timestamp ?? time() }}" type="image/png">
     @endif
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'], 'build')
     @php
         $primary = optional($settings)->primary_color ?? '#1d4ed8';
         $secondary = optional($settings)->secondary_color ?? '#0f172a';
