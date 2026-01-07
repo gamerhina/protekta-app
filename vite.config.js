@@ -17,7 +17,7 @@ export default defineConfig({
 
     // ⬇️ INI KUNCI UTAMA
     build: {
-        outDir: 'build', 
+        outDir: 'public/build', 
         emptyOutDir: true,
     },
 
