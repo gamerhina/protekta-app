@@ -151,6 +151,7 @@ class AdminSuratController extends Controller
                     $sources = ['mahasiswa', 'dosen'];
                 }
 
+                $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'array';
                 $rules["form_data.$key.type"] = ($required ? 'required|' : 'nullable|') . 'in:' . implode(',', $sources);
                 $rules["form_data.$key.id"] = ($required ? 'required|' : 'nullable|') . 'integer|min:1';
                 continue;
@@ -208,6 +209,8 @@ class AdminSuratController extends Controller
             if ($type === 'table') {
                 $columns = is_array($f['columns'] ?? null) ? $f['columns'] : [];
                 $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'array';
+                
+                // Validate each row
                 $rules["form_data.$key.*"] = 'array';
                 
                 // Validate each column in each row
@@ -216,7 +219,7 @@ class AdminSuratController extends Controller
                         $colKey = $col['key'];
                         $colType = $col['type'] ?? 'text';
                         
-                        // Handle pemohon column type
+                        // Handle column with pemohon type
                         if ($colType === 'pemohon') {
                             $sources = $col['pemohon_sources'] ?? ['mahasiswa', 'dosen'];
                             if (!is_array($sources) || empty($sources)) {
@@ -227,7 +230,6 @@ class AdminSuratController extends Controller
                             $rules["form_data.$key.*.$colKey.type"] = 'nullable|in:' . implode(',', $sources);
                             $rules["form_data.$key.*.$colKey.id"] = 'nullable|integer|min:1';
                         } else {
-                            // Default validation for other column types
                             $rules["form_data.$key.*.$colKey"] = 'nullable|string|max:500';
                         }
                     }
@@ -251,7 +253,7 @@ class AdminSuratController extends Controller
                 continue;
             }
 
-            // default text/textarea
+            // default
             $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'string';
         }
 
