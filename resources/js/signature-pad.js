@@ -9,12 +9,12 @@ if (typeof window !== 'undefined' && !window.SIGNATURE_PAD_LOADED) {
 
     const SIGNATURE_TYPES = ['p1', 'p2', 'pembahas', 'mahasiswa'];
     const STROKE_OPTIONS = {
-        size: 4.5,
-        thinning: 0.5,
-        smoothing: 0.5,
-        streamline: 0.5,
+        size: 2.2,
+        thinning: 0.4,
+        smoothing: 0.1,
+        streamline: 0.1,
     };
-    const MIN_SEGMENT_LENGTH = 1.5;
+    const MIN_SEGMENT_LENGTH = 1.2;
 
     // Simpan referensi instansi pad agar tombol di app.js bisa memanggilnya
     const activePads = {};
