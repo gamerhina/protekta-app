@@ -15,6 +15,11 @@ export default defineConfig({
         tailwindcss(),
     ],
 
+    build: {
+        outDir: 'build', 
+        emptyOutDir: true,
+    },
+
     server: {
         host: '0.0.0.0',
         cors: true,
