@@ -139,6 +139,24 @@ class SuratTemplate extends Model
                     continue;
                 }
 
+                // For table fields, add each column as a separate field
+                if ($type === 'table' && isset($f['columns']) && is_array($f['columns'])) {
+                    // Automatically add the 'no' field for row numbering
+                    $customFields[$key . '.no'] = $label . ' - Nomor Urut';
+
+                    foreach ($f['columns'] as $col) {
+                        if (!is_array($col)) continue;
+                        $colKey = trim((string) ($col['key'] ?? ''));
+                        $colLabel = trim((string) ($col['label'] ?? ''));
+                        if ($colKey === '') continue;
+                        
+                        $compositeKey = $key . '.' . $colKey;
+                        $compositeLabel = $label . ' - ' . ($colLabel !== '' ? $colLabel : $colKey);
+                        $customFields[$compositeKey] = $compositeLabel;
+                    }
+                    continue;
+                }
+
                 $customFields[$key] = $label;
             }
         }

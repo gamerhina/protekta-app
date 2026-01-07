@@ -26,8 +26,14 @@ class Seminar extends Model
         'waktu_mulai',
         'lokasi',
         'p1_dosen_id',
+        'p1_nama',
+        'p1_nip',
         'p2_dosen_id',
+        'p2_nama',
+        'p2_nip',
         'pembahas_dosen_id',
+        'pembahas_nama',
+        'pembahas_nip',
         'berkas_syarat',
         'status',
         'tanggal_nilai',
@@ -158,13 +164,13 @@ class Seminar extends Model
         $pembahasRequired = (bool) ($jenis?->pembahas_required ?? true);
 
         $evaluatorIds = [];
-        if ($p1Required && $this->p1_dosen_id) {
+        if ($p1Required && ($this->p1_dosen_id || $this->p1_nama)) {
             $evaluatorIds[] = ['dosen_id' => $this->p1_dosen_id, 'jenis_penilai' => 'p1'];
         }
-        if ($p2Required && $this->p2_dosen_id) {
+        if ($p2Required && ($this->p2_dosen_id || $this->p2_nama)) {
             $evaluatorIds[] = ['dosen_id' => $this->p2_dosen_id, 'jenis_penilai' => 'p2'];
         }
-        if ($pembahasRequired && $this->pembahas_dosen_id) {
+        if ($pembahasRequired && ($this->pembahas_dosen_id || $this->pembahas_nama)) {
             $evaluatorIds[] = ['dosen_id' => $this->pembahas_dosen_id, 'jenis_penilai' => 'pembahas'];
         }
 

@@ -45,7 +45,9 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-sm">
-                                <a class="text-blue-600 hover:underline" href="{{ route('admin.surattemplate.edit', [$suratJenis, $t]) }}">Kelola</a>
+                                <a class="text-blue-600 hover:text-blue-800 transition-colors" href="{{ route('admin.surattemplate.edit', [$suratJenis, $t]) }}" title="Kelola Template">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </td>
                         </tr>
                     @empty

@@ -61,7 +61,7 @@ class DocumentController extends Controller
             'email_body_template' => 'nullable|string',
         ]);
 
-        $templateDir = storage_path('app/private/document-templates');
+        $templateDir = base_path('uploads/document-templates');
         $this->ensureDirectory($templateDir);
 
         $filename = uniqid('template_', true).'.docx';
@@ -135,7 +135,7 @@ class DocumentController extends Controller
         ];
 
         if ($request->hasFile('new_file')) {
-            $templateDir = storage_path('app/private/document-templates');
+            $templateDir = base_path('uploads/document-templates');
             $this->ensureDirectory($templateDir);
 
             $existingPath = $this->getTemplateFilePath($template);
@@ -445,7 +445,7 @@ class DocumentController extends Controller
 
     private function getTemplateFilePath(DocumentTemplate $template): string
     {
-        return storage_path('app/private/'.ltrim($template->file_path, '/'));
+        return base_path('uploads/'.ltrim($template->file_path, '/'));
     }
 
     private function normalizeAssociativeArray($value): array
@@ -496,7 +496,7 @@ class DocumentController extends Controller
             throw new \Exception('Template file not found: '.$templatePath);
         }
 
-        $tempDir = storage_path('app/temp/documents');
+        $tempDir = base_path('uploads/temp/documents');
         $this->ensureDirectory($tempDir);
 
         $fileName = uniqid('doc_', true).'.docx';
@@ -663,7 +663,7 @@ class DocumentController extends Controller
     private function applyImageValue(TemplateProcessor $processor, array $variants, ?string $value, array $properties = []): void
     {
         $path = $value ?? '';
-        if ($path && ! file_exists($path) && str_starts_with($path, 'data:image')) {
+        if ($path && ! file_exists($path)) {
             $path = $this->convertBase64ToImage($path, 'image_tag');
         }
 
@@ -1327,8 +1327,10 @@ class DocumentController extends Controller
             $trimmed,
             storage_path('app/'.ltrim($trimmed, '/')),
             storage_path('app/public/'.ltrim($trimmed, '/')),
+            base_path('uploads/'.ltrim($trimmed, '/')),
             public_path($trimmed),
             public_path('storage/'.ltrim($trimmed, '/')),
+            public_path('uploads/'.ltrim($trimmed, '/')),
         ];
 
         foreach ($pathCandidates as $candidate) {
@@ -1452,18 +1454,11 @@ class DocumentController extends Controller
 
         $hariNama = '';
         $tahun = '';
+        $tanggalPenuh = '';
         if ($seminar->tanggal) {
-            $hariIndo = [
-                'Sunday' => 'Minggu',
-                'Monday' => 'Senin',
-                'Tuesday' => 'Selasa',
-                'Wednesday' => 'Rabu',
-                'Thursday' => 'Kamis',
-                'Friday' => 'Jumat',
-                'Saturday' => 'Sabtu',
-            ];
-            $hariNama = $hariIndo[$seminar->tanggal->format('l')] ?? '';
-            $tahun = $seminar->tanggal->format('Y');
+            $hariNama = $seminar->tanggal->translatedFormat('l');
+            $tahun = $seminar->tanggal->translatedFormat('Y');
+            $tanggalPenuh = $seminar->tanggal->translatedFormat('d F Y');
         }
 
         return array_merge($nilaiData, [
@@ -1474,23 +1469,23 @@ class DocumentController extends Controller
             'mahasiswa_no_hp' => $seminar->mahasiswa?->no_hp ?? '',
             'seminar_no_surat' => $seminar->no_surat ?? '',
             'seminar_judul' => $seminar->judul ?? '',
-            'seminar_tanggal' => $seminar->tanggal ? $seminar->tanggal->format('d F Y') : '',
+            'seminar_tanggal' => $tanggalPenuh,
             'seminar_tahun' => $tahun,
             'seminar_hari' => $hariNama,
             'seminar_waktu_mulai' => $seminar->waktu_mulai ?? '',
             'seminar_lokasi' => $seminar->lokasi ?? '',
             'seminar_status' => $seminar->status ?? '',
             'seminar_jenis_nama' => $seminar->seminarJenis?->nama ?? '',
-            'p1_nama' => $seminar->p1Dosen?->nama ?? '',
-            'p1_nip' => $seminar->p1Dosen?->nip ?? '',
+            'p1_nama' => $seminar->p1Dosen?->nama ?: ($seminar->p1_nama ?? ''),
+            'p1_nip' => $seminar->p1Dosen?->nip ?: ($seminar->p1_nip ?? ''),
             'p1_email' => $seminar->p1Dosen?->email ?? '',
             'p1_ttd' => $p1SignaturePath,
-            'p2_nama' => $seminar->p2Dosen?->nama ?? '',
-            'p2_nip' => $seminar->p2Dosen?->nip ?? '',
+            'p2_nama' => $seminar->p2Dosen?->nama ?: ($seminar->p2_nama ?? ''),
+            'p2_nip' => $seminar->p2Dosen?->nip ?: ($seminar->p2_nip ?? ''),
             'p2_email' => $seminar->p2Dosen?->email ?? '',
             'p2_ttd' => $p2SignaturePath,
-            'pembahas_nama' => $seminar->pembahasDosen?->nama ?? '',
-            'pembahas_nip' => $seminar->pembahasDosen?->nip ?? '',
+            'pembahas_nama' => $seminar->pembahasDosen?->nama ?: ($seminar->pembahas_nama ?? ''),
+            'pembahas_nip' => $seminar->pembahasDosen?->nip ?: ($seminar->pembahas_nip ?? ''),
             'pembahas_email' => $seminar->pembahasDosen?->email ?? '',
             'pembahas_ttd' => $pembahasSignaturePath,
         ]);
@@ -1717,6 +1712,8 @@ class DocumentController extends Controller
             storage_path('app/'.ltrim($value, '/')),
             storage_path('app/public/'.ltrim($value, '/')),
             public_path('storage/'.ltrim($value, '/')),
+            base_path('uploads/'.ltrim($value, '/')),
+            public_path('uploads/'.ltrim($value, '/')),
         ];
 
         foreach ($possiblePaths as $path) {
@@ -1735,7 +1732,7 @@ class DocumentController extends Controller
             return null;
         }
 
-        $dir = storage_path('app/temp/signatures');
+        $dir = base_path('uploads/temp/signatures');
         $this->ensureDirectory($dir);
         $filePath = $dir.'/'.$prefix.'_'.uniqid('', true).'.png';
 

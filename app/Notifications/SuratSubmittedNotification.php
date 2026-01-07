@@ -52,7 +52,7 @@ class SuratSubmittedNotification extends Notification implements ShouldQueue
             ->line('Jenis Surat: ' . ($this->surat->jenis->nama ?? 'N/A'))
             ->line('Pemohon: ' . $pemohon)
             ->line('Nomor Surat: ' . ($this->surat->no_surat ?? 'Belum ada'))
-            ->line('Tanggal Surat: ' . ($this->surat->tanggal_surat ? $this->surat->tanggal_surat->format('d M Y') : 'N/A'))
+            ->line('Tanggal Surat: ' . ($this->surat->tanggal_surat ? $this->surat->tanggal_surat->translatedFormat('d F Y') : 'N/A'))
             ->line('Perihal: ' . ($this->surat->perihal ?? '-'))
             ->line('Tujuan: ' . ($this->surat->tujuan ?? '-'))
             ->action('Lihat Detail', route('admin.surat.show', $this->surat))

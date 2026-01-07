@@ -116,6 +116,7 @@
                                                         'radio' => 'Radio Button',
                                                         'checkbox' => 'Checklist (Checkbox)',
                                                         'file' => 'File Upload',
+                                                        'table' => 'Tabel Multi-Row',
                                                     ] as $v => $lbl)
                                                         <option value="{{ $v }}" {{ ($type === $v) ? 'selected' : '' }}>{{ $lbl }}</option>
                                                     @endforeach
@@ -130,6 +131,12 @@
                                                         $pemohonSources = $f['pemohon_sources'] ?? $f['sources'] ?? ['mahasiswa', 'dosen'];
                                                         if (!is_array($pemohonSources)) {
                                                             $pemohonSources = ['mahasiswa', 'dosen'];
+                                                        }
+                                                        $tableColumns = '';
+                                                        if (isset($f['columns']) && is_array($f['columns'])) {
+                                                            $tableColumns = collect($f['columns'])->map(fn($col) => ($col['key'] ?? '') . '|' . ($col['label'] ?? ''))->implode("\n");
+                                                        } elseif (isset($f['columns']) && is_string($f['columns'])) {
+                                                            $tableColumns = $f['columns'];
                                                         }
                                                     @endphp
                                                     <div class="pemohon-wrap {{ $type === 'pemohon' ? '' : 'hidden' }}">
@@ -146,6 +153,11 @@
                                                     <div class="options-wrap {{ in_array($type, ['select','radio','checkbox'], true) ? '' : 'hidden' }}">
                                                         <textarea name="form_fields[{{ $i }}][options]" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs" placeholder="value|label\nvalue2|label2">{{ $optionsText }}</textarea>
                                                     </div>
+                                                    <div class="table-wrap {{ $type === 'table' ? '' : 'hidden' }}">
+                                                        <div class="text-xs text-gray-500 mb-1">Kolom Tabel</div>
+                                                        <textarea name="form_fields[{{ $i }}][columns]" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs" placeholder="nama|Nama Lengkap\nnim|NIM\njurusan|Jurusan">{{ $tableColumns }}</textarea>
+                                                        <div class="text-xs text-gray-400 mt-1">Format: key|Label (satu kolom per baris)</div>
+                                                    </div>
                                                     <div class="file-wrap {{ $type === 'file' ? '' : 'hidden' }}">
                                                         <div class="grid grid-cols-1 gap-2">
                                                             <input name="form_fields[{{ $i }}][extensions]" value="{{ $extText }}" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs" placeholder="pdf,jpg,png">
@@ -153,7 +165,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="text-xs text-gray-400" data-hint>
-                                                        {{ $type === 'pemohon' ? 'field Pemohon (pilih mahasiswa/dosen) pada form permohonan.' : ($type === 'auto_no_surat' ? 'Nomor surat otomatis mengikuti jenis surat.' : '') }}
+                                                        {{ $type === 'pemohon' ? 'field Pemohon (pilih mahasiswa/dosen) pada form permohonan.' : ($type === 'auto_no_surat' ? 'Nomor surat otomatis mengikuti jenis surat.' : ($type === 'table' ? 'Tabel dengan multiple rows yang bisa ditambah/hapus oleh user.' : '')) }}
                                                     </div>
                                                 </div>
                                             </td>
@@ -226,6 +238,7 @@
             { value: 'radio', label: 'Radio Button' },
             { value: 'checkbox', label: 'Checklist (Checkbox)' },
             { value: 'file', label: 'File Upload' },
+            { value: 'table', label: 'Tabel Multi-Row' },
         ];
         return types.map(t => `<option value="${t.value}" ${selected === t.value ? 'selected' : ''}>${t.label}</option>`).join('');
     }
@@ -267,6 +280,11 @@
                         <div class="options-wrap hidden">
                             <textarea name="form_fields[${index}][options]" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs" placeholder="value|label\nvalue2|label2"></textarea>
                         </div>
+                        <div class="table-wrap hidden">
+                            <div class="text-xs text-gray-500 mb-1">Kolom Tabel</div>
+                            <textarea name="form_fields[${index}][columns]" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs" placeholder="nama|Nama Lengkap\nnim|NIM\njurusan|Jurusan"></textarea>
+                            <div class="text-xs text-gray-400 mt-1">Format: key|Label (satu kolom per baris)</div>
+                        </div>
                         <div class="file-wrap hidden">
                             <div class="grid grid-cols-1 gap-2">
                                 <input name="form_fields[${index}][extensions]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs" placeholder="pdf,jpg,png">
@@ -292,6 +310,7 @@
         const type = row.querySelector('.field-type')?.value;
         const pemohonWrap = row.querySelector('.pemohon-wrap');
         const optionsWrap = row.querySelector('.options-wrap');
+        const tableWrap = row.querySelector('.table-wrap');
         const fileWrap = row.querySelector('.file-wrap');
         const hint = row.querySelector('[data-hint]');
 
@@ -301,13 +320,17 @@
         if (optionsWrap) {
             optionsWrap.classList.toggle('hidden', !['select','radio','checkbox'].includes(type));
         }
+        if (tableWrap) {
+            tableWrap.classList.toggle('hidden', type !== 'table');
+        }
         if (fileWrap) {
             fileWrap.classList.toggle('hidden', type !== 'file');
         }
         if (hint) {
             hint.textContent = type === 'pemohon'
                 ? 'Akan menghasilkan field Pemohon (pilih mahasiswa/dosen) pada form permohonan.'
-                : (type === 'auto_no_surat' ? 'Nomor surat otomatis mengikuti jenis surat.' : '');
+                : (type === 'auto_no_surat' ? 'Nomor surat otomatis mengikuti jenis surat.' 
+                : (type === 'table' ? 'Tabel dengan multiple rows yang bisa ditambah/hapus oleh user.' : ''));
         }
     }
 

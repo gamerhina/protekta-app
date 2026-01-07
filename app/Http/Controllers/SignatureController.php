@@ -144,7 +144,7 @@ class SignatureController extends Controller
         return response()->json([
             'signature' => $signature->tanda_tangan,
             'dosen_name' => $signature->dosen->nama ?? 'Unknown',
-            'date' => $signature->tanggal_ttd ? $signature->tanggal_ttd->format('d M Y') : null
+            'date' => $signature->tanggal_ttd ? $signature->tanggal_ttd->translatedFormat('d F Y') : null
         ]);
     }
 }

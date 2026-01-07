@@ -81,7 +81,7 @@
                             <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">P1</span>
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembimbing 1</span>
                         </div>
-                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p1Dosen->nama ?? 'N/A' }}</p>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p1Dosen->nama ?? ($seminar->p1_nama ?? 'N/A') }}</p>
                     </div>
 
                     <!-- P2 -->
@@ -90,7 +90,7 @@
                             <span class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">P2</span>
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembimbing 2</span>
                         </div>
-                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p2Dosen->nama ?? 'N/A' }}</p>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->p2Dosen->nama ?? ($seminar->p2_nama ?? 'N/A') }}</p>
                     </div>
 
                     <!-- PMB -->
@@ -99,7 +99,7 @@
                             <span class="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">PMB</span>
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pembahas</span>
                         </div>
-                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->pembahasDosen->nama ?? 'N/A' }}</p>
+                        <p class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">{{ $seminar->pembahasDosen->nama ?? ($seminar->pembahas_nama ?? 'N/A') }}</p>
                     </div>
                 </div>
 

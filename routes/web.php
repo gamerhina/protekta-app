@@ -159,6 +159,7 @@ Route::middleware(['auth:admin', 'notifications'])->prefix('admin')->name('admin
     Route::post('/surat-jenis/{suratJenis}/template', [AdminSuratTemplateController::class, 'store'])->name('surattemplate.store');
     Route::get('/surat-jenis/{suratJenis}/template/{template}/edit', [AdminSuratTemplateController::class, 'edit'])->name('surattemplate.edit');
     Route::put('/surat-jenis/{suratJenis}/template/{template}', [AdminSuratTemplateController::class, 'update'])->name('surattemplate.update');
+    Route::post('/surat-jenis/{suratJenis}/template/{template}/re-extract', [AdminSuratTemplateController::class, 'reExtract'])->name('surattemplate.re-extract');
     Route::get('/surat-jenis/{suratJenis}/template/{template}/download/{surat}', [AdminSuratTemplateController::class, 'downloadDocx'])->name('surattemplate.download');
     Route::post('/surat-jenis/{suratJenis}/template/{template}/preview-email/{surat}', [AdminSuratTemplateController::class, 'previewEmail'])->name('surattemplate.preview-email');
     Route::post('/surat-jenis/{suratJenis}/template/{template}/send/{surat}', [AdminSuratTemplateController::class, 'sendEmail'])->name('surattemplate.send');

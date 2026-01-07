@@ -260,13 +260,15 @@
                                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $aspect->nama_aspek }}</td>
                                         <td class="px-4 py-3 text-sm">
                                             <div class="flex space-x-2">
-                                                <button onclick="editAspect({{ $aspect->id }}, '{{ addslashes($aspect->nama_aspek) }}', {{ $aspect->urutan }})" class="text-blue-600 hover:text-blue-900 font-medium">
-                                                    Edit
+                                                <button onclick="editAspect({{ $aspect->id }}, '{{ addslashes($aspect->nama_aspek) }}', {{ $aspect->urutan }})" class="text-blue-600 hover:text-blue-900 font-semibold" title="Edit">
+                                                    <i class="fas fa-edit"></i>
                                                 </button>
                                                 <form action="{{ route('admin.seminarjenis.aspects.destroy', [$seminarJenis, $aspect]) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus aspek ini?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900 font-medium">Hapus</button>
+                                                    <button type="submit" class="text-red-500 hover:text-red-700 font-semibold" title="Hapus">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 </form>
                                             </div>
                                         </td>

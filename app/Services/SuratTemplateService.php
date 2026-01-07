@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Dosen;
+use App\Models\Mahasiswa;
 use App\Models\Surat;
 use App\Models\SuratTemplate;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpWord\TemplateProcessor;
 
 class SuratTemplateService
@@ -15,16 +18,103 @@ class SuratTemplateService
 
         $fields = $this->buildFields($surat);
         $mappings = is_array($template->tag_mappings) ? $template->tag_mappings : [];
+        $types = is_array($template->tag_types) ? $template->tag_types : [];
+        $props = is_array($template->tag_properties) ? $template->tag_properties : [];
+        $availableTags = is_array($template->available_tags) ? $template->available_tags : [];
 
-        foreach ((array) ($template->available_tags ?? []) as $tag) {
-            $mapped = $mappings[$tag] ?? null;
-            if (!$mapped) {
-                $processor->setValue($tag, '');
+        // Identify table keys from SuratJenis
+        $formFields = is_array($surat->jenis?->form_fields) ? $surat->jenis->form_fields : [];
+        $tableKeys = [];
+        foreach ($formFields as $f) {
+            if (isset($f['type']) && $f['type'] === 'table' && !empty($f['key'])) {
+                $tableKeys[] = $f['key'];
+            }
+        }
+
+        // Group tags that belong to tables
+        $tableGroups = []; // prefix => [[tag => '', column => ''], ...]
+        $processedTags = [];
+
+        foreach ($availableTags as $tag) {
+            $mapped = $mappings[$tag] ?? $tag;
+            if (str_contains($mapped, '.')) {
+                $parts = explode('.', $mapped);
+                $prefix = $parts[0];
+                $column = $parts[1] ?? '';
+
+                if (in_array($prefix, $tableKeys)) {
+                    $tableGroups[$prefix][] = [
+                        'tag' => $tag,
+                        'column' => $column
+                    ];
+                    continue;
+                }
+            }
+        }
+
+        // Process Table Groups first using cloneRow
+        foreach ($tableGroups as $prefix => $group) {
+            $dataRows = $surat->data[$prefix] ?? [];
+            if (!is_array($dataRows)) $dataRows = [];
+            
+            $rowCount = count($dataRows);
+            if ($rowCount > 0) {
+                // We pick the first tag in the group to serve as the anchor for cloneRow
+                $anchorTag = $group[0]['tag'];
+                try {
+                    $processor->cloneRow($anchorTag, $rowCount);
+                    
+                    foreach ($dataRows as $index => $rowData) {
+                        $rowNum = $index + 1;
+                        foreach ($group as $gt) {
+                            $tag = $gt['tag'];
+                            $col = $gt['column'];
+                            $val = $rowData[$col] ?? '';
+
+                            // Automatically handle 'no' tag for row numbering
+                            if ($col === 'no' && empty($val)) {
+                                $val = $rowNum;
+                            }
+
+                            // Handle pemohon type column
+                            if (is_array($val) && (isset($val['type']) || isset($val['id']))) {
+                                $val = $this->resolvePemohonName($val, $col);
+                            }
+
+                            $processor->setValue($tag . '#' . $rowNum, is_scalar($val) ? (string) $val : '');
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Failed to cloneRow for tag {$anchorTag}", ['error' => $e->getMessage()]);
+                }
+            } else {
+                // If no data, just clear the tags in the original template row
+                foreach ($group as $gt) {
+                    $processor->setValue($gt['tag'], '');
+                }
+            }
+
+            // Mark these tags as processed so we don't try to fill them as standard tags
+            foreach ($group as $gt) {
+                $processedTags[] = $gt['tag'];
+            }
+        }
+
+        // Process remaining standard tags
+        foreach ($availableTags as $tag) {
+            if (in_array($tag, $processedTags)) {
                 continue;
             }
 
+            $mapped = $mappings[$tag] ?? $tag;
             $value = $fields[$mapped] ?? '';
-            $processor->setValue($tag, is_scalar($value) ? (string) $value : '');
+            $type = $types[$tag] ?? 'text';
+
+            if ($type === 'image') {
+                $this->applyImageValue($processor, $tag, is_string($value) ? $value : null, $props[$tag] ?? []);
+            } else {
+                $processor->setValue($tag, is_scalar($value) ? (string) $value : '');
+            }
         }
 
         $processor->saveAs($outputPath);
@@ -67,7 +157,8 @@ class SuratTemplateService
             if (!is_string($k) || $k === '') {
                 continue;
             }
-            $base[$k] = is_scalar($v) ? (string) $v : '';
+            // Keep original value if it's a string (could be a path)
+            $base[$k] = $v;
         }
 
         // Aliases for common/legacy tag keys (to ease mapping when templates reuse seminar-style tags)
@@ -91,8 +182,90 @@ class SuratTemplateService
         return array_merge($base, $aliases);
     }
 
+    private function applyImageValue(TemplateProcessor $processor, string $tag, ?string $value, array $properties = []): void
+    {
+        $path = $this->resolveImagePath($value);
+
+        if (!$path || !file_exists($path)) {
+            $processor->setValue($tag, '');
+            return;
+        }
+
+        // Validate image
+        $imageInfo = @getimagesize($path);
+        if ($imageInfo === false) {
+            Log::warning('Invalid image file for SuratTemplate', ['path' => $path]);
+            $processor->setValue($tag, '');
+            return;
+        }
+
+        $width = (int) ($properties['width'] ?? $properties['image_width'] ?? 120);
+        $height = (int) ($properties['height'] ?? $properties['image_height'] ?? 60);
+
+        try {
+            $processor->setImageValue($tag, [
+                'path' => $path,
+                'width' => $width,
+                'height' => $height,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to set image value in SuratTemplate', [
+                'path' => $path,
+                'error' => $e->getMessage(),
+                'tag' => $tag,
+            ]);
+            $processor->setValue($tag, '');
+        }
+    }
+
+    private function resolveImagePath(?string $value): ?string
+    {
+        if (!$value) return null;
+
+        $possiblePaths = [
+            $value,
+            storage_path('app/' . ltrim($value, '/')),
+            storage_path('app/public/' . ltrim($value, '/')),
+            public_path('storage/' . ltrim($value, '/')),
+            base_path('uploads/' . ltrim($value, '/')),
+            public_path('uploads/' . ltrim($value, '/')),
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if ($path && file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolvePemohonName($val, string $columnKey = ''): string
+    {
+        $type = $val['type'] ?? '';
+        $id = $val['id'] ?? '';
+
+        if (!$type || !$id) return '';
+
+        $person = null;
+        if ($type === 'dosen') {
+            $person = Dosen::find($id);
+        } elseif ($type === 'mahasiswa') {
+            $person = Mahasiswa::find($id);
+        }
+
+        if (!$person) return '';
+
+        $colKey = strtolower($columnKey);
+        if (str_contains($colKey, 'nip') || str_contains($colKey, 'npm')) {
+            return ($type === 'dosen' ? $person->nip : $person->npm) ?? '';
+        }
+
+        return $person->nama ?? '';
+    }
+
     private function getTemplateFilePath(SuratTemplate $template): string
     {
-        return storage_path('app/private/' . ltrim($template->file_path, '/'));
+        return base_path('uploads/' . ltrim($template->file_path, '/'));
     }
 }

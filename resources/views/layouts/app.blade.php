@@ -72,9 +72,9 @@
             ;
         }
 
-        .btn-gradient {
+        body .btn-gradient, .btn-pill-primary {
             background-image: var(--brand-gradient);
-            color: #fff !important;
+            color: #fff;
             border: none;
             border-radius: 9999px;
             padding: 0.65rem 1.8rem;
@@ -117,9 +117,9 @@
             border: none;
         }
 
-        .btn-pill-primary {
+        body .btn-pill-primary {
             background-image: var(--brand-gradient);
-            color: #fff !important;
+            color: #fff;
             box-shadow: 0 8px 25px rgba(76, 81, 191, 0.25);
         }
 
@@ -128,21 +128,21 @@
             box-shadow: 0 15px 30px rgba(76, 81, 191, 0.35);
         }
 
-        .btn-pill-secondary {
+        body .btn-pill-secondary {
             background: #f1f5f9;
-            color: #475569 !important;
+            color: #475569;
             border: 1px solid rgba(148, 163, 184, .5);
         }
 
         .btn-pill-secondary:hover {
             background: #e2e8f0;
             border-color: rgba(59, 130, 246, .35);
-            color: #2563eb !important;
+            color: #2563eb;
         }
 
-        .btn-pill-danger {
+        body .btn-pill-danger {
             background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: #fff !important;
+            color: #fff;
             box-shadow: 0 8px 25px rgba(239, 68, 68, 0.25);
         }
 
@@ -151,9 +151,9 @@
             box-shadow: 0 15px 30px rgba(220, 38, 38, 0.35);
         }
 
-        .btn-pill-success {
+        body .btn-pill-success {
             background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: #fff !important;
+            color: #fff;
             box-shadow: 0 8px 25px rgba(34, 197, 94, 0.25);
         }
 
@@ -169,13 +169,13 @@
             100% { transform: scale(1); opacity: 1; }
         }
         .searching-active {
-            animation: pulse-search 1s infinite ease-in-out !important;
-            color: #3b82f6 !important;
+            animation: pulse-search 1s infinite ease-in-out;
+            color: #3b82f6;
         }
 
-        .btn-pill-info {
+        body .btn-pill-info {
             background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: #fff !important;
+            color: #fff;
             box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25);
         }
 
@@ -184,9 +184,9 @@
             box-shadow: 0 15px 30px rgba(37, 99, 235, 0.35);
         }
 
-        .btn-pill-purple {
+        body .btn-pill-purple {
             background: linear-gradient(135deg, #a855f7, #7c3aed);
-            color: #fff !important;
+            color: #fff;
             box-shadow: 0 8px 25px rgba(168, 85, 247, 0.25);
         }
 
@@ -195,15 +195,28 @@
             box-shadow: 0 15px 30px rgba(124, 58, 237, 0.35);
         }
 
-        .btn-pill-warning {
+        body .btn-pill-warning {
             background: linear-gradient(135deg, #f97316, #ea580c);
-            color: #fff !important;
+            color: #fff;
             box-shadow: 0 8px 25px rgba(234, 88, 12, 0.25);
         }
 
         .btn-pill-warning:hover {
             transform: translateY(-1px);
             box-shadow: 0 15px 30px rgba(249, 115, 22, 0.35);
+        }
+
+        /* Prevent icons inside pill buttons from scaling on hover */
+        /* Only the button itself should move (translateY), not the icons */
+        .btn-pill:hover i[class*="fa-"],
+        .btn-pill-primary:hover i[class*="fa-"],
+        .btn-pill-secondary:hover i[class*="fa-"],
+        .btn-pill-info:hover i[class*="fa-"],
+        .btn-pill-success:hover i[class*="fa-"],
+        .btn-pill-danger:hover i[class*="fa-"],
+        .btn-pill-warning:hover i[class*="fa-"],
+        .btn-pill-purple:hover i[class*="fa-"] {
+            transform: none;
         }
 
         .modern-navbar .nav-icon-btn {
@@ -225,17 +238,17 @@
         }
 
         .modern-navbar {
-            background: rgba(255, 255, 255, 0.92) !important;
+            background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(148, 163, 184, .2);
             box-shadow: 0 12px 40px rgba(15, 23, 42, .08);
         }
 
-        .modern-brand {
+        .modern-navbar .modern-brand {
             font-weight: 700;
             font-size: 1.15rem;
             letter-spacing: 0.03em;
-            color: #0f172a !important;
+            color: #0f172a;
         }
 
         .app-name-text {

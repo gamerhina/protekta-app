@@ -88,9 +88,26 @@ class AdminSuratController extends Controller
 
     public function create()
     {
-        $jenisList = SuratJenis::where('aktif', true)->orderBy('nama')->get();
-        $dosens = Dosen::orderBy('nama')->get(['id', 'nama', 'nip', 'email']);
-        $mahasiswas = Mahasiswa::orderBy('nama')->get(['id', 'nama', 'npm', 'email']);
+        $jenisList = SuratJenis::where('aktif', true)->orderBy('nama')->get(['id', 'nama', 'kode', 'form_fields']);
+        
+        // Only pass essential fields to prevent JavaScript truncation
+        // Email is removed to reduce data size significantly
+        // LIMIT records to prevent script truncation (users can search if needed)
+        $dosens = Dosen::orderBy('nama')->limit(50)->get(['id', 'nama', 'nip'])->map(function($d) {
+            return [
+                'id' => $d->id,
+                'nama' => $d->nama,
+                'nip' => $d->nip
+            ];
+        });
+        
+        $mahasiswas = Mahasiswa::orderBy('nama')->limit(100)->get(['id', 'nama', 'npm'])->map(function($m) {
+            return [
+                'id' => $m->id,
+                'nama' => $m->nama,
+                'npm' => $m->npm
+            ];
+        });
 
         return view('admin.surat.create', compact('jenisList', 'dosens', 'mahasiswas'));
     }
@@ -184,6 +201,36 @@ class AdminSuratController extends Controller
                     $rules["form_data.$key.*"] = 'in:' . implode(',', array_map(fn ($v) => str_replace(',', '\\,', $v), $options));
                 } else {
                     $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'boolean';
+                }
+                continue;
+            }
+
+            if ($type === 'table') {
+                $columns = is_array($f['columns'] ?? null) ? $f['columns'] : [];
+                $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'array';
+                $rules["form_data.$key.*"] = 'array';
+                
+                // Validate each column in each row
+                foreach ($columns as $col) {
+                    if (is_array($col) && isset($col['key'])) {
+                        $colKey = $col['key'];
+                        $colType = $col['type'] ?? 'text';
+                        
+                        // Handle pemohon column type
+                        if ($colType === 'pemohon') {
+                            $sources = $col['pemohon_sources'] ?? ['mahasiswa', 'dosen'];
+                            if (!is_array($sources) || empty($sources)) {
+                                $sources = ['mahasiswa', 'dosen'];
+                            }
+                            
+                            $rules["form_data.$key.*.$colKey"] = 'nullable|array';
+                            $rules["form_data.$key.*.$colKey.type"] = 'nullable|in:' . implode(',', $sources);
+                            $rules["form_data.$key.*.$colKey.id"] = 'nullable|integer|min:1';
+                        } else {
+                            // Default validation for other column types
+                            $rules["form_data.$key.*.$colKey"] = 'nullable|string|max:500';
+                        }
+                    }
                 }
                 continue;
             }

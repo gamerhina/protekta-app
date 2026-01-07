@@ -35,7 +35,7 @@ class AdminSuratTemplateController extends Controller
             'keterangan' => 'nullable|string',
         ]);
 
-        $templateDir = storage_path('app/private/surat-templates');
+        $templateDir = base_path('uploads/surat-templates');
         if (!is_dir($templateDir)) {
             mkdir($templateDir, 0755, true);
         }
@@ -95,7 +95,7 @@ class AdminSuratTemplateController extends Controller
         ]);
 
         if ($request->hasFile('new_file')) {
-            $templateDir = storage_path('app/private/surat-templates');
+            $templateDir = base_path('uploads/surat-templates');
             if (!is_dir($templateDir)) {
                 mkdir($templateDir, 0755, true);
             }
@@ -114,6 +114,34 @@ class AdminSuratTemplateController extends Controller
 
         return redirect()->route('admin.surattemplate.edit', [$suratJenis, $template])
             ->with('success', 'Template surat berhasil diperbarui.');
+    }
+
+    public function reExtract(SuratJenis $suratJenis, SuratTemplate $template)
+    {
+        abort_unless((int) $template->surat_jenis_id === (int) $suratJenis->id, 404);
+
+        $templatePath = base_path('uploads/' . ltrim($template->file_path, '/'));
+        if (!file_exists($templatePath)) {
+            return redirect()->back()->with('error', 'File template tidak ditemukan.');
+        }
+
+        $availableTags = SuratTemplate::extractTagsFromDocx($templatePath);
+        
+        // Keep existing mappings but only for tags that still exist
+        $mappings = is_array($template->tag_mappings) ? $template->tag_mappings : [];
+        $newMappings = [];
+        foreach ($availableTags as $tag) {
+            if (isset($mappings[$tag])) {
+                $newMappings[$tag] = $mappings[$tag];
+            }
+        }
+
+        $template->update([
+            'available_tags' => $availableTags,
+            'tag_mappings' => $newMappings
+        ]);
+
+        return redirect()->back()->with('success', 'Tag berhasil diekstrak ulang dari file template.');
     }
 
     public function downloadDocx(SuratJenis $suratJenis, SuratTemplate $template, Surat $surat, SuratTemplateService $service)

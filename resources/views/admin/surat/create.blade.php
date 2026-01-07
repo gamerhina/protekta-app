@@ -58,9 +58,12 @@
 </div>
 @endsection
 
+
+
 @section('scripts')
 <script>
     (function() {
+        // Data loaded with limits to prevent truncation
         const jenisList = @json($jenisList->map(fn($j) => ['id' => $j->id, 'nama' => $j->nama, 'form_fields' => $j->form_fields]));
         const dosens = @json($dosens);
         const mahasiswas = @json($mahasiswas);
@@ -73,6 +76,23 @@
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
     }
+
+    // Global function for removing table rows
+    window.removeTableRow = function(btn) {
+        const row = btn.closest('tr');
+        const tbody = row.closest('tbody');
+        if (tbody.querySelectorAll('tr').length > 1) {
+            row.remove();
+            // Reindex all table rows in the document
+            document.querySelectorAll('[id$="_body"]').forEach(tb => {
+                const tableId = tb.id.replace('_body', '');
+                const reindexFunc = window['reindexTableRows_' + tableId.replace('table_', '')];
+                if (reindexFunc) reindexFunc();
+            });
+        } else {
+            alert('Minimal harus ada 1 baris data.');
+        }
+    };
 
     async function refreshNoSurat() {
         const jenisId = document.getElementById('surat_jenis_id')?.value;
@@ -102,7 +122,7 @@
             : ['mahasiswa','dosen'];
 
         const dosenOptions = dosens.map(d => `<option value="dosen:${d.id}">${escapeHtml(d.nama)} (${escapeHtml(d.nip)})</option>`).join('');
-        const mhsOptions = mahasiswas.map(m => `<option value="mahasiswa:${m.id}" data-email="${escapeHtml(m.email || '')}">${escapeHtml(m.nama)} (${escapeHtml(m.npm)})</option>`).join('');
+        const mhsOptions = mahasiswas.map(m => `<option value="mahasiswa:${m.id}">${escapeHtml(m.nama)} (${escapeHtml(m.npm)})</option>`).join('');
         const optionsHtml = `
             ${sources.includes('mahasiswa') ? `<optgroup label="Mahasiswa">${mhsOptions}</optgroup>` : ''}
             ${sources.includes('dosen') ? `<optgroup label="Dosen">${dosenOptions}</optgroup>` : ''}
@@ -201,6 +221,190 @@
             `;
         }
 
+        if (field.type === 'table') {
+            const columns = Array.isArray(field.columns) ? field.columns : [];
+            if (!columns.length) {
+                return `
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <div class="text-sm text-amber-800">Tabel "${label}" belum dikonfigurasi. Silakan tambahkan kolom di pengaturan jenis surat.</div>
+                    </div>
+                `;
+            }
+
+            const tableId = `table_${key}`;
+            
+            // Helper function to render table cell based on column type
+            const renderTableCell = (col, rowIndex) => {
+                const colKey = escapeHtml(col.key);
+                const colLabel = escapeHtml(col.label);
+                const colType = col.type || 'text';
+                
+                if (colType === 'pemohon') {
+                    const sources = Array.isArray(col.pemohon_sources) && col.pemohon_sources.length
+                        ? col.pemohon_sources
+                        : ['mahasiswa','dosen'];
+                    
+                    const dosenOptions = dosens.map(d => `<option value="dosen:${d.id}">${escapeHtml(d.nama)} (${escapeHtml(d.nip)})</option>`).join('');
+                    const mhsOptions = mahasiswas.map(m => `<option value="mahasiswa:${m.id}">${escapeHtml(m.nama)} (${escapeHtml(m.npm)})</option>`).join('');
+                    const optionsHtml = `
+                        ${sources.includes('mahasiswa') ? `<optgroup label="Mahasiswa">${mhsOptions}</optgroup>` : ''}
+                        ${sources.includes('dosen') ? `<optgroup label="Dosen">${dosenOptions}</optgroup>` : ''}
+                    `;
+                    
+                    return `
+                        <td class="px-4 py-2">
+                            <input type="hidden" class="pemohon-type" name="form_data[${key}][${rowIndex}][${colKey}][type]" value="">
+                            <input type="hidden" class="pemohon-id" name="form_data[${key}][${rowIndex}][${colKey}][id]" value="">
+                            <select class="pemohon-select w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                                <option value="">Pilih ${colLabel}</option>
+                                ${optionsHtml}
+                            </select>
+                        </td>
+                    `;
+                }
+                
+                // Default: text input
+                return `
+                    <td class="px-4 py-2">
+                        <input type="text" name="form_data[${key}][${rowIndex}][${colKey}]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="${colLabel}">
+                    </td>
+                `;
+            };
+            
+            const headerCells = '<th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 w-12 text-center">No</th>' + 
+                                columns.map(col => `<th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">${escapeHtml(col.label)}</th>`).join('');
+            const firstRowCells = '<td class="px-4 py-2 text-center text-sm text-gray-500 row-number">1</td>' + 
+                                  columns.map(col => renderTableCell(col, 0)).join('');
+
+            // Define table functions dynamically - use closure to access columns
+            window[`addTableRow_${key}`] = (function(cols, fieldKey, tableBodyId) {
+                return function() {
+                    const tbody = document.getElementById(tableBodyId);
+                    const rowCount = tbody.querySelectorAll('tr').length;
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'table-row';
+                    
+                    let cellsHtml = '<td class="px-4 py-2 text-center text-sm text-gray-500 row-number">' + (rowCount + 1) + '</td>';
+                    cols.forEach(col => {
+                        const colKey = col.key;
+                        const colLabel = col.label;
+                        const colType = col.type || 'text';
+                        
+                        if (colType === 'pemohon') {
+                            const sources = Array.isArray(col.pemohon_sources) && col.pemohon_sources.length
+                                ? col.pemohon_sources
+                                : ['mahasiswa','dosen'];
+                            
+                            const dosenOptions = dosens.map(d => '<option value="dosen:' + d.id + '">' + escapeHtml(d.nama) + ' (' + escapeHtml(d.nip) + ')</option>').join('');
+                            const mhsOptions = mahasiswas.map(m => '<option value="mahasiswa:' + m.id + '">' + escapeHtml(m.nama) + ' (' + escapeHtml(m.npm) + ')</option>').join('');
+                            
+                            let optionsHtml = '';
+                            if (sources.includes('mahasiswa')) {
+                                optionsHtml += '<optgroup label="Mahasiswa">' + mhsOptions + '</optgroup>';
+                            }
+                            if (sources.includes('dosen')) {
+                                optionsHtml += '<optgroup label="Dosen">' + dosenOptions + '</optgroup>';
+                            }
+                            
+                            cellsHtml += '<td class="px-4 py-2">' +
+                                '<input type="hidden" class="pemohon-type" name="form_data[' + fieldKey + '][' + rowCount + '][' + colKey + '][type]" value="">' +
+                                '<input type="hidden" class="pemohon-id" name="form_data[' + fieldKey + '][' + rowCount + '][' + colKey + '][id]" value="">' +
+                                '<select class="pemohon-select w-full px-3 py-2 border border-gray-300 rounded-md text-sm">' +
+                                    '<option value="">Pilih ' + colLabel + '</option>' +
+                                    optionsHtml +
+                                '</select>' +
+                            '</td>';
+                        } else {
+                            cellsHtml += '<td class="px-4 py-2">' +
+                                '<input type="text" name="form_data[' + fieldKey + '][' + rowCount + '][' + colKey + ']" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="' + colLabel + '">' +
+                            '</td>';
+                        }
+                    });
+                    
+                    cellsHtml += '<td class="px-4 py-2 text-center">' +
+                        '<button type="button" onclick="removeTableRow(this)" class="text-red-600 hover:text-red-800" title="Hapus Baris">' +
+                            '<i class="fas fa-trash"></i>' +
+                        '</button>' +
+                    '</td>';
+                    
+                    newRow.innerHTML = cellsHtml;
+                    tbody.appendChild(newRow);
+                    
+                    // Wire pemohon selects in the new row
+                    newRow.querySelectorAll('.pemohon-select').forEach((select) => {
+                        const cell = select.closest('td');
+                        const typeInput = cell?.querySelector('.pemohon-type');
+                        const idInput = cell?.querySelector('.pemohon-id');
+                        if (!typeInput || !idInput) return;
+
+                        function sync() {
+                            const v = select.value || '';
+                            const [t, id] = v.split(':');
+                            typeInput.value = t || '';
+                            idInput.value = id || '';
+                        }
+
+                        select.addEventListener('change', sync);
+                        sync();
+                    });
+                    
+                    const reindexFunc = window['reindexTableRows_' + fieldKey];
+                    if (reindexFunc) reindexFunc();
+                };
+            })(columns, key, tableId + '_body');
+
+            window[`reindexTableRows_${key}`] = (function(tableBodyId) {
+                return function() {
+                    const tbody = document.getElementById(tableBodyId);
+                    if (!tbody) return;
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach((row, idx) => {
+                        // Update row number
+                        const numCell = row.querySelector('.row-number');
+                        if (numCell) numCell.textContent = idx + 1;
+
+                        row.querySelectorAll('input, select').forEach(input => {
+                            const name = input.getAttribute('name');
+                            if (name) {
+                                input.setAttribute('name', name.replace(/(\[[^\]]+\])\[\d+\]/, '$1[' + idx + ']'));
+                            }
+                        });
+                    });
+                };
+            })(tableId + '_body');
+
+            return `
+                <div class="bg-white border border-gray-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-medium text-gray-700">${label}</label>
+                        <button type="button" onclick="addTableRow_${key}()" class="btn-pill btn-pill-secondary text-xs px-3 py-1">
+                            <i class="fas fa-plus mr-1"></i> Tambah Baris
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200" id="${tableId}">
+                            <thead>
+                                <tr>
+                                    ${headerCells}
+                                    <th class="px-4 py-2 w-16 bg-gray-50"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="${tableId}_body" class="divide-y divide-gray-100">
+                                <tr class="table-row">
+                                    ${firstRowCells}
+                                    <td class="px-4 py-2 text-center">
+                                        <button type="button" onclick="removeTableRow(this)" class="text-red-600 hover:text-red-800" title="Hapus Baris">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
         if (field.type === 'checkbox') {
             const options = Array.isArray(field.options) ? field.options : [];
             if (options.length) {
@@ -244,10 +448,11 @@
     }
 
     function wirePemohonDynamic(container) {
+        if (!container) return;
         container.querySelectorAll('.pemohon-select').forEach((select) => {
-            const card = select.closest('.bg-white');
-            const typeInput = card?.querySelector('.pemohon-type');
-            const idInput = card?.querySelector('.pemohon-id');
+            const wrapper = select.closest('td') || select.closest('.bg-white') || select.closest('.p-4');
+            const typeInput = wrapper?.querySelector('.pemohon-type');
+            const idInput = wrapper?.querySelector('.pemohon-id');
             if (!typeInput || !idInput) return;
 
             function sync() {
@@ -313,6 +518,9 @@
         }
 
         container.innerHTML = otherFields.map(renderField).join('') || `<div class="text-sm text-gray-500">Jenis surat ini belum memiliki konfigurasi field.</div>`;
+        
+        // Wire all pemohon selects (in tables and other fields)
+        wirePemohonDynamic(container);
     }
 
     function initSuratCreate() {

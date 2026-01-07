@@ -13,6 +13,10 @@
             <a href="{{ route('admin.suratjenis.edit', $suratJenis) }}" class="btn-pill btn-pill-secondary">Kembali</a>
         </div>
 
+        <form id="reextract-form" method="POST" action="{{ route('admin.surattemplate.re-extract', [$suratJenis, $template]) }}" class="hidden">
+            @csrf
+        </form>
+
         <form method="POST" action="{{ route('admin.surattemplate.update', [$suratJenis, $template]) }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
@@ -77,8 +81,27 @@
 
                             @php
                                 $customFields = collect($suratJenis->form_fields ?? [])
-                                    ->pluck('key')
-                                    ->filter(fn($k) => !in_array($k, ['no_surat', 'tanggal_surat', 'status', 'pemohon']))
+                                    ->flatMap(function($field) {
+                                        $key = $field['key'] ?? '';
+                                        $type = $field['type'] ?? '';
+                                        
+                                        // Skip system fields
+                                        if (in_array($key, ['no_surat', 'tanggal_surat', 'status', 'pemohon'])) {
+                                            return [];
+                                        }
+                                        
+                                        // For table fields, generate tags for each column
+                                        if ($type === 'table' && isset($field['columns']) && is_array($field['columns'])) {
+                                            return collect($field['columns'])
+                                                ->map(fn($col) => $key . '.' . ($col['key'] ?? ''))
+                                                ->filter()
+                                                ->values();
+                                        }
+                                        
+                                        // For other fields, just return the key
+                                        return [$key];
+                                    })
+                                    ->filter()
                                     ->values();
                             @endphp
 
@@ -108,7 +131,12 @@
                 </div>
 
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-800 mb-2">Pemetaan Tag</h2>
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-lg font-semibold text-gray-800">Pemetaan Tag</h2>
+                        <button type="submit" form="reextract-form" class="btn-pill btn-pill-secondary text-xs px-3 py-1">
+                            <i class="fas fa-sync-alt mr-1"></i> Ekstrak Ulang Tag
+                        </button>
+                    </div>
                     <p class="text-sm text-gray-500 mb-4">Pilih sumber data untuk setiap tag <span class="font-mono">${...}</span> yang ditemukan.</p>
 
                     <div class="space-y-3">

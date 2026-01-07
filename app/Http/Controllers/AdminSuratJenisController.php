@@ -155,6 +155,37 @@ class AdminSuratJenisController extends Controller
                 $field['max_kb'] = (int) ($item['max_kb'] ?? 0);
             }
 
+            if ($type === 'table') {
+                $columnsRaw = $item['columns'] ?? [];
+                if (is_string($columnsRaw)) {
+                    $columnsRaw = preg_split('/\r\n|\r|\n/', $columnsRaw) ?: [];
+                }
+                $columns = [];
+                foreach ((array) $columnsRaw as $line) {
+                    $line = trim((string) $line);
+                    if ($line === '') {
+                        continue;
+                    }
+                    if (str_contains($line, '|')) {
+                        $parts = array_map('trim', explode('|', $line, 3));
+                        $colKey = $parts[0] ?? '';
+                        $colLabel = $parts[1] ?? '';
+                        $colType = $parts[2] ?? 'text';
+
+                        if ($colKey !== '') {
+                            $columns[] = [
+                                'key' => $colKey,
+                                'label' => $colLabel !== '' ? $colLabel : $colKey,
+                                'type' => $colType !== '' ? $colType : 'text'
+                            ];
+                        }
+                    } else {
+                        $columns[] = ['key' => $line, 'label' => $line, 'type' => 'text'];
+                    }
+                }
+                $field['columns'] = $columns;
+            }
+
             $out[] = $field;
         }
 

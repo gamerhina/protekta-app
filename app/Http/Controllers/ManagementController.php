@@ -315,10 +315,7 @@ class ManagementController extends Controller
         if ($request->hasFile('foto')) {
             // Delete old photo if exists
             if ($dosen->foto) {
-                $oldPath = storage_path('app/public/' . $dosen->foto);
-                if (file_exists($oldPath)) {
-                    unlink($oldPath);
-                }
+                Storage::disk('uploads')->delete($dosen->foto);
             }
 
             $data['foto'] = $request->file('foto')->store('photos/dosen', 'uploads');
@@ -336,10 +333,7 @@ class ManagementController extends Controller
     {
         // Delete photo if exists
         if ($dosen->foto) {
-            $photoPath = storage_path('app/public/' . $dosen->foto);
-            if (file_exists($photoPath)) {
-                unlink($photoPath);
-            }
+            Storage::disk('uploads')->delete($dosen->foto);
         }
 
         $dosen->delete();
@@ -386,10 +380,7 @@ class ManagementController extends Controller
         if ($request->hasFile('foto')) {
             // Delete old photo if exists
             if ($mahasiswa->foto) {
-                $oldPath = storage_path('app/public/' . $mahasiswa->foto);
-                if (file_exists($oldPath)) {
-                    unlink($oldPath);
-                }
+                Storage::disk('uploads')->delete($mahasiswa->foto);
             }
 
             $data['foto'] = $request->file('foto')->store('photos/mahasiswa', 'uploads');
@@ -407,10 +398,7 @@ class ManagementController extends Controller
     {
         // Delete photo if exists
         if ($mahasiswa->foto) {
-            $photoPath = storage_path('app/public/' . $mahasiswa->foto);
-            if (file_exists($photoPath)) {
-                unlink($photoPath);
-            }
+            Storage::disk('uploads')->delete($mahasiswa->foto);
         }
 
         $mahasiswa->delete();
@@ -451,10 +439,7 @@ class ManagementController extends Controller
         if ($request->hasFile('foto')) {
             // Delete old photo if exists
             if ($admin->foto) {
-                $oldPath = storage_path('app/public/' . $admin->foto);
-                if (file_exists($oldPath)) {
-                    unlink($oldPath);
-                }
+                Storage::disk('uploads')->delete($admin->foto);
             }
 
             $data['foto'] = $request->file('foto')->store('photos/admin', 'uploads');
@@ -472,10 +457,7 @@ class ManagementController extends Controller
     {
         // Delete photo if exists
         if ($admin->foto) {
-            $photoPath = storage_path('app/public/' . $admin->foto);
-            if (file_exists($photoPath)) {
-                unlink($photoPath);
-            }
+            Storage::disk('uploads')->delete($admin->foto);
         }
 
         $admin->delete();
@@ -529,7 +511,10 @@ class ManagementController extends Controller
                     ->orWhere('seminars.status', 'like', $like)
                     ->orWhere('p1.nama', 'like', $like)
                     ->orWhere('p2.nama', 'like', $like)
-                    ->orWhere('pembahas.nama', 'like', $like);
+                    ->orWhere('pembahas.nama', 'like', $like)
+                    ->orWhere('seminars.p1_nama', 'like', $like)
+                    ->orWhere('seminars.p2_nama', 'like', $like)
+                    ->orWhere('seminars.pembahas_nama', 'like', $like);
             });
         }
 
@@ -649,9 +634,27 @@ class ManagementController extends Controller
             'tanggal' => 'required|date',
             'waktu_mulai' => 'required|date_format:H:i',
             'lokasi' => 'required|string|max:255',
-            'p1_dosen_id' => 'required|exists:dosen,id',
-            'p2_dosen_id' => 'nullable|exists:dosen,id|different:p1_dosen_id',
-            'pembahas_dosen_id' => 'nullable|exists:dosen,id|different:p1_dosen_id|different:p2_dosen_id',
+            'p1_dosen_id' => ['required', function ($attribute, $value, $fail) {
+                if ($value !== 'manual' && !\DB::table('dosen')->where('id', $value)->exists()) {
+                    $fail('The selected pembimbing 1 is invalid.');
+                }
+            }],
+            'p1_nama' => 'required_if:p1_dosen_id,manual|nullable|string|max:255',
+            'p1_nip' => 'nullable|string|max:255',
+            'p2_dosen_id' => ['nullable', function ($attribute, $value, $fail) {
+                if ($value && $value !== 'manual' && !\DB::table('dosen')->where('id', $value)->exists()) {
+                    $fail('The selected pembimbing 2 is invalid.');
+                }
+            }],
+            'p2_nama' => 'required_if:p2_dosen_id,manual|nullable|string|max:255',
+            'p2_nip' => 'nullable|string|max:255',
+            'pembahas_dosen_id' => ['nullable', function ($attribute, $value, $fail) {
+                if ($value && $value !== 'manual' && !\DB::table('dosen')->where('id', $value)->exists()) {
+                    $fail('The selected pembahas is invalid.');
+                }
+            }],
+            'pembahas_nama' => 'required_if:pembahas_dosen_id,manual|nullable|string|max:255',
+            'pembahas_nip' => 'nullable|string|max:255',
             'status' => 'required|in:diajukan,disetujui,ditolak,belum_lengkap,selesai',
         ] + $uploadRules);
 
@@ -663,9 +666,15 @@ class ManagementController extends Controller
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'lokasi' => $request->lokasi,
-            'p1_dosen_id' => $request->p1_dosen_id,
-            'p2_dosen_id' => $request->p2_dosen_id,
-            'pembahas_dosen_id' => $request->pembahas_dosen_id,
+            'p1_dosen_id' => $request->p1_dosen_id === 'manual' ? null : $request->p1_dosen_id,
+            'p1_nama' => $request->p1_nama,
+            'p1_nip' => $request->p1_nip,
+            'p2_dosen_id' => $request->p2_dosen_id === 'manual' ? null : $request->p2_dosen_id,
+            'p2_nama' => $request->p2_nama,
+            'p2_nip' => $request->p2_nip,
+            'pembahas_dosen_id' => $request->pembahas_dosen_id === 'manual' ? null : $request->pembahas_dosen_id,
+            'pembahas_nama' => $request->pembahas_nama,
+            'pembahas_nip' => $request->pembahas_nip,
             'status' => $request->status,
             'berkas_syarat' => [],
         ];
@@ -889,12 +898,30 @@ class ManagementController extends Controller
             'tanggal' => 'required|date',
             'waktu_mulai' => 'required|date_format:H:i',
             'lokasi' => 'required|string|max:255',
-            'p1_dosen_id' => 'required|exists:dosen,id',
-            'p2_dosen_id' => 'nullable|exists:dosen,id|different:p1_dosen_id',
-            'pembahas_dosen_id' => 'nullable|exists:dosen,id|different:p1_dosen_id|different:p2_dosen_id',
+            'p1_dosen_id' => ['required', function ($attribute, $value, $fail) {
+                if ($value !== 'manual' && !\DB::table('dosen')->where('id', $value)->exists()) {
+                    $fail('The selected pembimbing 1 is invalid.');
+                }
+            }],
+            'p1_nama' => 'required_if:p1_dosen_id,manual|nullable|string|max:255',
+            'p1_nip' => 'nullable|string|max:255',
+            'p2_dosen_id' => ['nullable', function ($attribute, $value, $fail) {
+                if ($value && $value !== 'manual' && !\DB::table('dosen')->where('id', $value)->exists()) {
+                    $fail('The selected pembimbing 2 is invalid.');
+                }
+            }],
+            'p2_nama' => 'required_if:p2_dosen_id,manual|nullable|string|max:255',
+            'p2_nip' => 'nullable|string|max:255',
+            'pembahas_dosen_id' => ['nullable', function ($attribute, $value, $fail) {
+                if ($value && $value !== 'manual' && !\DB::table('dosen')->where('id', $value)->exists()) {
+                    $fail('The selected pembahas is invalid.');
+                }
+            }],
+            'pembahas_nama' => 'required_if:pembahas_dosen_id,manual|nullable|string|max:255',
+            'pembahas_nip' => 'nullable|string|max:255',
             'status' => 'required|in:diajukan,disetujui,ditolak,belum_lengkap,selesai',
             'nilai' => 'nullable|array',
-            'nilai.*.dosen_id' => 'nullable|exists:dosen,id',
+            'nilai.*.dosen_id' => 'nullable', // Allow manual
             'nilai.*.jenis_penilai' => 'nullable|in:p1,p2,pembahas',
             'nilai.*.nilai_angka' => 'nullable|numeric|min:0|max:100',
             'nilai.*.catatan' => 'nullable|string|max:500',
@@ -902,7 +929,7 @@ class ManagementController extends Controller
             'nilai.*.komponen.*' => 'nullable|numeric|min:0|max:100',
             'signatures' => 'nullable|array',
             'signatures.*.data' => 'nullable|string',
-            'signatures.*.dosen_id' => 'nullable|exists:dosen,id',
+            'signatures.*.dosen_id' => 'nullable', // Allow manual
             'signatures.*.jenis_penilai' => 'nullable|in:p1,p2,pembahas',
         ] + $uploadRules);
 
@@ -913,9 +940,15 @@ class ManagementController extends Controller
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'lokasi' => $request->lokasi,
-            'p1_dosen_id' => $request->p1_dosen_id,
-            'p2_dosen_id' => $request->p2_dosen_id,
-            'pembahas_dosen_id' => $request->pembahas_dosen_id,
+            'p1_dosen_id' => $request->p1_dosen_id === 'manual' ? null : $request->p1_dosen_id,
+            'p1_nama' => $request->p1_nama,
+            'p1_nip' => $request->p1_nip,
+            'p2_dosen_id' => $request->p2_dosen_id === 'manual' ? null : $request->p2_dosen_id,
+            'p2_nama' => $request->p2_nama,
+            'p2_nip' => $request->p2_nip,
+            'pembahas_dosen_id' => $request->pembahas_dosen_id === 'manual' ? null : $request->pembahas_dosen_id,
+            'pembahas_nama' => $request->pembahas_nama,
+            'pembahas_nip' => $request->pembahas_nip,
             'status' => $request->status,
         ]);
 
@@ -1040,7 +1073,7 @@ class ManagementController extends Controller
                     $dosenId = $seminar->pembahas_dosen_id;
                 }
 
-                if (!$dosenId || empty($aspectScores)) {
+                if (empty($aspectScores)) {
                     continue;
                 }
 
@@ -1091,7 +1124,7 @@ class ManagementController extends Controller
                     $dosenId = $seminar->pembahas_dosen_id;
                 }
 
-                if (!$dosenId) {
+                if ($catatanText === null || $catatanText === '') {
                     continue;
                 }
 
@@ -1119,7 +1152,9 @@ class ManagementController extends Controller
         // Handle signatures if provided
         if ($request->has('signatures')) {
             foreach ($request->signatures as $signatureData) {
-                if (!empty($signatureData['data']) && !empty($signatureData['dosen_id']) && !empty($signatureData['jenis_penilai'])) {
+                if (!empty($signatureData['data']) && !empty($signatureData['jenis_penilai'])) {
+                    $dosenId = $signatureData['dosen_id'] ?? null;
+                    if ($dosenId === 'manual') $dosenId = null;
                     // Process base64 image
                     $image = $signatureData['data'];  // your base64 encoded
                     $image = str_replace('data:image/png;base64,', '', $image);
@@ -1130,7 +1165,7 @@ class ManagementController extends Controller
 
                     // Check if signature record already exists
                     $existingSignature = $seminar->signatures()
-                        ->where('dosen_id', $signatureData['dosen_id'])
+                        ->where('dosen_id', $dosenId)
                         ->where('jenis_penilai', $signatureData['jenis_penilai'])
                         ->first();
 
@@ -1145,12 +1180,9 @@ class ManagementController extends Controller
                             'tanggal_ttd' => now(),
                         ]);
                     } else {
-                        // Create using relationship
-                        // We need to make sure the relationship exists in Seminar model or use DB directly
-                        // But based on typical laravel patterns:
                         \App\Models\SeminarSignature::create([
                             'seminar_id' => $seminar->id,
-                            'dosen_id' => $signatureData['dosen_id'],
+                            'dosen_id' => $dosenId,
                             'jenis_penilai' => $signatureData['jenis_penilai'],
                             'tanda_tangan' => $imageName,
                             'tanggal_ttd' => now(),

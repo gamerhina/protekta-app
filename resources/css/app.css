@@ -54,24 +54,24 @@
   UTILITIES LAYER
 */
 @layer utilities {
-    .rounded-xl { border-radius: 0.75rem !important; }
-    .rounded-2xl { border-radius: 1rem !important; }
-    .rounded-full { border-radius: 9999px !important; }
-    .rounded-lg { border-radius: 0.5rem !important; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-full { border-radius: 9999px; }
+    .rounded-lg { border-radius: 0.5rem; }
 
-    .bg-gray-50 { background-color: #f9fafb !important; }
-    .bg-white { background-color: #ffffff !important; }
+    .bg-gray-50 { background-color: #f9fafb; }
+    .bg-white { background-color: #ffffff; }
     
-    .text-xs { font-size: 0.75rem !important; }
-    .text-sm { font-size: 0.875rem !important; }
-    .text-base { font-size: 1rem !important; }
-    .text-lg { font-size: 1.125rem !important; }
-    .text-xl { font-size: 1.25rem !important; }
-    .text-2xl { font-size: 1.5rem !important; }
-    .text-3xl { font-size: 1.875rem !important; }
+    .text-xs { font-size: 0.75rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-base { font-size: 1rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .text-3xl { font-size: 1.875rem; }
 
     .divide-y > :not([hidden]) ~ :not([hidden]) {
-        border-top-width: 1px !important;
+        border-top-width: 1px;
     }
 }
 
@@ -79,37 +79,19 @@
   SPECIFIC FIXES (Tailwind/Plugin related only)
 */
 
-/* Restore native calendar/clock icons that are hidden by Tailwind Forms reset */
-input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator {
-    display: block !important;
-    cursor: pointer;
-    background-color: transparent;
-    filter: invert(0.6) brightness(0.8);
-    opacity: 1;
-    padding: 2px;
-    width: 20px;
-    height: 20px;
-}
 
-/* Ensure FontAwesome icons have a base display */
-i[class*="fa-"] {
-    display: inline-block;
-    line-height: 1;
-    vertical-align: middle;
-}
 
 /* Remove unwanted border on notification badges */
-.badge {
-    border: none !important;
+body .badge {
+    border: none;
 }
 
-footer.border-t {
-    border-top-color: #f3f4f6 !important;
+body footer.border-t {
+    border-top-color: #f3f4f6;
 }
 
-th.bg-gray-50 {
-    background-color: #f9fafb !important;
+body th.bg-gray-50 {
+    background-color: #f9fafb;
 }
 
 /* MaryUI Paginator */
@@ -164,7 +146,6 @@ a:hover i.fa-download {
 }
 
 button:hover i.fa-paper-plane {
-    transform: scale(1.15);
     filter: brightness(1.2);
 }
 
@@ -187,4 +168,44 @@ a[class*="hover:text-"]:hover i[class*="fa-"],
 button[class*="hover:text-"]:hover i[class*="fa-"] {
     transform: scale(1.15);
     filter: brightness(1.2);
+}
+
+/* Override: Prevent icons in styled pill buttons from scaling */
+/* These are UI buttons (not action icons in tables), so they shouldn't zoom */
+.btn-pill:hover i[class*="fa-"],
+.btn-pill-primary:hover i[class*="fa-"],
+.btn-pill-secondary:hover i[class*="fa-"],
+.btn-pill-info:hover i[class*="fa-"],
+.btn-pill-success:hover i[class*="fa-"],
+.btn-pill-danger:hover i[class*="fa-"],
+.btn-pill-warning:hover i[class*="fa-"],
+button.btn-pill:hover i[class*="fa-"],
+button[class*="btn-pill"]:hover i[class*="fa-"] {
+    transform: none;
+}
+
+/* Standardize Date/Time Pickers and hide native indicators robustly to avoid doubles with FA icons */
+html body input[type="date"]::-webkit-calendar-picker-indicator,
+html body input[type="time"]::-webkit-calendar-picker-indicator,
+html body input[type="date"]::-webkit-inner-spin-button,
+html body input[type="time"]::-webkit-inner-spin-button,
+html body input[type="date"]::-webkit-clear-button,
+html body input[type="time"]::-webkit-clear-button {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+    opacity: 0;
+    background-image: none;
+}
+
+/* For Firefox */
+html body input[type="date"], html body input[type="time"] {
+    -moz-appearance: textfield;
+}
+
+/* Ensure FontAwesome icons have a base display */
+i[class*="fa-"], i[class*="fab"], i[class*="fas"], i[class*="far"] {
+    display: inline-block;
+    line-height: 1;
+    vertical-align: middle;
 }

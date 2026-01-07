@@ -171,6 +171,23 @@
                     .replaceAll("'", '&#039;');
             }
 
+            // Global function for removing table rows
+            window.removeTableRow = function(btn) {
+                const row = btn.closest('tr');
+                const tbody = row.closest('tbody');
+                if (tbody.querySelectorAll('tr').length > 1) {
+                    row.remove();
+                    // Reindex all table rows in the document
+                    document.querySelectorAll('[id$="_body"]').forEach(tb => {
+                        const tableId = tb.id.replace('_body', '');
+                        const reindexFunc = window['reindexTableRows_' + tableId.replace('table_', '')];
+                        if (reindexFunc) reindexFunc();
+                    });
+                } else {
+                    alert('Minimal harus ada 1 baris data.');
+                }
+            };
+
             function renderField(field) {
                 const key = field.key;
                 const label = escapeHtml(field.label);
@@ -254,6 +271,7 @@
                     `;
                 }
 
+
                 if (field.type === 'select' || field.type === 'radio') {
                     const options = Array.isArray(field.options) ? field.options : [];
                     const optionsHtml = options.map(o => `<option value="${escapeHtml(o.value)}" ${value == o.value ? 'selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
@@ -263,6 +281,202 @@
                             <option value="">Pilih</option>
                             ${optionsHtml}
                         </select>
+                    </div>`;
+                }
+
+                if (field.type === 'table') {
+                    const columns = Array.isArray(field.columns) ? field.columns : [];
+                    if (!columns.length) {
+                        return `<div class="md:col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                            <div class="text-sm text-amber-800">Tabel "${label}" belum dikonfigurasi.</div>
+                        </div>`;
+                    }
+
+                    const tableId = `table_${key}`;
+                    const tableData = Array.isArray(value) ? value : [];
+                    const headerCells = columns.map(col => `<th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">${escapeHtml(col.label)}</th>`).join('');
+                    
+                    // Helper function to render table cell
+                    const renderTableCell = (col, rowIdx, cellValue = '') => {
+                        const colKey = col.key;
+                        const colLabel = col.label;
+                        const colType = col.type || 'text';
+                        
+                        if (colType === 'pemohon') {
+                            const sources = Array.isArray(col.pemohon_sources) && col.pemohon_sources.length
+                                ? col.pemohon_sources
+                                : ['mahasiswa','dosen'];
+                            
+                            // cellValue for pemohon is an object {type, id}
+                            const pemohonType = (cellValue && cellValue.type) || '';
+                            const pemohonId = (cellValue && cellValue.id) || '';
+                            const selectedValue = pemohonType && pemohonId ? `${pemohonType}:${pemohonId}` : '';
+                            
+                            const dosenOptions = (dosens || []).map(d => `<option value="dosen:${d.id}" ${selectedValue === `dosen:${d.id}` ? 'selected' : ''}>${escapeHtml(d.nama)} (${escapeHtml(d.nip)})</option>`).join('');
+                            const mhsOptions = (mahasiswas || []).map(m => `<option value="mahasiswa:${m.id}" ${selectedValue === `mahasiswa:${m.id}` ? 'selected' : ''}>${escapeHtml(m.nama)} (${escapeHtml(m.npm)})</option>`).join('');
+                            const optionsHtml = `
+                                ${sources.includes('mahasiswa') ? `<optgroup label="Mahasiswa">${mhsOptions}</optgroup>` : ''}
+                                ${sources.includes('dosen') ? `<optgroup label="Dosen">${dosenOptions}</optgroup>` : ''}
+                            `;
+                            
+                            return `<td class="px-4 py-2">
+                                <input type="hidden" class="pemohon-type" name="form_data[${key}][${rowIdx}][${escapeHtml(colKey)}][type]" value="${escapeHtml(pemohonType)}">
+                                <input type="hidden" class="pemohon-id" name="form_data[${key}][${rowIdx}][${escapeHtml(colKey)}][id]" value="${escapeHtml(pemohonId)}">
+                                <select class="pemohon-select w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                                    <option value="">Pilih ${escapeHtml(colLabel)}</option>
+                                    ${optionsHtml}
+                                </select>
+                            </td>`;
+                        }
+                        
+                        // Default: text input
+                        return `<td class="px-4 py-2">
+                            <input type="text" name="form_data[${key}][${rowIdx}][${escapeHtml(colKey)}]" value="${escapeHtml(cellValue)}" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="${escapeHtml(colLabel)}">
+                        </td>`;
+                    };
+                    
+                    const rowsHtml = tableData.length > 0 ? tableData.map((row, idx) => {
+                        const cellsHtml = columns.map(col => renderTableCell(col, idx, row[col.key] || '')).join('');
+                        
+                        return `<tr class="table-row">
+                            <td class="px-4 py-2 text-center text-sm text-gray-500 row-number">${idx + 1}</td>
+                            ${cellsHtml}
+                            <td class="px-4 py-2 text-center">
+                                <button type="button" onclick="removeTableRow(this)" class="text-red-600 hover:text-red-800" title="Hapus Baris">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                    }).join('') : `<tr class="table-row">
+                        <td class="px-4 py-2 text-center text-sm text-gray-500 row-number">1</td>
+                        ${columns.map(col => renderTableCell(col, 0, '')).join('')}
+                        <td class="px-4 py-2 text-center">
+                            <button type="button" onclick="removeTableRow(this)" class="text-red-600 hover:text-red-800" title="Hapus Baris">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+
+                    // Register table functions
+                    window[`addTableRow_${key}`] = (function(cols, fieldKey, tableBodyId) {
+                        return function() {
+                            const tbody = document.getElementById(tableBodyId);
+                            const rowCount = tbody.querySelectorAll('tr').length;
+                            const newRow = document.createElement('tr');
+                            newRow.className = 'table-row';
+                            
+                            let cellsHtml = '<td class="px-4 py-2 text-center text-sm text-gray-500 row-number">' + (rowCount + 1) + '</td>';
+                            cols.forEach(col => {
+                                const colKey = col.key;
+                                const colLabel = col.label;
+                                const colType = col.type || 'text';
+                                
+                                if (colType === 'pemohon') {
+                                    const sources = Array.isArray(col.pemohon_sources) && col.pemohon_sources.length
+                                        ? col.pemohon_sources
+                                        : ['mahasiswa','dosen'];
+                                    
+                                    const dosenOptions = dosens.map(d => '<option value="dosen:' + d.id + '">' + escapeHtml(d.nama) + ' (' + escapeHtml(d.nip) + ')</option>').join('');
+                                    const mhsOptions = mahasiswas.map(m => '<option value="mahasiswa:' + m.id + '">' + escapeHtml(m.nama) + ' (' + escapeHtml(m.npm) + ')</option>').join('');
+                                    
+                                    let optionsHtml = '';
+                                    if (sources.includes('mahasiswa')) {
+                                        optionsHtml += '<optgroup label="Mahasiswa">' + mhsOptions + '</optgroup>';
+                                    }
+                                    if (sources.includes('dosen')) {
+                                        optionsHtml += '<optgroup label="Dosen">' + dosenOptions + '</optgroup>';
+                                    }
+                                    
+                                    cellsHtml += '<td class="px-4 py-2">' +
+                                        '<input type="hidden" class="pemohon-type" name="form_data[' + fieldKey + '][' + rowCount + '][' + colKey + '][type]" value="">' +
+                                        '<input type="hidden" class="pemohon-id" name="form_data[' + fieldKey + '][' + rowCount + '][' + colKey + '][id]" value="">' +
+                                        '<select class="pemohon-select w-full px-3 py-2 border border-gray-300 rounded-md text-sm">' +
+                                            '<option value="">Pilih ' + colLabel + '</option>' +
+                                            optionsHtml +
+                                        '</select>' +
+                                    '</td>';
+                                } else {
+                                    cellsHtml += '<td class="px-4 py-2">' +
+                                        '<input type="text" name="form_data[' + fieldKey + '][' + rowCount + '][' + colKey + ']" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="' + colLabel + '">' +
+                                    '</td>';
+                                }
+                            });
+                            
+                            cellsHtml += '<td class="px-4 py-2 text-center">' +
+                                '<button type="button" onclick="removeTableRow(this)" class="text-red-600 hover:text-red-800" title="Hapus Baris">' +
+                                    '<i class="fas fa-trash"></i>' +
+                                '</button>' +
+                            '</td>';
+                            
+                            newRow.innerHTML = cellsHtml;
+                            tbody.appendChild(newRow);
+                            
+                            // Wire pemohon selects in the new row
+                            newRow.querySelectorAll('.pemohon-select').forEach((select) => {
+                                const cell = select.closest('td');
+                                const typeInput = cell?.querySelector('.pemohon-type');
+                                const idInput = cell?.querySelector('.pemohon-id');
+                                if (!typeInput || !idInput) return;
+
+                                function sync() {
+                                    const v = select.value || '';
+                                    const [t, id] = v.split(':');
+                                    typeInput.value = t || '';
+                                    idInput.value = id || '';
+                                }
+
+                                select.addEventListener('change', sync);
+                                sync();
+                            });
+                            
+                            const reindexFunc = window['reindexTableRows_' + fieldKey];
+                            if (reindexFunc) reindexFunc();
+                        };
+                    })(columns, key, tableId + '_body');
+
+                    window[`reindexTableRows_${key}`] = (function(tableBodyId) {
+                        return function() {
+                            const tbody = document.getElementById(tableBodyId);
+                            if (!tbody) return;
+                            const rows = tbody.querySelectorAll('tr');
+                            rows.forEach((row, idx) => {
+                                // Update row number
+                                const numCell = row.querySelector('.row-number');
+                                if (numCell) numCell.textContent = idx + 1;
+
+                                row.querySelectorAll('input, select').forEach(input => {
+                                    const name = input.getAttribute('name');
+                                    if (name) {
+                                        input.setAttribute('name', name.replace(/(\[[^\]]+\])\[\d+\]/, '$1[' + idx + ']'));
+                                    }
+                                });
+                            });
+                        };
+                    })(tableId + '_body');
+
+                    const headerCells = '<th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 w-12 text-center">No</th>' + 
+                                       columns.map(col => `<th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">${escapeHtml(col.label)}</th>`).join('');
+
+                    return `<div class="md:col-span-2 bg-white border border-gray-200 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="block text-sm font-medium text-gray-700 font-bold">${label}</label>
+                            <button type="button" onclick="addTableRow_${key}()" class="btn-pill btn-pill-secondary text-xs px-3 py-1">
+                                <i class="fas fa-plus mr-1"></i> Tambah Baris
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-200" id="${tableId}">
+                                <thead>
+                                    <tr>
+                                        ${headerCells}
+                                        <th class="px-4 py-2 w-16 bg-gray-50"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="${tableId}_body" class="divide-y divide-gray-100">
+                                    ${rowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>`;
                 }
 
@@ -285,7 +499,7 @@
                 container.querySelectorAll('.pemohon-select').forEach(select => {
                     select.addEventListener('change', () => {
                         const [type, id] = select.value.split(':');
-                        const parent = select.closest('div');
+                        const parent = select.closest('div') || select.closest('td');
                         if (parent.querySelector('.pemohon-type')) parent.querySelector('.pemohon-type').value = type || '';
                         if (parent.querySelector('.pemohon-id')) parent.querySelector('.pemohon-id').value = id || '';
                     });

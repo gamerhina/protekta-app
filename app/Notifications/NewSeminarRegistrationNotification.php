@@ -45,7 +45,7 @@ class NewSeminarRegistrationNotification extends Notification implements ShouldQ
             ->line('**Detail Seminar:**')
             ->line('Judul: ' . $this->seminar->judul)
             ->line('Mahasiswa: ' . ($this->seminar->mahasiswa->nama ?? 'N/A'))
-            ->line('Tanggal: ' . ($this->seminar->tanggal ? $this->seminar->tanggal->format('d M Y') : 'N/A'))
+            ->line('Tanggal: ' . ($this->seminar->tanggal ? $this->seminar->tanggal->translatedFormat('d F Y') : 'N/A'))
             ->line('Lokasi: ' . $this->seminar->lokasi)
             ->action('Lihat Pendaftaran', route('admin.seminar.index') . '?filter=diajukan')
             ->line('Mohon segera melakukan review dan approval pendaftaran ini.');

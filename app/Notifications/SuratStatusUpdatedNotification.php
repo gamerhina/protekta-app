@@ -68,7 +68,7 @@ class SuratStatusUpdatedNotification extends Notification implements ShouldQueue
             ->line('**Detail Surat:**')
             ->line('Jenis Surat: ' . ($this->surat->jenis->nama ?? 'N/A'))
             ->line('Nomor Surat: ' . ($this->surat->no_surat ?? 'Belum ada'))
-            ->line('Tanggal Surat: ' . ($this->surat->tanggal_surat ? $this->surat->tanggal_surat->format('d M Y') : 'N/A'))
+            ->line('Tanggal Surat: ' . ($this->surat->tanggal_surat ? $this->surat->tanggal_surat->translatedFormat('d F Y') : 'N/A'))
             ->line('Perihal: ' . ($this->surat->perihal ?? '-'))
             ->line('Tujuan: ' . ($this->surat->tujuan ?? '-'))
             ->line('')

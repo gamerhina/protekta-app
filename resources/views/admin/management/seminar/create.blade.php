@@ -122,14 +122,21 @@
 
                 <div>
                     <label for="p1_dosen_id" class="block text-sm font-medium text-gray-700 mb-1">Pembimbing 1</label>
-                    <select name="p1_dosen_id" id="p1_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('p1_dosen_id') border-red-500 @enderror" required>
-                        <option value="">Pilih Pembimbing 1</option>
-                        @foreach($dosens as $dosen)
-                            <option value="{{ $dosen->id }}" {{ old('p1_dosen_id') == $dosen->id ? 'selected' : '' }}>
-                                {{ $dosen->nama }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="space-y-2">
+                        <select name="p1_dosen_id" id="p1_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('p1_dosen_id') border-red-500 @enderror dosen-select-toggle" required>
+                            <option value="">Pilih Pembimbing 1</option>
+                            @foreach($dosens as $dosen)
+                                <option value="{{ $dosen->id }}" {{ old('p1_dosen_id') == $dosen->id ? 'selected' : '' }}>
+                                    {{ $dosen->nama }}
+                                </option>
+                            @endforeach
+                            <option value="manual" {{ old('p1_dosen_id') == 'manual' ? 'selected' : '' }}>Lainnya (Ketik Manual)</option>
+                        </select>
+                        <div id="p1_manual_fields" class="{{ old('p1_dosen_id') == 'manual' ? '' : 'hidden' }} space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <input type="text" name="p1_nama" value="{{ old('p1_nama') }}" placeholder="Nama Pembimbing 1" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md">
+                            <input type="text" name="p1_nip" value="{{ old('p1_nip') }}" placeholder="NIP Pembimbing 1" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md">
+                        </div>
+                    </div>
                     @error('p1_dosen_id')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -137,14 +144,21 @@
 
                 <div>
                     <label for="p2_dosen_id" class="block text-sm font-medium text-gray-700 mb-1">Pembimbing 2</label>
-                    <select name="p2_dosen_id" id="p2_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('p2_dosen_id') border-red-500 @enderror">
-                        <option value="">Pilih Pembimbing 2</option>
-                        @foreach($dosens as $dosen)
-                            <option value="{{ $dosen->id }}" {{ old('p2_dosen_id') == $dosen->id ? 'selected' : '' }}>
-                                {{ $dosen->nama }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="space-y-2">
+                        <select name="p2_dosen_id" id="p2_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('p2_dosen_id') border-red-500 @enderror dosen-select-toggle">
+                            <option value="">Pilih Pembimbing 2</option>
+                            @foreach($dosens as $dosen)
+                                <option value="{{ $dosen->id }}" {{ old('p2_dosen_id') == $dosen->id ? 'selected' : '' }}>
+                                    {{ $dosen->nama }}
+                                </option>
+                            @endforeach
+                            <option value="manual" {{ old('p2_dosen_id') == 'manual' ? 'selected' : '' }}>Lainnya (Ketik Manual)</option>
+                        </select>
+                        <div id="p2_manual_fields" class="{{ old('p2_dosen_id') == 'manual' ? '' : 'hidden' }} space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <input type="text" name="p2_nama" value="{{ old('p2_nama') }}" placeholder="Nama Pembimbing 2" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md">
+                            <input type="text" name="p2_nip" value="{{ old('p2_nip') }}" placeholder="NIP Pembimbing 2" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md">
+                        </div>
+                    </div>
                     @error('p2_dosen_id')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -152,14 +166,21 @@
 
                 <div>
                     <label for="pembahas_dosen_id" class="block text-sm font-medium text-gray-700 mb-1">Pembahas</label>
-                    <select name="pembahas_dosen_id" id="pembahas_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('pembahas_dosen_id') border-red-500 @enderror">
-                        <option value="">Pilih Pembahas</option>
-                        @foreach($dosens as $dosen)
-                            <option value="{{ $dosen->id }}" {{ old('pembahas_dosen_id') == $dosen->id ? 'selected' : '' }}>
-                                {{ $dosen->nama }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="space-y-2">
+                        <select name="pembahas_dosen_id" id="pembahas_dosen_id" class="w-full px-3 py-2 border border-gray-300 rounded-md @error('pembahas_dosen_id') border-red-500 @enderror dosen-select-toggle">
+                            <option value="">Pilih Pembahas</option>
+                            @foreach($dosens as $dosen)
+                                <option value="{{ $dosen->id }}" {{ old('pembahas_dosen_id') == $dosen->id ? 'selected' : '' }}>
+                                    {{ $dosen->nama }}
+                                </option>
+                            @endforeach
+                            <option value="manual" {{ old('pembahas_dosen_id') == 'manual' ? 'selected' : '' }}>Lainnya (Ketik Manual)</option>
+                        </select>
+                        <div id="pembahas_manual_fields" class="{{ old('pembahas_dosen_id') == 'manual' ? '' : 'hidden' }} space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <input type="text" name="pembahas_nama" value="{{ old('pembahas_nama') }}" placeholder="Nama Pembahas" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md">
+                            <input type="text" name="pembahas_nip" value="{{ old('pembahas_nip') }}" placeholder="NIP Pembahas" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md">
+                        </div>
+                    </div>
                     @error('pembahas_dosen_id')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -383,6 +404,21 @@
         }
 
         seminarJenisSelect.dataset.initialized = 'true';
+        
+        // 3. Manual Dosen Toggle
+        document.querySelectorAll('.dosen-select-toggle').forEach(select => {
+            select.addEventListener('change', function() {
+                const targetId = this.id.replace('_dosen_id', '_manual_fields');
+                const target = document.getElementById(targetId);
+                if (target) {
+                    if (this.value === 'manual') {
+                        target.classList.remove('hidden');
+                    } else {
+                        target.classList.add('hidden');
+                    }
+                }
+            });
+        });
     }
 
     // Standardized Init Pattern

@@ -67,7 +67,7 @@
                         <td class="px-6 py-4">
                             <div class="text-sm font-medium text-gray-900">{{ $template->nama }}</div>
                             <div class="text-xs text-gray-500">{{ $template->keterangan }}</div>
-                            @if(!file_exists(storage_path('app/private/' . $template->file_path)))
+                            @if(!file_exists(base_path('uploads/' . $template->file_path)))
                                 <div class="text-xs text-red-600 mt-1">
                                     ⚠️ File tidak ditemukan! Silakan upload ulang.
                                 </div>
@@ -124,7 +124,7 @@
                                    title="Ubah & Pemetaan">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{{ asset('storage/' . str_replace('public/', '', $template->file_path)) }}"
+                                <a href="{{ route('uploads.show', $template->file_path) }}"
                                    class="text-green-600 hover:text-green-900 font-semibold"
                                    download
                                    title="Unduh Template">
@@ -177,7 +177,7 @@
 </div>
 
 <!-- Pratinjau Modal -->
-<div id="previewModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+<div id="previewModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Pratinjau - Pilih Seminar</h3>

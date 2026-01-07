@@ -139,7 +139,7 @@ class LayoutComposer
                 $items[] = [
                     'key' => 'seminar_jadwal_' . $seminar->id,
                     'title' => 'Jadwal seminar',
-                    'message' => $seminar->tanggal->format('d M Y') . ', ' . $seminar->lokasi,
+                    'message' => $seminar->tanggal->translatedFormat('d F Y') . ', ' . $seminar->lokasi,
                     'url' => route('mahasiswa.dashboard') . '#seminar-saya',
                     'level' => 'info',
                 ];
@@ -276,7 +276,7 @@ class LayoutComposer
             $isPast = $seminar->tanggal && Carbon::parse($seminar->tanggal)->isPast();
 
             $tanggalLabel = $seminar->tanggal instanceof Carbon
-                ? $seminar->tanggal->format('d M Y')
+                ? $seminar->tanggal->translatedFormat('d F Y')
                 : $seminar->tanggal;
 
             // 1. Mendapatkan tugas baru sebagai penguji

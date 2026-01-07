@@ -271,7 +271,7 @@
                         @if(count($waOptions) > 0)
                             <div class="flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3 pb-2 border-b border-gray-100 mt-3">
                                 <label for="wa_recipient_select" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">
-                                    <i class="fab fa-whatsapp mr-1"></i> Pilih Penerima WhatsApp
+                                    <i class="fa-brands fa-whatsapp mr-1"></i> Pilih Penerima WhatsApp
                                 </label>
                                 <select id="wa_recipient_select" class="block w-full sm:w-64 bg-blue-50 border-blue-200 text-blue-700 text-xs font-semibold rounded-full px-4 py-1.5 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
                                     @foreach($waOptions as $opt)
@@ -286,13 +286,13 @@
                                     onclick="sendViaWhatsapp()" 
                                     class="w-full sm:w-auto btn-pill btn-pill-success min-w-[180px] {{ count($waOptions) === 0 ? 'opacity-50 cursor-not-allowed' : '' }}"
                                     {{ count($waOptions) === 0 ? 'disabled' : '' }}>
-                                <i class="fab fa-whatsapp mr-2"></i> Kirim via WA
+                                <i class="fa-brands fa-whatsapp mr-2"></i> Kirim via WA
                             </button>
 
                             <button type="submit" 
                                     onclick="this.closest('form').submit()" 
                                     class="w-full sm:w-auto btn-pill btn-pill-info min-w-[180px]">
-                                <i class="fas fa-paper-plane mr-2"></i> Kirim via Email
+                                <i class="fa-solid fa-paper-plane mr-2"></i> Kirim via Email
                             </button>
                         </div>
 
