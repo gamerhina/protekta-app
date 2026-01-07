@@ -15,12 +15,6 @@ export default defineConfig({
         tailwindcss(),
     ],
 
-    // ⬇️ INI KUNCI UTAMA PENYIMPANAN ASSET ANDA
-    build: {
-        outDir: 'build', 
-        emptyOutDir: true,
-    },
-
     server: {
         host: '0.0.0.0',
         cors: true,
