@@ -151,6 +151,7 @@ class DosenSuratController extends Controller
 
             if ($type === 'pemohon') {
                 $pemohonFieldKey = $pemohonFieldKey ?? $key;
+                $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'array';
                 $rules["form_data.$key.type"] = ($required ? 'required|' : 'nullable|') . 'in:dosen';
                 $rules["form_data.$key.id"] = ($required ? 'required|' : 'nullable|') . 'integer|min:1';
                 continue;
@@ -201,6 +202,26 @@ class DosenSuratController extends Controller
                     $rules["form_data.$key.*"] = 'in:' . implode(',', array_map(fn ($v) => str_replace(',', '\\,', $v), $options));
                 } else {
                     $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'boolean';
+                }
+                continue;
+            }
+
+            if ($type === 'table') {
+                $columns = is_array($f['columns'] ?? null) ? $f['columns'] : [];
+                $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'array';
+                $rules["form_data.$key.*"] = 'array';
+                foreach ($columns as $col) {
+                    if (is_array($col) && isset($col['key'])) {
+                        $colKey = $col['key'];
+                        $colType = $col['type'] ?? 'text';
+                        if ($colType === 'pemohon') {
+                            $rules["form_data.$key.*.$colKey"] = 'nullable|array';
+                            $rules["form_data.$key.*.$colKey.type"] = 'nullable|in:mahasiswa,dosen';
+                            $rules["form_data.$key.*.$colKey.id"] = 'nullable|integer|min:1';
+                        } else {
+                            $rules["form_data.$key.*.$colKey"] = 'nullable|string|max:500';
+                        }
+                    }
                 }
                 continue;
             }
