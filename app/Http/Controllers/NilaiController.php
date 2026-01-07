@@ -113,13 +113,6 @@ class NilaiController extends Controller
                 $nilai->jenis_penilai = $evaluatorType;
             }
 
-            $totalScore = 0;
-            foreach ($aspects as $aspect) {
-                $score = $request->input('aspect_' . $aspect->id);
-                $totalScore += ($score * $aspect->persentase) / 100;
-            }
-
-            $nilai->nilai_angka = round($totalScore, 2);
             $nilai->catatan = $request->catatan;
             $nilai->save();
 
@@ -134,6 +127,11 @@ class NilaiController extends Controller
                     ]
                 );
             }
+
+            // Recalculate final score based on stored aspect scores
+            $nilai->refresh();
+            $nilai->nilai_angka = $nilai->calculateFinalScore();
+            $nilai->save();
 
             if ($request->filled('signature')) {
                 // Process base64 image

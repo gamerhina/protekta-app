@@ -542,7 +542,9 @@ class ManagementController extends Controller
             'nilai.assessmentScores.assessmentAspect',
             'signatures'
         ]);
-        return view('admin.management.seminar.show', compact('seminar'));
+        $seminar->refreshCompletionStatus();
+
+    return view('admin.management.seminar.show', compact('seminar'));
     }
 
     /**
@@ -1195,6 +1197,9 @@ class ManagementController extends Controller
                 }
             }
         }
+
+        // Update seminar status based on evaluator completion
+        $seminar->refreshCompletionStatus();
 
         return redirect()->route('admin.seminar.edit', $seminar->id)->with('success', 'Seminar berhasil diperbarui!');
     }
