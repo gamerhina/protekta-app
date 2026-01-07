@@ -618,7 +618,8 @@ class ManagementController extends Controller
                 'required',
                 'exists:mahasiswa,id',
                 Rule::unique('seminars', 'mahasiswa_id')->where(function ($query) use ($request) {
-                    return $query->where('seminar_jenis_id', $request->seminar_jenis_id);
+                    return $query->where('seminar_jenis_id', $request->seminar_jenis_id)
+                        ->whereYear('created_at', date('Y'));
                 }),
             ],
             'seminar_jenis_id' => 'required|exists:seminar_jenis,id',
@@ -627,7 +628,8 @@ class ManagementController extends Controller
                 'string',
                 'max:255',
                 Rule::unique('seminars', 'no_surat')->where(function ($query) use ($request) {
-                    return $query->where('seminar_jenis_id', $request->seminar_jenis_id);
+                    return $query->where('seminar_jenis_id', $request->seminar_jenis_id)
+                        ->whereYear('created_at', date('Y'));
                 }),
             ],
             'judul' => 'required|string|max:500', // Increased length to accommodate HTML
@@ -881,7 +883,8 @@ class ManagementController extends Controller
                 Rule::unique('seminars', 'seminar_jenis_id')
                     ->ignore($seminar->id)
                     ->where(function ($query) use ($seminar) {
-                        return $query->where('mahasiswa_id', $seminar->mahasiswa_id);
+                        return $query->where('mahasiswa_id', $seminar->mahasiswa_id)
+                            ->whereYear('created_at', date('Y'));
                     }),
             ],
             'no_surat' => [
@@ -891,7 +894,8 @@ class ManagementController extends Controller
                 Rule::unique('seminars', 'no_surat')
                     ->ignore($seminar->id)
                     ->where(function ($query) use ($request) {
-                        return $query->where('seminar_jenis_id', $request->seminar_jenis_id);
+                        return $query->where('seminar_jenis_id', $request->seminar_jenis_id)
+                            ->whereYear('created_at', date('Y'));
                     }),
             ],
             'judul' => 'required|string|max:500',

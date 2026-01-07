@@ -176,7 +176,8 @@ class SeminarRegistrationController extends Controller
                 'required',
                 'exists:seminar_jenis,id',
                 Rule::unique('seminars', 'seminar_jenis_id')->where(function ($query) {
-                    return $query->where('mahasiswa_id', Auth::guard('mahasiswa')->id());
+                    return $query->where('mahasiswa_id', Auth::guard('mahasiswa')->id())
+                        ->whereYear('created_at', date('Y'));
                 }),
             ],
             'no_surat' => [
@@ -184,7 +185,8 @@ class SeminarRegistrationController extends Controller
                 'string',
                 'max:255',
                 Rule::unique('seminars', 'no_surat')->where(function ($query) use ($request) {
-                    return $query->where('seminar_jenis_id', $request->seminar_jenis_id);
+                    return $query->where('seminar_jenis_id', $request->seminar_jenis_id)
+                        ->whereYear('created_at', date('Y'));
                 }),
             ],
             'judul' => 'required|string|max:255',
