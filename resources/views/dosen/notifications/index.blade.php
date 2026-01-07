@@ -17,7 +17,9 @@
                 <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 @if(!$notification->read_at) bg-blue-50 border-blue-200 @endif">
                     <div class="flex items-start">
                         <div class="flex-shrink-0">
-                            @if($notification->type === 'App\Notifications\SuratStatusUpdatedNotification')
+                            @if($notification->type === 'App\Notifications\SuratSubmittedNotification')
+                                <i class="fas fa-file-alt text-blue-500 text-lg mt-1"></i>
+                            @elseif($notification->type === 'App\Notifications\SuratStatusUpdatedNotification')
                                 <i class="fas fa-sync-alt text-green-500 text-lg mt-1"></i>
                             @else
                                 <i class="fas fa-info-circle text-gray-500 text-lg mt-1"></i>

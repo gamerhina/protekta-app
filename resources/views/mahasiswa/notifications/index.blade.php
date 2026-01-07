@@ -21,8 +21,6 @@
                                 <i class="fas fa-file-alt text-blue-500 text-lg mt-1"></i>
                             @elseif($notification->type === 'App\Notifications\SuratStatusUpdatedNotification')
                                 <i class="fas fa-sync-alt text-green-500 text-lg mt-1"></i>
-                            @elseif($notification->type === 'App\Notifications\NewSeminarRegistrationNotification')
-                                <i class="fas fa-graduation-cap text-purple-500 text-lg mt-1"></i>
                             @else
                                 <i class="fas fa-info-circle text-gray-500 text-lg mt-1"></i>
                             @endif
@@ -37,7 +35,7 @@
                                         {{ $notification->created_at->timezone('Asia/Jakarta')->translatedFormat('d F Y H:i') }}
                                     </span>
                                     @if(!$notification->read_at)
-                                        <form method="POST" action="{{ route('admin.notifications.markNotificationAsRead', $notification->id) }}" class="inline">
+                                        <form method="POST" action="{{ route('mahasiswa.notifications.markNotificationAsRead', $notification->id) }}" class="inline">
                                             @csrf
                                             <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs">
                                                 <i class="fas fa-check"></i> Tandai dibaca
@@ -53,27 +51,9 @@
                                 </p>
                             @endif
                             
-                            @if(isset($notification->data['pemohon']))
-                                <p class="text-sm text-gray-600 mt-1">
-                                    Pemohon: {{ $notification->data['pemohon'] }}
-                                </p>
-                            @endif
-                            
                             @if(isset($notification->data['status_text']))
                                 <p class="text-sm text-gray-600 mt-1">
                                     Status: {{ $notification->data['status_text'] }}
-                                </p>
-                            @endif
-
-                            @if(isset($notification->data['mahasiswa']))
-                                <p class="text-sm text-gray-600 mt-1">
-                                    Mahasiswa: {{ $notification->data['mahasiswa'] }}
-                                </p>
-                            @endif
-
-                            @if(isset($notification->data['judul']))
-                                <p class="text-sm text-gray-600 mt-1">
-                                    Judul: {!! strip_tags($notification->data['judul']) !!}
                                 </p>
                             @endif
                             
@@ -105,7 +85,7 @@
 @push('scripts')
 <script>
 function markAllAsRead() {
-    fetch('{{ route("admin.notifications.markAsRead") }}', {
+    fetch('{{ route("mahasiswa.notifications.markAsRead") }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',

@@ -30,7 +30,7 @@ class NewSeminarRegistrationNotification extends Notification implements ShouldQ
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     /**
@@ -58,12 +58,15 @@ class NewSeminarRegistrationNotification extends Notification implements ShouldQ
      */
     public function toArray(object $notifiable): array
     {
+        $mahasiswaNama = $this->seminar->mahasiswa->nama ?? 'N/A';
         return [
             'seminar_id' => $this->seminar->id,
             'judul' => $this->seminar->judul,
-            'mahasiswa' => $this->seminar->mahasiswa->nama ?? null,
+            'mahasiswa' => $mahasiswaNama,
             'tanggal' => $this->seminar->tanggal,
             'status' => 'diajukan',
+            'message' => 'Pendaftaran seminar baru dari ' . $mahasiswaNama,
+            'action_url' => route('admin.seminar.show', $this->seminar),
         ];
     }
 }

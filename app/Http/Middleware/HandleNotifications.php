@@ -34,7 +34,7 @@ class HandleNotifications
         $count = 0;
 
         if ($user) {
-            $unreadNotifications = $user->unreadNotifications()->orderBy('created_at', 'desc')->limit(5)->get();
+            $unreadNotifications = $user->unreadNotifications()->orderBy('created_at', 'desc')->limit(10)->get();
             $count = $user->unreadNotifications()->count();
             
             foreach ($unreadNotifications as $notification) {

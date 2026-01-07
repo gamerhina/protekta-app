@@ -816,7 +816,7 @@
             <div class="flex items-center gap-2 sm:gap-4">
                 @if($currentUser)
                     @php
-                        $notif = $navbarNotifications ?? ['items' => [], 'count' => 0];
+                        $notif = $navbarNotifications ?? ['items' => [], 'count' => 0, 'guard' => $currentGuard];
                     @endphp
                     
                     <!-- Notification Dropdown -->
@@ -856,6 +856,13 @@
                                     </li>
                                 @endforelse
                             </ul>
+                            @if(($notif['count'] ?? 0) > 0)
+                                <div class="border-t border-slate-100 bg-slate-50/50 p-2">
+                                    <a href="{{ route(($notif['guard'] ?? $currentGuard) . '.notifications.index') }}" class="block w-full rounded-xl py-2 text-center text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50">
+                                        Lihat Semua Notifikasi
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 

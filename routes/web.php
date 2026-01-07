@@ -223,7 +223,9 @@ Route::middleware(['auth:dosen', 'notifications'])->prefix('dosen')->name('dosen
     Route::get('/gdrive', [App\Http\Controllers\GDriveController::class, 'index'])->name('gdrive.index');
 
     // Notifications
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/{notification}/read', [App\Http\Controllers\NotificationController::class, 'markNotificationAsRead'])->name('notifications.markNotificationAsRead');
 });
 
 // Protected routes for mahasiswa
@@ -256,4 +258,9 @@ Route::middleware(['auth:mahasiswa', 'notifications'])->prefix('mahasiswa')->nam
     Route::post('/surat', [App\Http\Controllers\MahasiswaSuratController::class, 'store'])->name('surat.store');
     Route::get('/surat/{surat}', [App\Http\Controllers\MahasiswaSuratController::class, 'show'])->whereNumber('surat')->name('surat.show');
     Route::get('/surat/{surat}/download', [App\Http\Controllers\MahasiswaSuratController::class, 'download'])->name('surat.download');
+
+    // Notifications
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/{notification}/read', [App\Http\Controllers\NotificationController::class, 'markNotificationAsRead'])->name('notifications.markNotificationAsRead');
 });
