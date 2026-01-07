@@ -3,18 +3,19 @@ import { getStroke } from 'perfect-freehand';
 /**
  * SIGNATURE PAD CORE
  * Dioptimasi untuk bekerja dengan Event Delegation (pusat kendali di app.js).
+ * Mendukung High-DPI (Device Pixel Ratio) untuk ketajaman maksimal di Android/iOS.
  */
 if (typeof window !== 'undefined' && !window.SIGNATURE_PAD_LOADED) {
     window.SIGNATURE_PAD_LOADED = true;
 
     const SIGNATURE_TYPES = ['p1', 'p2', 'pembahas', 'mahasiswa'];
     const STROKE_OPTIONS = {
-        size: 2.2,
-        thinning: 0.4,
-        smoothing: 0.1,
-        streamline: 0.1,
+        size: 2.8,
+        thinning: 0.7,
+        smoothing: 0.4,
+        streamline: 0.4,
     };
-    const MIN_SEGMENT_LENGTH = 1.2;
+    const MIN_SEGMENT_LENGTH = 1.5;
 
     // Simpan referensi instansi pad agar tombol di app.js bisa memanggilnya
     const activePads = {};
@@ -90,7 +91,8 @@ if (typeof window !== 'undefined' && !window.SIGNATURE_PAD_LOADED) {
             },
             clear: () => {
                 paths.length = 0;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const dpr = window.devicePixelRatio || 1;
+                ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
                 input.value = '';
             }
         };
@@ -129,7 +131,7 @@ if (typeof window !== 'undefined' && !window.SIGNATURE_PAD_LOADED) {
         canvas.addEventListener('pointerleave', stopDrawing);
         canvas.addEventListener('pointercancel', stopDrawing);
 
-        // Touch handlers
+        // Touch handlers (Fallback for standard touch)
         canvas.addEventListener('touchstart', (event) => {
             event.preventDefault();
             if (event.touches.length > 1) return;
@@ -163,22 +165,32 @@ if (typeof window !== 'undefined' && !window.SIGNATURE_PAD_LOADED) {
     }
 
     function prepareCanvas(canvas) {
-        const width = canvas.clientWidth || canvas.parentElement?.clientWidth || canvas.width;
-        const height = canvas.clientHeight || canvas.parentElement?.clientHeight || canvas.height;
-        if (width && height) {
-            canvas.width = width;
-            canvas.height = height;
-        }
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width || canvas.clientWidth || 360;
+        const height = rect.height || canvas.clientHeight || 120;
+
+        // Set the internal resolution based on DPR (Device Pixel Ratio)
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+
+        // Set the transform to scale drawing context to logical pixels
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+        ctx.scale(dpr, dpr);
+        
         canvas.style.touchAction = 'none';
     }
 
     function addPointToPath(event, canvas, path) {
         const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = (event.clientX - rect.left) * scaleX;
-        const y = (event.clientY - rect.top) * scaleY;
+        // Since we scale the context by DPR, we capture and store points in logical (CSS) pixels.
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Android/Touch optimization: clamp force/pressure impact
         let pressure = event.pressure || event.force || 0.5;
+        if (pressure > 0.6) pressure = 0.6; // Avoid blobby lines on sensitive screens
 
         const timestamp = Date.now();
         const lastPoint = path[path.length - 1];
@@ -198,8 +210,13 @@ if (typeof window !== 'undefined' && !window.SIGNATURE_PAD_LOADED) {
     }
 
     function redraw(ctx, paths) {
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const canvas = ctx.canvas;
+        const dpr = window.devicePixelRatio || 1;
+        
+        // Clear using logical coordinates because scale() is active
+        ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
         ctx.fillStyle = '#0f172a';
+        
         paths.forEach(path => {
             if (!path.length) return;
             if (path.length === 1) {
