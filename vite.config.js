@@ -15,6 +15,7 @@ export default defineConfig({
         tailwindcss(),
     ],
 
+    // ⬇️ INI KUNCI UTAMA
     build: {
         outDir: 'build', 
         emptyOutDir: true,
