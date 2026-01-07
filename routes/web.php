@@ -174,7 +174,7 @@ Route::middleware(['auth:admin', 'notifications'])->prefix('admin')->name('admin
     Route::delete('/surats/{surat}', [AdminSuratController::class, 'destroy'])->name('surat.destroy');
 
     // Notifications
-    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    // Notifications (Index removed)
     Route::post('/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/notifications/{notification}/read', [App\Http\Controllers\NotificationController::class, 'markNotificationAsRead'])->name('notifications.markNotificationAsRead');
 
@@ -223,7 +223,7 @@ Route::middleware(['auth:dosen', 'notifications'])->prefix('dosen')->name('dosen
     Route::get('/gdrive', [App\Http\Controllers\GDriveController::class, 'index'])->name('gdrive.index');
 
     // Notifications
-    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    // Notifications (Index removed)
     Route::post('/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/notifications/{notification}/read', [App\Http\Controllers\NotificationController::class, 'markNotificationAsRead'])->name('notifications.markNotificationAsRead');
 });
@@ -260,7 +260,7 @@ Route::middleware(['auth:mahasiswa', 'notifications'])->prefix('mahasiswa')->nam
     Route::get('/surat/{surat}/download', [App\Http\Controllers\MahasiswaSuratController::class, 'download'])->name('surat.download');
 
     // Notifications
-    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    // Notifications (Index removed)
     Route::post('/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/notifications/{notification}/read', [App\Http\Controllers\NotificationController::class, 'markNotificationAsRead'])->name('notifications.markNotificationAsRead');
 });

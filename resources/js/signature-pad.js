@@ -10,12 +10,12 @@ if (typeof window !== 'undefined' && !window.SIGNATURE_PAD_LOADED) {
 
     const SIGNATURE_TYPES = ['p1', 'p2', 'pembahas', 'mahasiswa'];
     const STROKE_OPTIONS = {
-        size: 2.8,
-        thinning: 0.7,
-        smoothing: 0.4,
-        streamline: 0.4,
+        size: 3.2,
+        thinning: 0.65,
+        smoothing: 0.5,
+        streamline: 0.5,
     };
-    const MIN_SEGMENT_LENGTH = 1.5;
+    const MIN_SEGMENT_LENGTH = 0.8;
 
     // Simpan referensi instansi pad agar tombol di app.js bisa memanggilnya
     const activePads = {};
@@ -190,7 +190,7 @@ if (typeof window !== 'undefined' && !window.SIGNATURE_PAD_LOADED) {
         
         // Android/Touch optimization: clamp force/pressure impact
         let pressure = event.pressure || event.force || 0.5;
-        if (pressure > 0.6) pressure = 0.6; // Avoid blobby lines on sensitive screens
+        if (pressure > 0.55) pressure = 0.55; // Avoid blobby lines on sensitive screens
 
         const timestamp = Date.now();
         const lastPoint = path[path.length - 1];

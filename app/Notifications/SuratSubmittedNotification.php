@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notification;
 
 use App\Models\Surat;
 
-class SuratSubmittedNotification extends Notification implements ShouldQueue
+class SuratSubmittedNotification extends Notification
 {
     use Queueable;
 

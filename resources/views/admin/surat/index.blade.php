@@ -70,7 +70,18 @@
                         <tr>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ $s->no_surat ?? '-' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-700">
-                                {{ $s->pemohon_type === 'mahasiswa' ? ($s->pemohonMahasiswa->nama ?? '-') : ($s->pemohonDosen->nama ?? '-') }}
+                                @php
+                                    // Check for custom nama in data JSON
+                                    $customNama = $s->data['pemohon']['custom_nama'] ?? ($s->data['custom_nama'] ?? null);
+                                @endphp
+                                
+                                @if($customNama)
+                                    {{ $customNama }}
+                                @elseif($s->pemohon_type === 'mahasiswa')
+                                    {{ $s->pemohonMahasiswa->nama ?? '-' }}
+                                @else
+                                    {{ $s->pemohonDosen->nama ?? '-' }}
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ $s->jenis->nama ?? '-' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $s->tanggal_surat?->timezone('Asia/Jakarta')->translatedFormat('d F Y') }}</td>

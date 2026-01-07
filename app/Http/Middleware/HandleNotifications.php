@@ -39,6 +39,7 @@ class HandleNotifications
             
             foreach ($unreadNotifications as $notification) {
                 $item = [
+                    'key' => $notification->id,
                     'title' => $this->getNotificationTitle($notification),
                     'message' => $notification->data['message'] ?? 'Notifikasi baru',
                     'url' => $notification->data['action_url'] ?? '#',

@@ -242,8 +242,10 @@ class SeminarRegistrationController extends Controller
 
         // Send notification to admins about new registration
         try {
-            \Notification::route('mail', \App\Models\Admin::pluck('email')->toArray())
-                ->notify(new \App\Notifications\NewSeminarRegistrationNotification($seminar));
+            $admins = \App\Models\Admin::all();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\NewSeminarRegistrationNotification($seminar));
+            }
         } catch (\Exception $e) {
             // Log error but don't fail the registration
             \Log::error('Failed to send admin notification for seminar registration: '.$e->getMessage());

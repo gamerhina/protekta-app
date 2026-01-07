@@ -939,6 +939,8 @@ class ManagementController extends Controller
             'signatures.*.jenis_penilai' => 'nullable|in:p1,p2,pembahas',
         ] + $uploadRules);
 
+        $previousStatus = $seminar->status;
+
         $seminar->update([
             'seminar_jenis_id' => $request->seminar_jenis_id,
             'no_surat' => $request->no_surat,
@@ -957,6 +959,10 @@ class ManagementController extends Controller
             'pembahas_nip' => $request->pembahas_nip,
             'status' => $request->status,
         ]);
+
+        if ($previousStatus !== $seminar->status && $seminar->mahasiswa) {
+            $seminar->mahasiswa->notify(new \App\Notifications\SeminarStatusUpdatedNotification($seminar, $previousStatus));
+        }
 
         // Handle file uploads (item-based)
         if ($jenis && is_array($jenis->berkas_syarat_items) && count($jenis->berkas_syarat_items)) {

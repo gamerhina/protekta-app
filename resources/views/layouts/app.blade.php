@@ -827,8 +827,8 @@
                             <i class="fas fa-bell text-lg"></i>
                             @if(($notif['count'] ?? 0) > 0)
                                 <span class="hidden absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
-                                    {{ $notif['count'] > 9 ? '9+' : $notif['count'] }}
-                                </span>
+                                     {{ $notif['count'] > 9 ? '9+' : $notif['count'] }}
+                                 </span>
                             @endif
                         </button>
                         
@@ -856,13 +856,7 @@
                                     </li>
                                 @endforelse
                             </ul>
-                            @if(($notif['count'] ?? 0) > 0)
-                                <div class="border-t border-slate-100 bg-slate-50/50 p-2">
-                                    <a href="{{ route(($notif['guard'] ?? $currentGuard) . '.notifications.index') }}" class="block w-full rounded-xl py-2 text-center text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50">
-                                        Lihat Semua Notifikasi
-                                    </a>
-                                </div>
-                            @endif
+                            {{-- Notification footer removed --}}
                         </div>
                     </div>
 

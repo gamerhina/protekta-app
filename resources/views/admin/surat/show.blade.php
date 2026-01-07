@@ -208,15 +208,36 @@
                     const dosenOptions = (dosens || []).map(d => `<option value="dosen:${d.id}" ${currentPemohonType === 'dosen' && currentPemohonId == d.id ? 'selected' : ''}>${escapeHtml(d.nama)} (${escapeHtml(d.nip)})</option>`).join('');
                     const mhsOptions = (mahasiswas || []).map(m => `<option value="mahasiswa:${m.id}" ${currentPemohonType === 'mahasiswa' && currentPemohonId == m.id ? 'selected' : ''}>${escapeHtml(m.nama)} (${escapeHtml(m.npm)})</option>`).join('');
                     
+                    // Check if pemohon data exists in suratData (for custom type detection)
+                    const pemohonData = suratData[key] || {};
+                    const actualType = pemohonData.type || currentPemohonType;
+                    const actualId = pemohonData.id || currentPemohonId;
+                    const customNama = pemohonData.custom_nama || '';
+                    const customNip = pemohonData.custom_nip || '';
+                    const isCustom = actualType === 'custom';
+                    
                     return `<div class="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">${label}</label>
-                        <input type="hidden" class="pemohon-type" name="form_data[${escapeHtml(key)}][type]" value="${escapeHtml(currentPemohonType)}">
-                        <input type="hidden" class="pemohon-id" name="form_data[${escapeHtml(key)}][id]" value="${escapeHtml(currentPemohonId)}">
-                        <select class="pemohon-select w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+                        <input type="hidden" class="pemohon-type" name="form_data[${escapeHtml(key)}][type]" value="${escapeHtml(actualType)}">
+                        <input type="hidden" class="pemohon-id" name="form_data[${escapeHtml(key)}][id]" value="${escapeHtml(actualId)}">
+                        <select class="pemohon-select w-full px-3 py-2 border border-gray-300 rounded-md bg-white mb-3">
                             <option value="">Pilih pemohon</option>
                             ${sources.includes('mahasiswa') ? `<optgroup label="Mahasiswa">${mhsOptions}</optgroup>` : ''}
                             ${sources.includes('dosen') ? `<optgroup label="Dosen">${dosenOptions}</optgroup>` : ''}
+                            <optgroup label="Lainnya">
+                                <option value="custom:0" ${isCustom ? 'selected' : ''}>Isi Sendiri</option>
+                            </optgroup>
                         </select>
+                        <div class="pemohon-custom-inputs ${isCustom ? '' : 'hidden'} space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Nama Lengkap</label>
+                                <input type="text" name="form_data[${escapeHtml(key)}][custom_nama]" value="${escapeHtml(customNama)}" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Masukkan nama lengkap" ${isCustom ? 'required' : ''}>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">NIP/NPM/Identitas</label>
+                                <input type="text" name="form_data[${escapeHtml(key)}][custom_nip]" value="${escapeHtml(customNip)}" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Masukkan NIP/NPM" ${isCustom ? 'required' : ''}>
+                            </div>
+                        </div>
                     </div>`;
                 }
 
@@ -294,7 +315,7 @@
 
                     const tableId = `table_${key}`;
                     const tableData = Array.isArray(value) ? value : [];
-                    const headerCells = columns.map(col => `<th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">${escapeHtml(col.label)}</th>`).join('');
+
                     
                     // Helper function to render table cell
                     const renderTableCell = (col, rowIdx, cellValue = '') => {
@@ -495,13 +516,28 @@
                 // Also initialize the click listener for the main container here if not already done via delegation
                 // In this architecture, we rely on the document level delegation but bounded by the scope check in handleSuratClicks
 
-                // Wire up pemohon selects
+                // Wire pemohon selects
                 container.querySelectorAll('.pemohon-select').forEach(select => {
                     select.addEventListener('change', () => {
                         const [type, id] = select.value.split(':');
                         const parent = select.closest('div') || select.closest('td');
                         if (parent.querySelector('.pemohon-type')) parent.querySelector('.pemohon-type').value = type || '';
                         if (parent.querySelector('.pemohon-id')) parent.querySelector('.pemohon-id').value = id || '';
+                        
+                        // Toggle custom inputs visibility
+                        const customInputs = parent.querySelector('.pemohon-custom-inputs');
+                        if (customInputs) {
+                            if (type === 'custom') {
+                                customInputs.classList.remove('hidden');
+                                customInputs.querySelectorAll('input').forEach(inp => inp.setAttribute('required', 'required'));
+                            } else {
+                                customInputs.classList.add('hidden');
+                                customInputs.querySelectorAll('input').forEach(inp => {
+                                    inp.removeAttribute('required');
+                                    inp.value = '';
+                                });
+                            }
+                        }
                     });
                 });
 

@@ -7,7 +7,7 @@
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
         <h1 class="text-2xl font-semibold text-gray-800 mb-6">Pendaftaran Seminar</h1>
 
-        <form action="{{ route('mahasiswa.seminar.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('mahasiswa.seminar.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return handleSeminarSubmit(event, this)">
             @csrf
             <div class="space-y-6">
                 <div>
@@ -45,20 +45,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                <i class="fas fa-calendar-alt fa-fw"></i>
-                            </div>
-                            <input
-                                type="date"
-                                name="tanggal"
-                                id="tanggal"
-                                value="{{ old('tanggal') }}"
-                                min="{{ date('Y-m-d') }}"
-                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('tanggal') border-red-500 @enderror"
-                                required
-                            >
-                        </div>
+                        <input
+                            type="date"
+                            name="tanggal"
+                            id="tanggal"
+                            value="{{ old('tanggal') }}"
+                            min="{{ date('Y-m-d') }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('tanggal') border-red-500 @enderror"
+                            required
+                        >
                         <p class="text-sm text-gray-500 mt-1">Tanggal harus hari ini atau setelahnya</p>
                         @error('tanggal')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -67,19 +62,14 @@
 
                     <div>
                         <label for="waktu" class="block text-sm font-medium text-gray-700 mb-1">Waktu</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                <i class="fas fa-clock fa-fw"></i>
-                            </div>
-                            <input
-                                type="time"
-                                name="waktu"
-                                id="waktu"
-                                value="{{ old('waktu', '09:00') }}"
-                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('waktu') border-red-500 @enderror"
-                                required
-                            >
-                        </div>
+                        <input
+                            type="time"
+                            name="waktu"
+                            id="waktu"
+                            value="{{ old('waktu', '09:00') }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('waktu') border-red-500 @enderror"
+                            required
+                        >
                         @error('waktu')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -189,7 +179,7 @@
                 </div>
 
                 <div class="mt-8 flex justify-end">
-                    <button type="submit" class="btn-pill btn-pill-primary">
+                    <button type="submit" class="btn-pill btn-pill-primary" id="seminar-submit-btn">
                         Daftar Seminar
                     </button>
                 </div>
@@ -201,6 +191,30 @@
 
 @section('scripts')
 <script>
+// Global function to prevent double-submit on seminar registration
+window.handleSeminarSubmit = function(event, form) {
+    const submitBtn = form.querySelector('#seminar-submit-btn');
+    if (!submitBtn) return true;
+    
+    // Check if already submitting
+    if (submitBtn.disabled) {
+        event.preventDefault();
+        return false;
+    }
+    
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Mendaftar...';
+    
+    // Re-enable after 5 seconds as fallback (in case of network error)
+    setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Daftar Seminar';
+    }, 5000);
+    
+    return true;
+};
+
 (function() {
     function initSeminarRegister() {
         const select = document.getElementById('seminar_jenis_id');

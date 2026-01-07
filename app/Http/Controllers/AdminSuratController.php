@@ -150,10 +150,17 @@ class AdminSuratController extends Controller
                 if (!is_array($sources) || empty($sources)) {
                     $sources = ['mahasiswa', 'dosen'];
                 }
+                
+                // Add 'custom' to allowed types
+                $allowedTypes = array_merge($sources, ['custom']);
 
                 $rules["form_data.$key"] = ($required ? 'required|' : 'nullable|') . 'array';
-                $rules["form_data.$key.type"] = ($required ? 'required|' : 'nullable|') . 'in:' . implode(',', $sources);
-                $rules["form_data.$key.id"] = ($required ? 'required|' : 'nullable|') . 'integer|min:1';
+                $rules["form_data.$key.type"] = ($required ? 'required|' : 'nullable|') . 'in:' . implode(',', $allowedTypes);
+                $rules["form_data.$key.id"] = ($required ? 'required|' : 'nullable|') . 'integer|min:0';
+                
+                // Add validation for custom inputs (conditional)
+                $rules["form_data.$key.custom_nama"] = 'nullable|string|max:255';
+                $rules["form_data.$key.custom_nip"] = 'nullable|string|max:100';
                 continue;
             }
 
@@ -226,9 +233,12 @@ class AdminSuratController extends Controller
                                 $sources = ['mahasiswa', 'dosen'];
                             }
                             
+                            // Add 'custom' to allowed types for table columns too
+                            $allowedTypes = array_merge($sources, ['custom']);
+                            
                             $rules["form_data.$key.*.$colKey"] = 'nullable|array';
-                            $rules["form_data.$key.*.$colKey.type"] = 'nullable|in:' . implode(',', $sources);
-                            $rules["form_data.$key.*.$colKey.id"] = 'nullable|integer|min:1';
+                            $rules["form_data.$key.*.$colKey.type"] = 'nullable|in:' . implode(',', $allowedTypes);
+                            $rules["form_data.$key.*.$colKey.id"] = 'nullable|integer|min:0';
                         } else {
                             $rules["form_data.$key.*.$colKey"] = 'nullable|string|max:500';
                         }
@@ -286,13 +296,19 @@ class AdminSuratController extends Controller
         if ($pemohonFieldKey && isset($data[$pemohonFieldKey]) && is_array($data[$pemohonFieldKey])) {
             $pemType = $data[$pemohonFieldKey]['type'] ?? null;
             $pemId = (int) ($data[$pemohonFieldKey]['id'] ?? 0);
-            if ($pemType === 'mahasiswa' && $pemId > 0) {
+            
+            if ($pemType === 'custom') {
+                $payload['pemohon_type'] = 'custom';
+                $payload['pemohon_mahasiswa_id'] = null;
+                $payload['pemohon_dosen_id'] = null;
+            } elseif ($pemType === 'mahasiswa' && $pemId > 0) {
                 $payload['pemohon_type'] = 'mahasiswa';
                 $payload['pemohon_mahasiswa_id'] = $pemId;
-            }
-            if ($pemType === 'dosen' && $pemId > 0) {
+                $payload['pemohon_dosen_id'] = null;
+            } elseif ($pemType === 'dosen' && $pemId > 0) {
                 $payload['pemohon_type'] = 'dosen';
                 $payload['pemohon_dosen_id'] = $pemId;
+                $payload['pemohon_mahasiswa_id'] = null;
             }
         }
 
@@ -413,7 +429,12 @@ class AdminSuratController extends Controller
             if ($pemohonFieldKey && isset($data[$pemohonFieldKey]) && is_array($data[$pemohonFieldKey])) {
                 $pemType = $data[$pemohonFieldKey]['type'] ?? null;
                 $pemId = (int) ($data[$pemohonFieldKey]['id'] ?? 0);
-                if ($pemType === 'mahasiswa' && $pemId > 0) {
+                
+                if ($pemType === 'custom') {
+                    $validated['pemohon_type'] = 'custom';
+                    $validated['pemohon_mahasiswa_id'] = null;
+                    $validated['pemohon_dosen_id'] = null;
+                } elseif ($pemType === 'mahasiswa' && $pemId > 0) {
                     $validated['pemohon_type'] = 'mahasiswa';
                     $validated['pemohon_mahasiswa_id'] = $pemId;
                     $validated['pemohon_dosen_id'] = null;

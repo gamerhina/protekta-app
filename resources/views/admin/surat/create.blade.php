@@ -13,7 +13,7 @@
             <a href="{{ route('admin.surat.index') }}" class="btn-pill btn-pill-secondary">Kembali</a>
         </div>
 
-        <form method="POST" action="{{ route('admin.surat.store') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('admin.surat.store') }}" enctype="multipart/form-data" onsubmit="handleFormSubmit(event, this)">
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -51,7 +51,7 @@
             </div>
 
             <div class="mt-8 flex justify-end">
-                <button class="btn-pill btn-pill-primary" type="submit">Simpan</button>
+                <button class="btn-pill btn-pill-primary" type="submit" id="submit-btn">Simpan</button>
             </div>
         </form>
     </div>
@@ -76,6 +76,30 @@
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
     }
+
+    // Global function to prevent double-submit
+    window.handleFormSubmit = function(event, form) {
+        const submitBtn = form.querySelector('#submit-btn');
+        if (!submitBtn) return true;
+        
+        // Check if already submitting
+        if (submitBtn.disabled) {
+            event.preventDefault();
+            return false;
+        }
+        
+        // Disable button and show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Menyimpan...';
+        
+        // Re-enable after 5 seconds as fallback (in case of network error)
+        setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Simpan';
+        }, 5000);
+        
+        return true;
+    };
 
     // Global function for removing table rows
     window.removeTableRow = function(btn) {
@@ -126,17 +150,31 @@
         const optionsHtml = `
             ${sources.includes('mahasiswa') ? `<optgroup label="Mahasiswa">${mhsOptions}</optgroup>` : ''}
             ${sources.includes('dosen') ? `<optgroup label="Dosen">${dosenOptions}</optgroup>` : ''}
+            <optgroup label="Lainnya">
+                <option value="custom:0">Isi Sendiri</option>
+            </optgroup>
         `;
 
+        const fieldKey = escapeHtml(field.key);
         return `
             <div class="bg-white border border-gray-200 rounded-xl p-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">${escapeHtml(field.label)}</label>
-                <input type="hidden" class="pemohon-type" name="form_data[${escapeHtml(field.key)}][type]" value="">
-                <input type="hidden" class="pemohon-id" name="form_data[${escapeHtml(field.key)}][id]" value="">
-                <select class="pemohon-select w-full px-3 py-2 border border-gray-300 rounded-md">
+                <input type="hidden" class="pemohon-type" name="form_data[${fieldKey}][type]" value="">
+                <input type="hidden" class="pemohon-id" name="form_data[${fieldKey}][id]" value="">
+                <select class="pemohon-select w-full px-3 py-2 border border-gray-300 rounded-md mb-3">
                     <option value="">Pilih pemohon</option>
                     ${optionsHtml}
                 </select>
+                <div class="pemohon-custom-inputs hidden space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Nama Lengkap</label>
+                        <input type="text" name="form_data[${fieldKey}][custom_nama]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Masukkan nama lengkap">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">NIP/NPM/Identitas</label>
+                        <input type="text" name="form_data[${fieldKey}][custom_nip]" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Masukkan NIP/NPM">
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -249,6 +287,9 @@
                     const optionsHtml = `
                         ${sources.includes('mahasiswa') ? `<optgroup label="Mahasiswa">${mhsOptions}</optgroup>` : ''}
                         ${sources.includes('dosen') ? `<optgroup label="Dosen">${dosenOptions}</optgroup>` : ''}
+                        <optgroup label="Lainnya">
+                            <option value="custom:0">Isi Sendiri</option>
+                        </optgroup>
                     `;
                     
                     return `
@@ -305,6 +346,7 @@
                             if (sources.includes('dosen')) {
                                 optionsHtml += '<optgroup label="Dosen">' + dosenOptions + '</optgroup>';
                             }
+                            optionsHtml += '<optgroup label="Lainnya"><option value="custom:0">Isi Sendiri</option></optgroup>';
                             
                             cellsHtml += '<td class="px-4 py-2">' +
                                 '<input type="hidden" class="pemohon-type" name="form_data[' + fieldKey + '][' + rowCount + '][' + colKey + '][type]" value="">' +
@@ -453,6 +495,7 @@
             const wrapper = select.closest('td') || select.closest('.bg-white') || select.closest('.p-4');
             const typeInput = wrapper?.querySelector('.pemohon-type');
             const idInput = wrapper?.querySelector('.pemohon-id');
+            const customInputs = wrapper?.querySelector('.pemohon-custom-inputs');
             if (!typeInput || !idInput) return;
 
             function sync() {
@@ -460,6 +503,22 @@
                 const [t, id] = v.split(':');
                 typeInput.value = t || '';
                 idInput.value = id || '';
+                
+                // Toggle custom inputs visibility
+                if (customInputs) {
+                    if (t === 'custom') {
+                        customInputs.classList.remove('hidden');
+                        // Make custom inputs required when visible
+                        customInputs.querySelectorAll('input').forEach(inp => inp.setAttribute('required', 'required'));
+                    } else {
+                        customInputs.classList.add('hidden');
+                        // Remove required when hidden
+                        customInputs.querySelectorAll('input').forEach(inp => {
+                            inp.removeAttribute('required');
+                            inp.value = ''; // Clear values
+                        });
+                    }
+                }
             }
 
             select.addEventListener('change', sync);
